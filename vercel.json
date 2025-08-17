@@ -8,6 +8,14 @@
       "destination": "/api/index"
     },
     {
+      "source": "/dashboard",
+      "destination": "/api/dashboard"
+    },
+    {
+      "source": "/create-campaign",
+      "destination": "/api/create-campaign"
+    },
+    {
       "source": "/claim/(.*)",
       "destination": "/api/claim-view?id=$1"
     }

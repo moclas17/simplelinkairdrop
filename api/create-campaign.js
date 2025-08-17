@@ -141,19 +141,23 @@ export default async function handler(req, res) {
 
         <div class="form-row">
           <div class="form-group">
-            <label for="tokenAddress">Token Contract</label>
+            <label for="tokenAddress">Token Contract Address</label>
             <input type="text" id="tokenAddress" name="tokenAddress" placeholder="0x..." pattern="^0x[a-fA-F0-9]{40}$" required>
+            <div class="explanation-box" style="margin-top: 8px;">
+              🔍 Enter the contract address of an ERC-20 token. The contract will be validated automatically.
+            </div>
+            <div id="tokenValidation" style="margin-top: 8px; display: none;"></div>
           </div>
           <div class="form-group">
-            <label for="tokenSymbol">Token Symbol</label>
-            <input type="text" id="tokenSymbol" name="tokenSymbol" placeholder="TOKEN" required>
+            <label for="tokenSymbol">Token Symbol <span class="label-help">(Auto-filled after validation)</span></label>
+            <input type="text" id="tokenSymbol" name="tokenSymbol" placeholder="TOKEN" required readonly style="background: rgba(255,255,255,0.05);">
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="tokenDecimals">Token Decimals</label>
-            <input type="number" id="tokenDecimals" name="tokenDecimals" value="18" min="0" max="18" required>
+            <label for="tokenDecimals">Token Decimals <span class="label-help">(Auto-filled after validation)</span></label>
+            <input type="number" id="tokenDecimals" name="tokenDecimals" value="18" min="0" max="18" required readonly style="background: rgba(255,255,255,0.05);">
           </div>
           <div class="form-group">
             <label for="expiresInHours">Expires in Hours (optional)</label>
@@ -233,6 +237,56 @@ export default async function handler(req, res) {
       }, 3000);
     }
 
+    // Token validation
+    let tokenValidationTimeout;
+    let validatedTokenInfo = null;
+    
+    async function validateTokenContract(address) {
+      const validationDiv = document.getElementById('tokenValidation');
+      const symbolInput = document.getElementById('tokenSymbol');
+      const decimalsInput = document.getElementById('tokenDecimals');
+      
+      if (!address || address.length !== 42 || !address.startsWith('0x')) {
+        validationDiv.style.display = 'none';
+        symbolInput.value = '';
+        decimalsInput.value = '18';
+        validatedTokenInfo = null;
+        return;
+      }
+      
+      validationDiv.style.display = 'block';
+      validationDiv.innerHTML = '<div style="color: var(--orange);">🔍 Validating token contract...</div>';
+      
+      try {
+        const response = await fetch('/api/validate-token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tokenAddress: address })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok && result.isValid) {
+          validationDiv.innerHTML = '<div style="color: var(--green);">✅ Valid ERC-20 token: ' + result.tokenInfo.name + ' (' + result.tokenInfo.symbol + ')</div>';
+          symbolInput.value = result.tokenInfo.symbol;
+          decimalsInput.value = result.tokenInfo.decimals;
+          validatedTokenInfo = result.tokenInfo;
+          calculateBudget();
+        } else {
+          validationDiv.innerHTML = '<div style="color: var(--red);">❌ ' + (result.error || 'Invalid ERC-20 token') + '</div>';
+          symbolInput.value = '';
+          decimalsInput.value = '18';
+          validatedTokenInfo = null;
+        }
+      } catch (error) {
+        console.error('Token validation error:', error);
+        validationDiv.innerHTML = '<div style="color: var(--red);">❌ Failed to validate token contract</div>';
+        symbolInput.value = '';
+        decimalsInput.value = '18';
+        validatedTokenInfo = null;
+      }
+    }
+    
     // Event listeners
     document.getElementById('amountPerClaim').addEventListener('input', calculateBudget);
     document.getElementById('totalClaims').addEventListener('input', function() {
@@ -243,6 +297,14 @@ export default async function handler(req, res) {
       }
     });
     document.getElementById('tokenSymbol').addEventListener('input', calculateBudget);
+    
+    // Token address validation with debounce
+    document.getElementById('tokenAddress').addEventListener('input', function() {
+      clearTimeout(tokenValidationTimeout);
+      tokenValidationTimeout = setTimeout(() => {
+        validateTokenContract(this.value);
+      }, 500);
+    });
 
     // Form submission
     document.getElementById('campaignForm').addEventListener('submit', async (e) => {
@@ -250,6 +312,12 @@ export default async function handler(req, res) {
       
       if (!walletAddress || walletAddress === 'null') {
         showToast('Wallet address required', 'error');
+        return;
+      }
+      
+      // Validate that token is verified
+      if (!validatedTokenInfo) {
+        showToast('Please enter a valid ERC-20 token address and wait for validation', 'error');
         return;
       }
       
