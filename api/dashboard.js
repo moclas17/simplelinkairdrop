@@ -144,7 +144,7 @@ export default async function handler(req, res) {
         </div>
       </div>
       
-      <button id="connectWallet" class="btn btn-primary wallet-btn">
+      <button id="connectWallet" class="btn btn-primary wallet-btn" onclick="connectWallet()">
         <svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor">
           <path d="M22.05 8.5l-1.2-4.1c-.4-1.3-1.8-2.2-3.2-1.9L12 3.8 6.35 2.5c-1.4-.3-2.8.6-3.2 1.9L2 8.5c-.4 1.3.5 2.7 1.9 2.9l3.1.5v6.6c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-6.6l3.1-.5c1.4-.2 2.3-1.6 1.9-2.9z"/>
         </svg>
@@ -426,7 +426,7 @@ export default async function handler(req, res) {
       
       const allLinks = window.generatedLinksData.links
         .map(link => window.location.origin + link.url)
-        .join('\\n');
+        .join('\n');
       
       navigator.clipboard.writeText(allLinks).then(() => {
         showToast('All links copied to clipboard!', 'success');
@@ -438,14 +438,14 @@ export default async function handler(req, res) {
     window.downloadLinks = function() {
       if (!window.generatedLinksData) return;
       
-      const csvContent = 'Link ID,URL,Type,Amount,Max Claims\\n' +
+      const csvContent = 'Link ID,URL,Type,Amount,Max Claims\n' +
         window.generatedLinksData.links.map(link => 
           link.id + ',' + 
           window.location.origin + link.url + ',' + 
           link.type + ',' + 
           link.amount + ',' + 
           (link.maxClaims || 1)
-        ).join('\\n');
+        ).join('\n');
       
       const blob = new Blob([csvContent], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -505,20 +505,35 @@ export default async function handler(req, res) {
     });
     
     function checkWalletAvailability() {
+      console.log('Checking wallet availability...');
+      console.log('window.ethereum exists:', typeof window.ethereum !== 'undefined');
+      
       const noWalletMsg = document.getElementById('noWalletMessage');
       const walletDetectedMsg = document.getElementById('walletDetectedMessage');
       const connectBtn = document.getElementById('connectWallet');
       
+      console.log('DOM elements found:', {
+        noWalletMsg: !!noWalletMsg,
+        walletDetectedMsg: !!walletDetectedMsg,
+        connectBtn: !!connectBtn
+      });
+      
       if (typeof window.ethereum !== 'undefined') {
-        noWalletMsg.style.display = 'none';
-        walletDetectedMsg.style.display = 'block';
-        connectBtn.style.opacity = '1';
-        connectBtn.disabled = false;
+        console.log('MetaMask detected, updating UI');
+        if (noWalletMsg) noWalletMsg.style.display = 'none';
+        if (walletDetectedMsg) walletDetectedMsg.style.display = 'block';
+        if (connectBtn) {
+          connectBtn.style.opacity = '1';
+          connectBtn.disabled = false;
+        }
       } else {
-        noWalletMsg.style.display = 'block';
-        walletDetectedMsg.style.display = 'none';
-        connectBtn.style.opacity = '0.5';
-        connectBtn.disabled = true;
+        console.log('MetaMask not detected, updating UI');
+        if (noWalletMsg) noWalletMsg.style.display = 'block';
+        if (walletDetectedMsg) walletDetectedMsg.style.display = 'none';
+        if (connectBtn) {
+          connectBtn.style.opacity = '0.5';
+          connectBtn.disabled = true;
+        }
       }
     }
   </script>
