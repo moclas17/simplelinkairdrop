@@ -236,7 +236,7 @@ export default async function handler(req, res) {
         return;
       }
       console.log('Redirecting to create campaign page...');
-      window.location.href = '/create-campaign?wallet=' + currentUser;
+      window.location.href = '/api/create-campaign?wallet=' + currentUser;
     }
 
 
