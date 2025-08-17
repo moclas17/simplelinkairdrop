@@ -96,7 +96,7 @@ export default async function handler(req, res) {
     console.log('[CLAIM] Processing multi-claim link');
     
     // Check if wallet already claimed from this multi-claim link
-    const alreadyClaimed = await db.checkWalletAlreadyClaimed(linkId, userWallet);
+    const alreadyClaimed = await db.checkWalletAlreadyClaimed(linkId, userWallet, current.campaign_id);
     if (alreadyClaimed) {
       console.log('[CLAIM] Wallet already claimed from this multi-claim link');
       
@@ -208,7 +208,7 @@ export default async function handler(req, res) {
     // Try to save to database - if this fails, we still have a successful blockchain transfer
     try {
       if (current.is_multi_claim) {
-        await db.markMultiClaimed(linkId, userWallet, tx.hash, amount);
+        await db.markMultiClaimed(linkId, userWallet, tx.hash, amount, current.campaign_id);
       } else {
         await db.markClaimed(linkId, tx.hash);
       }
@@ -231,7 +231,7 @@ export default async function handler(req, res) {
     // Only rollback if transfer actually failed (not DB save)
     if (current.is_multi_claim) {
       try { 
-        await db.rollbackMultiClaim(linkId, userWallet); 
+        await db.rollbackMultiClaim(linkId, userWallet, current.campaign_id); 
         console.log('[CLAIM] Multi-claim rollback successful');
       } catch (rollbackError) {
         console.error('[CLAIM] Multi-claim rollback failed:', rollbackError);

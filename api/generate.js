@@ -30,8 +30,8 @@ export default async function handler(req, res) {
   console.log('[GENERATE] Admin check:', isAdmin);
   if (!isAdmin) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { count, amount, expiresInHours } = req.body || {};
-  console.log('[GENERATE] Parsed body:', { count, amount, expiresInHours });
+  const { count, amount, expiresInHours, campaign_id = 'default' } = req.body || {};
+  console.log('[GENERATE] Parsed body:', { count, amount, expiresInHours, campaign_id });
   if (!count || !amount) {
     console.log('[GENERATE] Missing required fields');
     return res.status(400).json({ error: 'Missing count or amount' });
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     for (let i = 0; i < Number(count); i++) {
       const id = randomUUID();
       console.log(`[GENERATE] Saving link ${i + 1}/${count}, id:`, id);
-      await db.save(id, Number(amount), expires_at);
+      await db.save(id, Number(amount), expires_at, campaign_id);
       const proto = req.headers['x-forwarded-proto'] || 'https';
       const link = `${proto}://${req.headers.host}/claim/${id}`;
       links.push(link);

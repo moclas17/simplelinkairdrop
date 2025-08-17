@@ -56,6 +56,10 @@ export default async function handler(req, res) {
           <p>Create links that allow multiple wallets to claim (e.g., 10 claims of 10 tokens each)</p>
         </div>
         <div class="feature">
+          <h3>🏷️ Campaign System</h3>
+          <p>Organize airdrops by campaigns - wallets can claim from multiple campaigns</p>
+        </div>
+        <div class="feature">
           <h3>🏷️ ENS Support</h3>
           <p>Users can claim using ENS names (e.g., vitalik.eth) instead of wallet addresses</p>
         </div>
@@ -114,7 +118,7 @@ export default async function handler(req, res) {
 curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') + '://' + req.headers.host : 'https://your-app.vercel.app'}/api/generate \\<br>
 &nbsp;&nbsp;-H "Content-Type: application/json" \\<br>
 &nbsp;&nbsp;-H "x-admin-token: YOUR_ADMIN_TOKEN" \\<br>
-&nbsp;&nbsp;-d '{"count": 10, "amount": 50, "expiresInHours": 24}'
+&nbsp;&nbsp;-d '{"count": 10, "amount": 50, "expiresInHours": 24, "campaign_id": "launch-airdrop"}'
       </div>
       
       <h3 style="color:var(--acc); font-size:16px; margin:20px 0 8px;">Multi-Claim Links</h3>
@@ -122,7 +126,7 @@ curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') 
 curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') + '://' + req.headers.host : 'https://your-app.vercel.app'}/api/generate-multi \\<br>
 &nbsp;&nbsp;-H "Content-Type: application/json" \\<br>
 &nbsp;&nbsp;-H "x-admin-token: YOUR_ADMIN_TOKEN" \\<br>
-&nbsp;&nbsp;-d '{"count": 1, "amount": 10, "maxClaims": 20, "expiresInHours": 48}'
+&nbsp;&nbsp;-d '{"count": 1, "amount": 10, "maxClaims": 20, "expiresInHours": 48, "campaign_id": "community-rewards"}'
       </div>
       
       <h3 style="color:var(--acc); font-size:16px; margin:20px 0 8px;">Claiming with ENS</h3>
@@ -148,6 +152,7 @@ curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') 
     <div class="card">
       <h2>🆕 Recent Updates</h2>
       <ul style="color:var(--muted); line-height:1.8;">
+        <li><strong>Campaign System:</strong> Organize airdrops by campaigns - wallets can participate in multiple campaigns</li>
         <li><strong>Multi-Claim Links:</strong> Create links that allow multiple different wallets to claim</li>
         <li><strong>ENS Resolution:</strong> Users can claim using ENS names like vitalik.eth</li>
         <li><strong>Balance Verification:</strong> Pre-transfer checks prevent failed transactions and gas waste</li>

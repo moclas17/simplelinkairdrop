@@ -30,8 +30,8 @@ export default async function handler(req, res) {
   console.log('[GENERATE-MULTI] Admin check:', isAdmin);
   if (!isAdmin) return res.status(401).json({ error: 'Unauthorized' });
 
-  const { count, amount, maxClaims, expiresInHours } = req.body || {};
-  console.log('[GENERATE-MULTI] Parsed body:', { count, amount, maxClaims, expiresInHours });
+  const { count, amount, maxClaims, expiresInHours, campaign_id = 'default' } = req.body || {};
+  console.log('[GENERATE-MULTI] Parsed body:', { count, amount, maxClaims, expiresInHours, campaign_id });
   
   if (!count || !amount || !maxClaims) {
     console.log('[GENERATE-MULTI] Missing required fields');
@@ -57,7 +57,7 @@ export default async function handler(req, res) {
     for (let i = 0; i < Number(count); i++) {
       const id = randomUUID();
       console.log(`[GENERATE-MULTI] Saving multi-claim link ${i + 1}/${count}, id:`, id);
-      await db.saveMultiClaim(id, Number(amount), Number(maxClaims), expires_at);
+      await db.saveMultiClaim(id, Number(amount), Number(maxClaims), expires_at, campaign_id);
       const proto = req.headers['x-forwarded-proto'] || 'https';
       const link = `${proto}://${req.headers.host}/claim/${id}`;
       links.push(link);
