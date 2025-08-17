@@ -263,23 +263,28 @@ export default async function handler(req, res) {
 
     // Wallet connection
     async function connectWallet() {
+      console.log('connectWallet function called');
       try {
         if (typeof window.ethereum !== 'undefined') {
+          console.log('MetaMask detected, requesting accounts...');
           const accounts = await window.ethereum.request({ 
             method: 'eth_requestAccounts' 
           });
           
+          console.log('Accounts received:', accounts);
           if (accounts.length > 0) {
             currentUser = accounts[0];
+            console.log('Current user set to:', currentUser);
             showDashboard();
             loadCampaigns();
           }
         } else {
+          console.log('MetaMask not detected');
           showToast('Please install MetaMask or another Web3 wallet', 'error');
         }
       } catch (error) {
         console.error('Wallet connection failed:', error);
-        showToast('Wallet connection failed', 'error');
+        showToast('Wallet connection failed: ' + error.message, 'error');
       }
     }
 
@@ -406,18 +411,8 @@ export default async function handler(req, res) {
       }, 3000);
     }
 
-    // Event listeners
-    document.getElementById('connectWallet').addEventListener('click', connectWallet);
-    document.getElementById('disconnectWallet').addEventListener('click', disconnectWallet);
-    document.getElementById('createCampaignBtn').addEventListener('click', openCreateCampaignModal);
-    
-    // Form event listeners
-    document.getElementById('amountPerClaim').addEventListener('input', calculateBudget);
-    document.getElementById('totalClaims').addEventListener('input', calculateBudget);
-    document.getElementById('tokenSymbol').addEventListener('input', calculateBudget);
-    
-    // Form submission
-    document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+    // Form submission handler (defined here but will be attached in load event)
+    async function handleFormSubmission(e) {
       e.preventDefault();
       
       const formData = new FormData(e.target);
@@ -465,14 +460,7 @@ export default async function handler(req, res) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Create Campaign';
       }
-    });
-
-    // Close modal when clicking outside
-    document.getElementById('createCampaignModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        closeModal();
-      }
-    });
+    }
 
     // Campaign action functions
     window.checkFunding = async function(campaignId) {
@@ -518,6 +506,43 @@ export default async function handler(req, res) {
 
     // Check wallet availability and connection on page load
     window.addEventListener('load', async () => {
+      console.log('Page loaded, setting up event listeners...');
+      
+      // Set up all event listeners after DOM is ready
+      console.log('Setting up connect wallet button...');
+      const connectBtn = document.getElementById('connectWallet');
+      if (connectBtn) {
+        connectBtn.addEventListener('click', connectWallet);
+        console.log('Connect wallet event listener attached');
+      } else {
+        console.error('Connect wallet button not found!');
+      }
+      
+      const disconnectBtn = document.getElementById('disconnectWallet');
+      if (disconnectBtn) {
+        disconnectBtn.addEventListener('click', disconnectWallet);
+      }
+      
+      const createBtn = document.getElementById('createCampaignBtn');
+      if (createBtn) {
+        createBtn.addEventListener('click', openCreateCampaignModal);
+      }
+      
+      // Form event listeners
+      document.getElementById('amountPerClaim').addEventListener('input', calculateBudget);
+      document.getElementById('totalClaims').addEventListener('input', calculateBudget);
+      document.getElementById('tokenSymbol').addEventListener('input', calculateBudget);
+      
+      // Form submission
+      document.getElementById('campaignForm').addEventListener('submit', handleFormSubmission);
+      
+      // Close modal when clicking outside
+      document.getElementById('createCampaignModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeModal();
+        }
+      });
+      
       checkWalletAvailability();
       
       if (typeof window.ethereum !== 'undefined') {
