@@ -53,22 +53,39 @@ async function createCampaign(req, res) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  const campaignData = {
-    walletAddress,
-    title,
-    description,
-    claimType,
-    amountPerClaim: Number(amountPerClaim),
-    totalClaims: Number(totalClaims),
-    maxClaimsPerLink: claimType === 'multi' ? Number(maxClaimsPerLink) : null,
-    tokenAddress,
-    tokenSymbol,
-    tokenDecimals: Number(tokenDecimals) || 18,
-    expiresInHours: expiresInHours ? Number(expiresInHours) : null
-  };
+  try {
+    const campaignData = {
+      walletAddress,
+      title,
+      description,
+      claimType,
+      amountPerClaim: Number(amountPerClaim),
+      totalClaims: Number(totalClaims),
+      maxClaimsPerLink: claimType === 'multi' ? Number(maxClaimsPerLink) : null,
+      tokenAddress,
+      tokenSymbol,
+      tokenDecimals: Number(tokenDecimals) || 18,
+      expiresInHours: expiresInHours ? Number(expiresInHours) : null
+    };
 
-  const campaign = await db.createCampaign(campaignData);
-  return res.status(201).json({ campaign });
+    const campaign = await db.createCampaign(campaignData);
+    return res.status(201).json({ campaign });
+  } catch (error) {
+    console.error('Error creating campaign:', error);
+    
+    // Check if it's a database schema issue
+    if (error.message?.includes('relation') && error.message?.includes('does not exist')) {
+      return res.status(500).json({ 
+        error: 'Database tables not found. Please run the schema migration first.',
+        details: 'Execute lib/schema-users.sql in your Supabase database'
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Failed to create campaign',
+      details: error.message 
+    });
+  }
 }
 
 async function updateCampaign(req, res) {
