@@ -267,8 +267,16 @@ export default async function handler(req, res) {
             
             if (campaign.status === 'active') {
               html += '<div class="action-buttons" style="margin: 12px 0;">';
-              html += '<button onclick="generateLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-primary" style="margin-right: 8px; font-size: 12px;">Generate Links</button>';
-              html += '<button onclick="viewStats(' + "'" + campaign.id + "'" + ')" class="btn" style="font-size: 12px;">View Stats</button>';
+              
+              // Check if links are already generated
+              if (campaign.links_generated) {
+                html += '<button onclick="viewExistingLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-success" style="margin-right: 8px; font-size: 12px;">📋 View Generated Links</button>';
+                html += '<button class="btn" style="margin-right: 8px; font-size: 12px; opacity: 0.5;" disabled>✅ Links Generated</button>';
+              } else {
+                html += '<button onclick="generateLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-primary" style="margin-right: 8px; font-size: 12px;">➕ Generate Links</button>';
+              }
+              
+              html += '<button onclick="viewStats(' + "'" + campaign.id + "'" + ')" class="btn" style="font-size: 12px;">📊 View Stats</button>';
               html += '</div>';
             }
             
@@ -362,9 +370,60 @@ export default async function handler(req, res) {
       }
     };
 
-    window.viewStats = function(campaignId) {
-      // TODO: Implement stats modal
-      showToast('Stats view coming soon!', 'success');
+    window.viewExistingLinks = async function(campaignId) {
+      try {
+        console.log('Loading existing links for campaign:', campaignId);
+        showToast('Loading existing links...', 'success');
+        
+        const response = await fetch('/api/campaigns', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            campaignId: campaignId, 
+            action: 'get_existing_links',
+            walletAddress: currentUser 
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showLinksModal(result);
+        } else {
+          showToast(result.error || 'Failed to load existing links', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading existing links:', error);
+        showToast('Failed to load existing links', 'error');
+      }
+    };
+
+    window.viewStats = async function(campaignId) {
+      try {
+        console.log('Loading stats for campaign:', campaignId);
+        showToast('Loading campaign statistics...', 'success');
+        
+        const response = await fetch('/api/campaigns', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            campaignId: campaignId, 
+            action: 'get_stats',
+            walletAddress: currentUser 
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showStatsModal(result);
+        } else {
+          showToast(result.error || 'Failed to load campaign stats', 'error');
+        }
+      } catch (error) {
+        console.error('Error loading campaign stats:', error);
+        showToast('Failed to load campaign stats', 'error');
+      }
     };
 
     function showLinksModal(data) {
@@ -450,6 +509,111 @@ export default async function handler(req, res) {
       
       // Store links data globally for copy/download functions
       window.generatedLinksData = data;
+    }
+
+    function showStatsModal(data) {
+      console.log('Showing stats modal with data:', data);
+      
+      // Create modal div
+      const modal = document.createElement('div');
+      modal.id = 'statsModal';
+      modal.className = 'modal';
+      modal.style.display = 'flex';
+      
+      // Create modal content
+      const modalContent = document.createElement('div');
+      modalContent.className = 'modal-content';
+      modalContent.style.maxWidth = '800px';
+      modalContent.style.width = '95%';
+      
+      // Create close button
+      const closeBtn = document.createElement('span');
+      closeBtn.innerHTML = '&times;';
+      closeBtn.className = 'close-btn';
+      closeBtn.onclick = () => modal.remove();
+      
+      // Create title
+      const title = document.createElement('h2');
+      title.innerHTML = '📊 Campaign Statistics';
+      title.style.cssText = 'margin: 0 0 20px; color: var(--acc);';
+      
+      // Create campaign info
+      const campaignInfo = document.createElement('div');
+      campaignInfo.style.cssText = 'background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px;';
+      campaignInfo.innerHTML = '<h3 style="margin: 0 0 8px; color: var(--acc);">' + data.campaign.title + '</h3>' +
+        '<p style="margin: 0; color: var(--muted);">Type: ' + data.campaign.claim_type + ' • Status: ' + data.campaign.status + '</p>';
+      
+      // Create stats grid
+      const statsGrid = document.createElement('div');
+      statsGrid.style.cssText = 'display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;';
+      
+      // Stats cards
+      const statsCards = [
+        { title: 'Total Budget', value: data.stats.total_budget + ' ' + data.campaign.token_symbol, color: 'var(--green)' },
+        { title: 'Amount per Claim', value: data.stats.amount_per_claim + ' ' + data.campaign.token_symbol, color: 'var(--acc)' },
+        { title: 'Total Claims', value: data.stats.total_claims_completed + ' / ' + data.stats.max_claims, color: 'var(--orange)' },
+        { title: 'Links Generated', value: data.stats.links_count, color: 'var(--text)' },
+        { title: 'Completion Rate', value: Math.round((data.stats.total_claims_completed / data.stats.max_claims) * 100) + '%', color: 'var(--green)' }
+      ];
+      
+      statsCards.forEach(stat => {
+        const card = document.createElement('div');
+        card.style.cssText = 'background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; text-align: center;';
+        card.innerHTML = '<div style="font-size: 12px; color: var(--muted); margin-bottom: 4px;">' + stat.title + '</div>' +
+          '<div style="font-size: 20px; font-weight: 600; color: ' + stat.color + ';">' + stat.value + '</div>';
+        statsGrid.appendChild(card);
+      });
+      
+      // Create claims list if there are claims
+      let claimsList = document.createElement('div');
+      if (data.claims && data.claims.length > 0) {
+        const claimsTitle = document.createElement('h3');
+        claimsTitle.innerHTML = '🎯 Recent Claims';
+        claimsTitle.style.cssText = 'margin: 20px 0 12px; color: var(--acc);';
+        
+        claimsList.appendChild(claimsTitle);
+        
+        const claimsContainer = document.createElement('div');
+        claimsContainer.style.cssText = 'max-height: 300px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;';
+        
+        data.claims.forEach((claim, index) => {
+          const claimDiv = document.createElement('div');
+          const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+          claimDiv.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ' + bgColor + ';';
+          
+          const walletShort = claim.wallet_address.substring(0, 6) + '...' + claim.wallet_address.substring(38);
+          const timeAgo = new Date(claim.claimed_at).toLocaleDateString();
+          
+          claimDiv.innerHTML = '<div style="flex: 1;">' +
+            '<div style="color: var(--text); font-size: 13px; margin-bottom: 2px;">💰 ' + claim.amount + ' ' + data.campaign.token_symbol + '</div>' +
+            '<div style="color: var(--muted); font-size: 11px;">👤 ' + walletShort + '</div>' +
+          '</div>' +
+          '<div style="text-align: right;">' +
+            '<div style="color: var(--muted); font-size: 11px;">' + timeAgo + '</div>' +
+            '<a href="https://optimistic.etherscan.io/tx/' + claim.tx_hash + '" target="_blank" style="color: var(--acc); font-size: 11px; text-decoration: none;">🔗 TX</a>' +
+          '</div>';
+          
+          claimsContainer.appendChild(claimDiv);
+        });
+        
+        claimsList.appendChild(claimsContainer);
+      } else {
+        claimsList.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--muted);">' +
+          '<h3 style="color: var(--muted);">No claims yet</h3>' +
+          '<p>Claims will appear here once users start claiming from your links.</p>' +
+        '</div>';
+      }
+      
+      // Assemble modal
+      modalContent.appendChild(closeBtn);
+      modalContent.appendChild(title);
+      modalContent.appendChild(campaignInfo);
+      modalContent.appendChild(statsGrid);
+      modalContent.appendChild(claimsList);
+      modal.appendChild(modalContent);
+      
+      // Add to page
+      document.body.appendChild(modal);
     }
 
     window.closeLinksModal = function() {

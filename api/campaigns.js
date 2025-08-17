@@ -115,6 +115,24 @@ async function updateCampaign(req, res) {
       return res.status(200).json(result);
     }
 
+    if (action === 'get_existing_links') {
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'Wallet address required for link retrieval' });
+      }
+
+      const result = await db.getExistingLinksForCampaign(campaignId, walletAddress);
+      return res.status(200).json(result);
+    }
+
+    if (action === 'get_stats') {
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'Wallet address required for stats' });
+      }
+
+      const result = await db.getCampaignStats(campaignId, walletAddress);
+      return res.status(200).json(result);
+    }
+
     // Regular update
     const campaign = await db.updateCampaign(campaignId, updateData);
     return res.status(200).json({ campaign });
