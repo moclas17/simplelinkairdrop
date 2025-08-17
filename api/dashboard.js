@@ -378,7 +378,7 @@ export default async function handler(req, res) {
 
     function showToast(message, type) {
       const toast = document.createElement('div');
-      toast.className = \`toast toast-\${type}\`;
+      toast.className = "toast toast-" + type;
       toast.textContent = message;
       document.body.appendChild(toast);
       
