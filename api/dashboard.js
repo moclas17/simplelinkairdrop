@@ -132,7 +132,10 @@ export default async function handler(req, res) {
   <div class="container">
     <!-- Wallet Connection Section -->
     <div id="walletSection" class="card wallet-section">
-      <h1>🎯 Campaign Dashboard</h1>
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <img src="/logo.svg" alt="SimpleLink Airdrop" style="width:48px; height:48px; margin-right:16px;">
+        <h1 style="margin: 0;">🎯 Campaign Dashboard</h1>
+      </div>
       <p style="margin-bottom: 24px;">Connect your wallet to create and manage token distribution campaigns</p>
       
       <div id="walletStatus" style="margin-bottom: 20px;">

@@ -30,16 +30,29 @@ export default async function handler(req, res) {
     .header { display: flex; align-items: center; margin-bottom: 24px; }
     .status { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .online { background: rgba(34,197,94,0.2); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); background: linear-gradient(180deg, #1e293b, #0f172a); color: white; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s ease; font-size: 16px; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .btn-primary { background: linear-gradient(180deg, var(--acc), #0ea5e9); color: #0b1220; border-color: var(--acc); }
+    .quick-access { text-align: center; margin: 24px 0; }
+    .quick-access h2 { margin-bottom: 16px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="logo"></div>
+      <img src="/logo.svg" alt="SimpleLink Airdrop" class="logo-svg" style="width:48px; height:48px; margin-right:16px;">
       <div>
         <h1>SimpleLink Airdrop</h1>
         <span class="status online">🟢 Service Online</span>
       </div>
+    </div>
+
+    <div class="card quick-access">
+      <h2>🚀 Get Started</h2>
+      <p style="margin-bottom: 20px;">Create and manage your token distribution campaigns</p>
+      <a href="/dashboard" class="btn btn-primary">
+        🎯 Open Campaign Dashboard
+      </a>
     </div>
 
     <div class="card">
