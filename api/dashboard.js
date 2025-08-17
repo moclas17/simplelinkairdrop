@@ -183,8 +183,8 @@ export default async function handler(req, res) {
   <script>
     let currentUser = null;
 
-    // Wallet connection
-    async function connectWallet() {
+    // Wallet connection (make it global)
+    window.connectWallet = async function() {
       console.log('connectWallet function called');
       try {
         if (typeof window.ethereum !== 'undefined') {
@@ -208,7 +208,7 @@ export default async function handler(req, res) {
         console.error('Wallet connection failed:', error);
         showToast('Wallet connection failed: ' + error.message, 'error');
       }
-    }
+    };
 
     function disconnectWallet() {
       currentUser = null;
@@ -385,16 +385,20 @@ export default async function handler(req, res) {
             '<button onclick="downloadLinks()" class="btn">📥 Download as CSV</button>' +
           '</div>' +
           '<div style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">' +
-            data.links.map((link, index) => 
-              '<div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ' + (index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + ';">' +
+            data.links.map((link, index) => {
+              const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+              const fullUrl = window.location.origin + link.url;
+              const maxClaimsDiv = link.type === 'multi-claim' ? '<div style="color: var(--muted); font-size: 11px;">Max Claims: ' + link.maxClaims + '</div>' : '';
+              
+              return '<div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ' + bgColor + ';">' +
                 '<div style="flex: 1; font-family: monospace; font-size: 13px;">' +
                   '<div style="color: var(--text); margin-bottom: 4px;">ID: ' + link.id + '</div>' +
-                  '<div style="color: var(--acc);">URL: ' + window.location.origin + link.url + '</div>' +
-                  (link.type === 'multi-claim' ? '<div style="color: var(--muted); font-size: 11px;">Max Claims: ' + link.maxClaims + '</div>' : '') +
+                  '<div style="color: var(--acc);">URL: ' + fullUrl + '</div>' +
+                  maxClaimsDiv +
                 '</div>' +
-                '<button onclick="copyLink(\'' + window.location.origin + link.url + '\')" class="btn" style="margin-left: 12px; font-size: 12px; padding: 8px 12px;">Copy</button>' +
-              '</div>'
-            ).join('') +
+                '<button onclick="copyLink(\'' + fullUrl + '\')" class="btn" style="margin-left: 12px; font-size: 12px; padding: 8px 12px;">Copy</button>' +
+              '</div>';
+            }).join('') +
           '</div>' +
         '</div>' +
       '</div>';
