@@ -83,6 +83,10 @@ export default async function handler(req, res) {
           <h3>🔐 Admin Protected</h3>
           <p>Link generation requires admin authentication</p>
         </div>
+        <div class="feature">
+          <h3>👤 User Dashboard</h3>
+          <p>Web interface for users to create and manage their own campaigns</p>
+        </div>
       </div>
     </div>
 
@@ -107,6 +111,11 @@ export default async function handler(req, res) {
       <div class="endpoint">
         <span class="method get">GET</span>/claim/:id
         <p style="margin:8px 0 0; color:var(--muted);">Claim page with user-friendly interface, progress tracking for multi-claims</p>
+      </div>
+      
+      <div class="endpoint">
+        <span class="method get">GET</span>/dashboard
+        <p style="margin:8px 0 0; color:var(--muted);">Campaign management dashboard - create and manage your own airdrops</p>
       </div>
     </div>
 
