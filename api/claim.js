@@ -133,20 +133,34 @@ export default async function handler(req, res) {
       });
     }
     
+    // Execute blockchain transfer
     const tx = await token.transfer(userWallet, requiredAmount);
     console.log('[CLAIM] Transfer successful:', tx.hash);
     
-    if (current.is_multi_claim) {
-      await db.markMultiClaimed(linkId, userWallet, tx.hash, amount);
-    } else {
-      await db.markClaimed(linkId, tx.hash);
+    // Try to save to database - if this fails, we still have a successful blockchain transfer
+    try {
+      if (current.is_multi_claim) {
+        await db.markMultiClaimed(linkId, userWallet, tx.hash, amount);
+      } else {
+        await db.markClaimed(linkId, tx.hash);
+      }
+      console.log('[CLAIM] Database save successful');
+    } catch (dbError) {
+      console.error('[CLAIM] Database save failed but transfer succeeded:', dbError);
+      // Transfer succeeded, but DB save failed - still return success with warning
+      return res.status(200).json({ 
+        success: true, 
+        txHash: tx.hash,
+        warning: 'Transfer completed but database update failed. Transaction is valid on blockchain.'
+      });
     }
     
     return res.status(200).json({ success: true, txHash: tx.hash });
+    
   } catch (e) {
     console.error('[CLAIM] Transfer failed:', e);
     
-    // Rollback based on claim type
+    // Only rollback if transfer actually failed (not DB save)
     if (current.is_multi_claim) {
       try { 
         await db.rollbackMultiClaim(linkId, userWallet); 
