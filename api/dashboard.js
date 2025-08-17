@@ -183,7 +183,7 @@ export default async function handler(req, res) {
   <script>
     let currentUser = null;
 
-    // Wallet connection (make it global)
+    // Make connectWallet available immediately (before DOM load)
     window.connectWallet = async function() {
       console.log('connectWallet function called');
       try {
@@ -370,41 +370,83 @@ export default async function handler(req, res) {
     function showLinksModal(data) {
       console.log('Showing links modal with data:', data);
       
-      // Create modal HTML
-      const modalHtml = '<div id="linksModal" class="modal" style="display: flex;">' +
-        '<div class="modal-content" style="max-width: 900px; width: 95%;">' +
-          '<span class="close-btn" onclick="closeLinksModal()" style="float: right; font-size: 28px; cursor: pointer; color: var(--muted); line-height: 1; padding: 4px; border-radius: 4px;">&times;</span>' +
-          '<h2 style="margin: 0 0 20px; color: var(--acc);">🔗 Generated Links</h2>' +
-          '<div style="background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px;">' +
-            '<h3 style="margin: 0 0 8px; color: var(--acc);">' + data.campaign.title + '</h3>' +
-            '<p style="margin: 0; color: var(--muted);">Type: ' + data.campaign.type + ' • Amount: ' + data.campaign.amountPerClaim + ' tokens per claim</p>' +
-            '<p style="margin: 8px 0 0; font-weight: 600; color: var(--green);">' + data.message + '</p>' +
-          '</div>' +
-          '<div style="margin-bottom: 16px;">' +
-            '<button onclick="copyAllLinks()" class="btn btn-primary" style="margin-right: 12px;">📋 Copy All Links</button>' +
-            '<button onclick="downloadLinks()" class="btn">📥 Download as CSV</button>' +
-          '</div>' +
-          '<div style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">' +
-            data.links.map((link, index) => {
-              const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
-              const fullUrl = window.location.origin + link.url;
-              const maxClaimsDiv = link.type === 'multi-claim' ? '<div style="color: var(--muted); font-size: 11px;">Max Claims: ' + link.maxClaims + '</div>' : '';
-              
-              return '<div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ' + bgColor + ';">' +
-                '<div style="flex: 1; font-family: monospace; font-size: 13px;">' +
-                  '<div style="color: var(--text); margin-bottom: 4px;">ID: ' + link.id + '</div>' +
-                  '<div style="color: var(--acc);">URL: ' + fullUrl + '</div>' +
-                  maxClaimsDiv +
-                '</div>' +
-                '<button onclick="copyLink(\'' + fullUrl + '\')" class="btn" style="margin-left: 12px; font-size: 12px; padding: 8px 12px;">Copy</button>' +
-              '</div>';
-            }).join('') +
-          '</div>' +
+      // Create modal div
+      const modal = document.createElement('div');
+      modal.id = 'linksModal';
+      modal.className = 'modal';
+      modal.style.display = 'flex';
+      
+      // Create modal content
+      const modalContent = document.createElement('div');
+      modalContent.className = 'modal-content';
+      modalContent.style.maxWidth = '900px';
+      modalContent.style.width = '95%';
+      
+      // Create close button
+      const closeBtn = document.createElement('span');
+      closeBtn.innerHTML = '&times;';
+      closeBtn.className = 'close-btn';
+      closeBtn.style.cssText = 'float: right; font-size: 28px; cursor: pointer; color: var(--muted); line-height: 1; padding: 4px; border-radius: 4px;';
+      closeBtn.onclick = closeLinksModal;
+      
+      // Create title
+      const title = document.createElement('h2');
+      title.innerHTML = '🔗 Generated Links';
+      title.style.cssText = 'margin: 0 0 20px; color: var(--acc);';
+      
+      // Create campaign info
+      const campaignInfo = document.createElement('div');
+      campaignInfo.style.cssText = 'background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px;';
+      campaignInfo.innerHTML = '<h3 style="margin: 0 0 8px; color: var(--acc);">' + data.campaign.title + '</h3>' +
+        '<p style="margin: 0; color: var(--muted);">Type: ' + data.campaign.type + ' • Amount: ' + data.campaign.amountPerClaim + ' tokens per claim</p>' +
+        '<p style="margin: 8px 0 0; font-weight: 600; color: var(--green);">' + data.message + '</p>';
+      
+      // Create buttons
+      const buttonsDiv = document.createElement('div');
+      buttonsDiv.style.marginBottom = '16px';
+      buttonsDiv.innerHTML = '<button onclick="copyAllLinks()" class="btn btn-primary" style="margin-right: 12px;">📋 Copy All Links</button>' +
+        '<button onclick="downloadLinks()" class="btn">📥 Download as CSV</button>';
+      
+      // Create links list
+      const linksList = document.createElement('div');
+      linksList.style.cssText = 'max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;';
+      
+      data.links.forEach((link, index) => {
+        const linkDiv = document.createElement('div');
+        const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent';
+        linkDiv.style.cssText = 'display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ' + bgColor + ';';
+        
+        const fullUrl = window.location.origin + link.url;
+        const maxClaimsText = link.type === 'multi-claim' ? '<div style="color: var(--muted); font-size: 11px;">Max Claims: ' + link.maxClaims + '</div>' : '';
+        
+        linkDiv.innerHTML = '<div style="flex: 1; font-family: monospace; font-size: 13px;">' +
+          '<div style="color: var(--text); margin-bottom: 4px;">ID: ' + link.id + '</div>' +
+          '<div style="color: var(--acc);">URL: ' + fullUrl + '</div>' +
+          maxClaimsText +
         '</div>' +
-      '</div>';
+        '<button class="btn copy-link-btn" data-url="' + fullUrl + '" style="margin-left: 12px; font-size: 12px; padding: 8px 12px;">Copy</button>';
+        
+        linksList.appendChild(linkDiv);
+      });
+      
+      // Add click handlers to copy buttons
+      linksList.addEventListener('click', function(e) {
+        if (e.target.classList.contains('copy-link-btn')) {
+          const url = e.target.getAttribute('data-url');
+          copyLink(url);
+        }
+      });
+      
+      // Assemble modal
+      modalContent.appendChild(closeBtn);
+      modalContent.appendChild(title);
+      modalContent.appendChild(campaignInfo);
+      modalContent.appendChild(buttonsDiv);
+      modalContent.appendChild(linksList);
+      modal.appendChild(modalContent);
       
       // Add to page
-      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      document.body.appendChild(modal);
       
       // Store links data globally for copy/download functions
       window.generatedLinksData = data;
