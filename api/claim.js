@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       console.log('[CLAIM] Resolving ENS name:', userWalletInput);
       
       // Use Ethereum mainnet provider specifically for ENS resolution
-      const ensProvider = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth');
+      const ensProvider = new ethers.JsonRpcProvider('https://lb.drpc.org/ethereum/Au_X8MHT5km3gTHdk3Zh9IDdBvMcMPoR8I_zzoXPVSjK');
       
       userWallet = await ensProvider.resolveName(userWalletInput);
       if (!userWallet) {
