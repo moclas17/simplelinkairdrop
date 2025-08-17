@@ -106,11 +106,11 @@ export default async function handler(req, res) {
       </div>` : ''}
     </div>
 
-    <p style="margin-top:16px">Enter the wallet address where you want to receive your tokens. ${isMultiClaim ? `Each wallet can claim only once from this multi-use link (${remainingClaims} claims remaining).` : 'This link can be used only once.'}</p>
+    <p style="margin-top:16px">Enter the wallet address or ENS name where you want to receive your tokens. ${isMultiClaim ? `Each wallet can claim only once from this multi-use link (${remainingClaims} claims remaining).` : 'This link can be used only once.'}</p>
 
     <form id="claimForm">
-      <label for="wallet">Recipient wallet (0x…)</label>
-      <input id="wallet" name="wallet" placeholder="0xabc..." required pattern="^0x[a-fA-F0-9]{40}$" />
+      <label for="wallet">Recipient wallet (0x… or ENS)</label>
+      <input id="wallet" name="wallet" placeholder="0xabc... or vitalik.eth" required />
       <input type="hidden" id="linkId" name="linkId" />
       <button class="btn" id="submitBtn" type="submit">Claim ${amount} $${tokenSymbol} ${isMultiClaim ? `(${remainingClaims} left)` : ''}</button>
       <div class="hint">We will submit a transfer from the distributor wallet once you confirm. ${isMultiClaim ? 'Each wallet can only claim once.' : ''}</div>
@@ -141,10 +141,34 @@ export default async function handler(req, res) {
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!form.reportValidity()) return;
+      
+      const walletValue = form.wallet.value.trim();
+      
+      // Basic validation
+      if (!walletValue) {
+        show('Please enter a wallet address or ENS name', 'error');
+        return;
+      }
+      
+      // Check if it's a valid format (hex address or ENS)
+      const isValidAddress = /^0x[a-fA-F0-9]{40}$/.test(walletValue);
+      const isValidENS = walletValue.endsWith('.eth') && walletValue.length > 4;
+      
+      if (!isValidAddress && !isValidENS) {
+        show('Please enter a valid 0x address or .eth ENS name', 'error');
+        return;
+      }
+      
       btn.disabled = true;
-      show('Submitting claim…');
+      
+      if (isValidENS) {
+        show('Resolving ENS name…');
+      } else {
+        show('Submitting claim…');
+      }
+      
       try {
-        const payload = { wallet: form.wallet.value, linkId: form.linkId.value };
+        const payload = { wallet: walletValue, linkId: form.linkId.value };
         const res = await fetch('/api/claim', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

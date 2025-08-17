@@ -34,17 +34,35 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { wallet: userWallet, linkId } = req.body || {};
-  console.log('[CLAIM] Parsed request:', { userWallet, linkId });
+  const { wallet: userWalletInput, linkId } = req.body || {};
+  console.log('[CLAIM] Parsed request:', { userWalletInput, linkId });
   
-  if (!userWallet || !linkId) {
+  if (!userWalletInput || !linkId) {
     console.log('[CLAIM] Missing data');
     return res.status(400).json({ error: 'Missing data' });
   }
   
-  if (!ethers.isAddress(userWallet)) {
-    console.log('[CLAIM] Invalid wallet address:', userWallet);
-    return res.status(400).json({ error: 'Invalid wallet address' });
+  // Resolve ENS names to addresses
+  let userWallet;
+  try {
+    if (userWalletInput.endsWith('.eth')) {
+      console.log('[CLAIM] Resolving ENS name:', userWalletInput);
+      userWallet = await provider.resolveName(userWalletInput);
+      if (!userWallet) {
+        console.log('[CLAIM] ENS name not found:', userWalletInput);
+        return res.status(400).json({ error: 'ENS name not found or invalid' });
+      }
+      console.log('[CLAIM] ENS resolved:', userWalletInput, '→', userWallet);
+    } else if (ethers.isAddress(userWalletInput)) {
+      userWallet = userWalletInput;
+      console.log('[CLAIM] Valid address provided:', userWallet);
+    } else {
+      console.log('[CLAIM] Invalid wallet address/ENS:', userWalletInput);
+      return res.status(400).json({ error: 'Invalid wallet address or ENS name' });
+    }
+  } catch (ensError) {
+    console.error('[CLAIM] ENS resolution failed:', ensError);
+    return res.status(400).json({ error: 'Failed to resolve ENS name' });
   }
 
   // Check if this is a multi-claim or single-claim link
