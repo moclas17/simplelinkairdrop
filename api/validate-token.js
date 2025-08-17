@@ -16,8 +16,17 @@ export default async function handler(req, res) {
 
   try {
     console.log('[API] Validating ERC-20 token:', tokenAddress);
+    console.log('[API] Current RPC URL:', process.env.RPC_URL);
     
-    const validation = await db.validateERC20Contract(tokenAddress);
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Validation timeout after 30 seconds')), 30000)
+    );
+    
+    const validation = await Promise.race([
+      db.validateERC20Contract(tokenAddress),
+      timeoutPromise
+    ]);
     
     if (validation.isValid) {
       console.log('[API] Token validation successful:', validation.tokenInfo);
@@ -27,16 +36,16 @@ export default async function handler(req, res) {
       });
     } else {
       console.log('[API] Token validation failed:', validation.error);
-      return res.status(400).json({
+      return res.status(200).json({ // Change to 200 to avoid frontend errors
         isValid: false,
         error: validation.error
       });
     }
   } catch (error) {
     console.error('[API] Token validation error:', error);
-    return res.status(500).json({
+    return res.status(200).json({ // Change to 200 to avoid frontend errors
       isValid: false,
-      error: 'Internal server error during token validation'
+      error: `Validation failed: ${error.message}`
     });
   }
 }
