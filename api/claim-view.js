@@ -175,7 +175,23 @@ export default async function handler(req, res) {
           body: JSON.stringify(payload)
         });
         const data = await res.json().catch(()=>({}));
-        if (!res.ok) throw new Error(data?.error || 'Transfer failed');
+        if (!res.ok) {
+          // Handle special case for already claimed with transaction details
+          if (data && data.error === 'Wallet already claimed from this link' && data.details) {
+            const details = data.details;
+            show('Already claimed! Amount: ' + details.amount + ' tokens. TX: ' + details.txHash, 'error');
+            btn.textContent = 'Already claimed';
+            
+            // Show link to explorer
+            setTimeout(function() {
+              if (confirm('This wallet already claimed ' + details.amount + ' tokens on ' + details.claimedAt + '. View transaction on explorer?')) {
+                window.open(details.explorerUrl, '_blank');
+              }
+            }, 2000);
+            return;
+          }
+          throw new Error((data && data.error) || 'Transfer failed');
+        }
         show('Success! TX: ' + (data.txHash || 'pending'), 'success');
         btn.textContent = 'Already claimed';
         

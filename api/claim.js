@@ -99,7 +99,26 @@ export default async function handler(req, res) {
     const alreadyClaimed = await db.checkWalletAlreadyClaimed(linkId, userWallet);
     if (alreadyClaimed) {
       console.log('[CLAIM] Wallet already claimed from this multi-claim link');
-      return res.status(400).json({ error: 'Wallet already claimed from this link' });
+      
+      // Get explorer URL based on RPC
+      const explorerUrl = RPC_URL?.includes('optimism') ? 
+        `https://optimistic.etherscan.io/tx/${alreadyClaimed.tx_hash}` : 
+        `https://etherscan.io/tx/${alreadyClaimed.tx_hash}`;
+      
+      const claimedDate = alreadyClaimed.claimed_at ? 
+        new Date(alreadyClaimed.claimed_at).toLocaleString() : 
+        'Unknown date';
+      
+      return res.status(400).json({ 
+        error: 'Wallet already claimed from this link',
+        details: {
+          message: 'This wallet has already claimed tokens from this multi-claim link',
+          amount: alreadyClaimed.amount,
+          txHash: alreadyClaimed.tx_hash,
+          explorerUrl: explorerUrl,
+          claimedAt: claimedDate
+        }
+      });
     }
     
     // Check if multi-claim still has slots available
@@ -108,7 +127,28 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'All claims have been used' });
     }
     
-    reserved = await db.reserveMultiClaim(linkId, userWallet);
+    const reserveResult = await db.reserveMultiClaim(linkId, userWallet);
+    
+    // Handle already claimed error from reserveMultiClaim
+    if (reserveResult?.error === 'already_claimed') {
+      const claimData = reserveResult.claimData;
+      const explorerUrl = RPC_URL?.includes('optimism') ? 
+        `https://optimistic.etherscan.io/tx/${claimData.tx_hash}` : 
+        `https://etherscan.io/tx/${claimData.tx_hash}`;
+      
+      return res.status(400).json({ 
+        error: 'Wallet already claimed from this link',
+        details: {
+          message: 'This wallet has already claimed tokens from this multi-claim link',
+          amount: claimData.amount,
+          txHash: claimData.tx_hash,
+          explorerUrl: explorerUrl,
+          claimedAt: claimData.claimed_at ? new Date(claimData.claimed_at).toLocaleString() : 'Unknown date'
+        }
+      });
+    }
+    
+    reserved = reserveResult;
   } else {
     console.log('[CLAIM] Processing single-use claim link');
     
