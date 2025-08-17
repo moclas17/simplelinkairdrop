@@ -356,42 +356,41 @@ export default async function handler(req, res) {
         const grid = document.getElementById('campaignsGrid');
         
         if (data.campaigns && data.campaigns.length > 0) {
-          grid.innerHTML = data.campaigns.map(campaign => 
-            '<div class="campaign-card">' +
-              '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">' +
-                '<h3 style="margin: 0;">' + campaign.title + '</h3>' +
-                '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase().replace('_', ' ') + '</span>' +
-              '</div>' +
-              '<p>' + (campaign.description || 'No description') + '</p>' +
-              (campaign.status === 'pending_funding' ? 
-                '<div class="funding-info" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 16px; margin: 12px 0;">' +
-                  '<h4 style="margin: 0 0 8px; color: var(--orange);">💰 Fund Campaign</h4>' +
-                  '<p style="margin: 0 0 8px; font-size: 13px;">Send <strong>' + campaign.total_budget + ' ' + campaign.token_symbol + '</strong> to:</p>' +
-                  '<div style="font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; word-break: break-all;">' + campaign.deposit_address + '</div>' +
-                  '<button onclick="checkFunding(\'' + campaign.id + '\')" class="btn" style="margin-top: 12px; width: 100%; font-size: 12px;">Check Funding Status</button>' +
-                '</div>' 
-                : '') +
-              
-              (campaign.status === 'active' ? 
-                '<div class="action-buttons" style="margin: 12px 0;">' +
-                  '<button onclick="generateLinks(\'' + campaign.id + '\')" class="btn btn-primary" style="margin-right: 8px; font-size: 12px;">Generate Links</button>' +
-                  '<button onclick="viewStats(\'' + campaign.id + '\')" class="btn" style="font-size: 12px;">View Stats</button>' +
-                '</div>' 
-                : '') +
-              
-              '<div style="font-size: 14px; color: var(--muted);">' +
-                '<div>Type: ' + (campaign.claim_type === 'multi' ? 'Multi-claim' : 'Single-use') + '</div>' +
-                '<div>Budget: ' + campaign.total_budget + ' ' + campaign.token_symbol + '</div>' +
-                '<div>Created: ' + new Date(campaign.created_at).toLocaleDateString() + '</div>' +
-              '</div>' +
-            '</div>'
-          ).join('');
+          grid.innerHTML = data.campaigns.map(function(campaign) {
+            var html = '<div class="campaign-card">';
+            html += '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">';
+            html += '<h3 style="margin: 0;">' + campaign.title + '</h3>';
+            html += '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase().replace('_', ' ') + '</span>';
+            html += '</div>';
+            html += '<p>' + (campaign.description || 'No description') + '</p>';
+            
+            if (campaign.status === 'pending_funding') {
+              html += '<div class="funding-info" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 16px; margin: 12px 0;">';
+              html += '<h4 style="margin: 0 0 8px; color: var(--orange);">💰 Fund Campaign</h4>';
+              html += '<p style="margin: 0 0 8px; font-size: 13px;">Send <strong>' + campaign.total_budget + ' ' + campaign.token_symbol + '</strong> to:</p>';
+              html += '<div style="font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; word-break: break-all;">' + campaign.deposit_address + '</div>';
+              html += '<button onclick="checkFunding(' + "'" + campaign.id + "'" + ')" class="btn" style="margin-top: 12px; width: 100%; font-size: 12px;">Check Funding Status</button>';
+              html += '</div>';
+            }
+            
+            if (campaign.status === 'active') {
+              html += '<div class="action-buttons" style="margin: 12px 0;">';
+              html += '<button onclick="generateLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-primary" style="margin-right: 8px; font-size: 12px;">Generate Links</button>';
+              html += '<button onclick="viewStats(' + "'" + campaign.id + "'" + ')" class="btn" style="font-size: 12px;">View Stats</button>';
+              html += '</div>';
+            }
+            
+            html += '<div style="font-size: 14px; color: var(--muted);">';
+            html += '<div>Type: ' + (campaign.claim_type === 'multi' ? 'Multi-claim' : 'Single-use') + '</div>';
+            html += '<div>Budget: ' + campaign.total_budget + ' ' + campaign.token_symbol + '</div>';
+            html += '<div>Created: ' + new Date(campaign.created_at).toLocaleDateString() + '</div>';
+            html += '</div>';
+            html += '</div>';
+            
+            return html;
+          }).join('');
         } else {
-          grid.innerHTML = 
-            '<div class="empty-state">' +
-              '<h3>No campaigns yet</h3>' +
-              '<p>Create your first campaign to get started!</p>' +
-            '</div>';
+          grid.innerHTML = '<div class="empty-state"><h3>No campaigns yet</h3><p>Create your first campaign to get started!</p></div>';
         }
       } catch (error) {
         console.error('Failed to load campaigns:', error);
