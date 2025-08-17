@@ -342,33 +342,32 @@ export default async function handler(req, res) {
 
     async function loadCampaigns() {
       try {
-        const response = await fetch(`/api/campaigns?walletAddress=${currentUser}`);
+        const response = await fetch('/api/campaigns?walletAddress=' + currentUser);
         const data = await response.json();
         
         const grid = document.getElementById('campaignsGrid');
         
         if (data.campaigns && data.campaigns.length > 0) {
-          grid.innerHTML = data.campaigns.map(campaign => `
-            <div class="campaign-card">
-              <h3>${campaign.title}</h3>
-              <p>${campaign.description || 'No description'}</p>
-              <div style="margin: 12px 0;">
-                <span class="status status-${campaign.status.replace('_', '-')}">${campaign.status.toUpperCase()}</span>
-              </div>
-              <div style="font-size: 14px; color: var(--muted);">
-                <div>Type: ${campaign.claim_type === 'multi' ? 'Multi-claim' : 'Single-use'}</div>
-                <div>Budget: ${campaign.total_budget} ${campaign.token_symbol}</div>
-                <div>Created: ${new Date(campaign.created_at).toLocaleDateString()}</div>
-              </div>
-            </div>
-          `).join('');
+          grid.innerHTML = data.campaigns.map(campaign => 
+            '<div class="campaign-card">' +
+              '<h3>' + campaign.title + '</h3>' +
+              '<p>' + (campaign.description || 'No description') + '</p>' +
+              '<div style="margin: 12px 0;">' +
+                '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase() + '</span>' +
+              '</div>' +
+              '<div style="font-size: 14px; color: var(--muted);">' +
+                '<div>Type: ' + (campaign.claim_type === 'multi' ? 'Multi-claim' : 'Single-use') + '</div>' +
+                '<div>Budget: ' + campaign.total_budget + ' ' + campaign.token_symbol + '</div>' +
+                '<div>Created: ' + new Date(campaign.created_at).toLocaleDateString() + '</div>' +
+              '</div>' +
+            '</div>'
+          ).join('');
         } else {
-          grid.innerHTML = `
-            <div class="empty-state">
-              <h3>No campaigns yet</h3>
-              <p>Create your first campaign to get started!</p>
-            </div>
-          `;
+          grid.innerHTML = 
+            '<div class="empty-state">' +
+              '<h3>No campaigns yet</h3>' +
+              '<p>Create your first campaign to get started!</p>' +
+            '</div>';
         }
       } catch (error) {
         console.error('Failed to load campaigns:', error);
