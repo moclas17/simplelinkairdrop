@@ -514,7 +514,7 @@ export default async function handler(req, res) {
       console.log('Setting up connect wallet button...');
       const connectBtn = document.getElementById('connectWallet');
       if (connectBtn) {
-        connectBtn.addEventListener('click', connectWallet);
+        connectBtn.addEventListener('click', window.connectWallet);
         console.log('Connect wallet event listener attached');
       } else {
         console.error('Connect wallet button not found!');
@@ -533,9 +533,14 @@ export default async function handler(req, res) {
         });
       }
       
-      
-      checkWalletAvailability();
-      
+      // Wait a moment for ethereum to be injected, then check wallet
+      setTimeout(() => {
+        checkWalletAvailability();
+        checkExistingConnection();
+      }, 100);
+    });
+    
+    async function checkExistingConnection() {
       if (typeof window.ethereum !== 'undefined') {
         try {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -548,11 +553,12 @@ export default async function handler(req, res) {
           console.error('Error checking wallet connection:', error);
         }
       }
-    });
+    }
     
     function checkWalletAvailability() {
       console.log('Checking wallet availability...');
       console.log('window.ethereum exists:', typeof window.ethereum !== 'undefined');
+      console.log('window.ethereum object:', window.ethereum);
       
       const noWalletMsg = document.getElementById('noWalletMessage');
       const walletDetectedMsg = document.getElementById('walletDetectedMessage');
@@ -564,21 +570,37 @@ export default async function handler(req, res) {
         connectBtn: !!connectBtn
       });
       
-      if (typeof window.ethereum !== 'undefined') {
-        console.log('MetaMask detected, updating UI');
+      // Check multiple wallet providers
+      const hasMetaMask = typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
+      const hasAnyWallet = typeof window.ethereum !== 'undefined';
+      
+      console.log('Wallet detection:', { hasMetaMask, hasAnyWallet });
+      
+      if (hasAnyWallet) {
+        console.log('Web3 wallet detected, updating UI');
         if (noWalletMsg) noWalletMsg.style.display = 'none';
-        if (walletDetectedMsg) walletDetectedMsg.style.display = 'block';
+        if (walletDetectedMsg) {
+          walletDetectedMsg.style.display = 'block';
+          walletDetectedMsg.innerHTML = hasMetaMask 
+            ? '✅ MetaMask detected! Click the button below to connect your wallet.'
+            : '✅ Web3 wallet detected! Click the button below to connect your wallet.';
+        }
         if (connectBtn) {
           connectBtn.style.opacity = '1';
           connectBtn.disabled = false;
+          connectBtn.style.display = 'inline-flex';
         }
       } else {
-        console.log('MetaMask not detected, updating UI');
-        if (noWalletMsg) noWalletMsg.style.display = 'block';
+        console.log('No wallet detected, updating UI');
+        if (noWalletMsg) {
+          noWalletMsg.style.display = 'block';
+          noWalletMsg.innerHTML = '⚠️ No Web3 wallet detected. Please install MetaMask, Coinbase Wallet, or another Web3 wallet to continue.';
+        }
         if (walletDetectedMsg) walletDetectedMsg.style.display = 'none';
         if (connectBtn) {
           connectBtn.style.opacity = '0.5';
           connectBtn.disabled = true;
+          connectBtn.innerHTML = '<svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M22.05 8.5l-1.2-4.1c-.4-1.3-1.8-2.2-3.2-1.9L12 3.8 6.35 2.5c-1.4-.3-2.8.6-3.2 1.9L2 8.5c-.4 1.3.5 2.7 1.9 2.9l3.1.5v6.6c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-6.6l3.1-.5c1.4-.2 2.3-1.6 1.9-2.9z"/></svg>Install Wallet First';
         }
       }
     }

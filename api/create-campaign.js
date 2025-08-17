@@ -114,6 +114,10 @@ export default async function handler(req, res) {
               <option value="single">Single-use Claims</option>
               <option value="multi">Multi-claim Links</option>
             </select>
+            <div class="explanation-box" id="claimTypeExplanation" style="margin-top: 8px;">
+              🔗 <strong>Single-use:</strong> Creates multiple links, each can be claimed once.<br>
+              🔗 <strong>Multi-claim:</strong> Creates ONE link that multiple wallets can claim from.
+            </div>
           </div>
           <div class="form-group">
             <label for="amountPerClaim">Amount per Claim</label>
@@ -127,8 +131,11 @@ export default async function handler(req, res) {
             <input type="number" id="totalClaims" name="totalClaims" placeholder="1000" min="1" required>
           </div>
           <div class="form-group" id="maxClaimsGroup" style="display: none;">
-            <label for="maxClaimsPerLink">Max Claims per Link <span class="label-help">(How many wallets can claim from ONE link)</span></label>
-            <input type="number" id="maxClaimsPerLink" name="maxClaimsPerLink" placeholder="10" min="1">
+            <label for="maxClaimsPerLink">Max Claims per Link <span class="label-help">(For multi-claim: ignored - determined by total claims)</span></label>
+            <input type="number" id="maxClaimsPerLink" name="maxClaimsPerLink" placeholder="10" min="1" readonly style="opacity: 0.6;">
+            <div class="explanation-box" id="multiClaimExplanation" style="margin-top: 8px;">
+              📋 <strong>Multi-claim explanation:</strong> Creates ONE link that allows multiple different wallets to claim. Each wallet can only claim once. Total claims = how many different wallets can claim from this single link.
+            </div>
           </div>
         </div>
 
@@ -185,16 +192,21 @@ export default async function handler(req, res) {
     function toggleClaimType() {
       const claimType = document.getElementById('claimType').value;
       const maxClaimsGroup = document.getElementById('maxClaimsGroup');
+      const totalClaimsLabel = document.querySelector('label[for="totalClaims"]');
       
       if (claimType === 'multi') {
         maxClaimsGroup.style.display = 'block';
-        // Set default value for multi-claim
+        // For multi-claim, max claims per link equals total claims (since there's only 1 link)
+        const totalClaims = document.getElementById('totalClaims').value || 10;
         const maxClaimsInput = document.getElementById('maxClaimsPerLink');
-        if (!maxClaimsInput.value) {
-          maxClaimsInput.value = document.getElementById('totalClaims').value || 10;
-        }
+        maxClaimsInput.value = totalClaims;
+        
+        // Update the Total Claims label to be clearer
+        totalClaimsLabel.innerHTML = 'Total Claims <span class="label-help">(How many different wallets can claim from the link)</span>';
       } else {
         maxClaimsGroup.style.display = 'none';
+        // Reset the Total Claims label for single-use
+        totalClaimsLabel.innerHTML = 'Total Claims <span class="label-help">(How many single-use links to create)</span>';
       }
       
       calculateBudget();
@@ -223,7 +235,13 @@ export default async function handler(req, res) {
 
     // Event listeners
     document.getElementById('amountPerClaim').addEventListener('input', calculateBudget);
-    document.getElementById('totalClaims').addEventListener('input', calculateBudget);
+    document.getElementById('totalClaims').addEventListener('input', function() {
+      calculateBudget();
+      // Update max claims per link for multi-claim mode
+      if (document.getElementById('claimType').value === 'multi') {
+        document.getElementById('maxClaimsPerLink').value = this.value;
+      }
+    });
     document.getElementById('tokenSymbol').addEventListener('input', calculateBudget);
 
     // Form submission
