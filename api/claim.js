@@ -15,7 +15,10 @@ console.log('[CLAIM] Module loaded - Environment check:', {
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-const token = new ethers.Contract(TOKEN_ADDRESS, ['function transfer(address,uint256)'], wallet);
+const token = new ethers.Contract(TOKEN_ADDRESS, [
+  'function transfer(address,uint256)',
+  'function balanceOf(address) view returns (uint256)'
+], wallet);
 
 export default async function handler(req, res) {
   console.log('[CLAIM] Request received:', {
@@ -99,8 +102,38 @@ export default async function handler(req, res) {
   const amount = reserved.amount;
   console.log('[CLAIM] Processing transfer:', { userWallet, amount, TOKEN_DECIMALS });
   
+  // Check wallet balance before attempting transfer
   try {
-    const tx = await token.transfer(userWallet, ethers.parseUnits(amount.toString(), TOKEN_DECIMALS));
+    const requiredAmount = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
+    const walletBalance = await token.balanceOf(wallet.address);
+    
+    console.log('[CLAIM] Balance check:', {
+      walletAddress: wallet.address,
+      requiredAmount: requiredAmount.toString(),
+      availableBalance: walletBalance.toString(),
+      hasEnoughBalance: walletBalance >= requiredAmount
+    });
+    
+    if (walletBalance < requiredAmount) {
+      console.log('[CLAIM] Insufficient balance in hot wallet');
+      
+      // Rollback reservation for single-use claims
+      if (!current.is_multi_claim) {
+        try { 
+          await db.rollback(linkId); 
+          console.log('[CLAIM] Rollback successful due to insufficient balance');
+        } catch (rollbackError) {
+          console.error('[CLAIM] Rollback failed:', rollbackError);
+        }
+      }
+      
+      return res.status(503).json({ 
+        error: 'Insufficient funds in distribution wallet',
+        details: 'The distribution wallet does not have enough tokens to complete this claim. Please contact the administrator.'
+      });
+    }
+    
+    const tx = await token.transfer(userWallet, requiredAmount);
     console.log('[CLAIM] Transfer successful:', tx.hash);
     
     if (current.is_multi_claim) {
