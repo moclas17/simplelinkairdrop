@@ -146,13 +146,20 @@ export default async function handler(req, res) {
   } catch (e) {
     console.error('[CLAIM] Transfer failed:', e);
     
-    // Only rollback for single-use claims (multi-claims don't use processing status)
-    if (!current.is_multi_claim) {
+    // Rollback based on claim type
+    if (current.is_multi_claim) {
+      try { 
+        await db.rollbackMultiClaim(linkId, userWallet); 
+        console.log('[CLAIM] Multi-claim rollback successful');
+      } catch (rollbackError) {
+        console.error('[CLAIM] Multi-claim rollback failed:', rollbackError);
+      }
+    } else {
       try { 
         await db.rollback(linkId); 
-        console.log('[CLAIM] Rollback successful');
+        console.log('[CLAIM] Single-claim rollback successful');
       } catch (rollbackError) {
-        console.error('[CLAIM] Rollback failed:', rollbackError);
+        console.error('[CLAIM] Single-claim rollback failed:', rollbackError);
       }
     }
     
