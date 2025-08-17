@@ -167,9 +167,9 @@ export default async function handler(req, res) {
         <h2>📊 Your Campaigns</h2>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
           <p>Create and manage your token distribution campaigns</p>
-          <button id="createCampaignBtn" class="btn btn-primary">
+          <a href="#" id="createCampaignBtn" class="btn btn-primary">
             ➕ Create Campaign
-          </button>
+          </a>
         </div>
         
         <div id="campaignsGrid" class="campaigns-grid">
@@ -178,84 +178,6 @@ export default async function handler(req, res) {
       </div>
     </div>
 
-  <!-- Create Campaign Modal -->
-    <div id="createCampaignModal" class="modal hidden">
-      <div class="modal-content">
-        <span class="close-btn" id="closeModalBtn">&times;</span>
-        <h2>🎯 Create New Campaign</h2>
-        <form id="campaignForm">
-          <div class="form-group">
-            <label for="campaignTitle">Campaign Title</label>
-            <input type="text" id="campaignTitle" name="title" placeholder="e.g., Community Airdrop 2024" required>
-          </div>
-
-          <div class="form-group">
-            <label for="campaignDescription">Description</label>
-            <textarea id="campaignDescription" name="description" placeholder="Describe your campaign..." rows="3"></textarea>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="claimType">Claim Type</label>
-              <select id="claimType" name="claimType" onchange="toggleClaimType()" required>
-                <option value="single">Single-use Claims</option>
-                <option value="multi">Multi-claim Links</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="amountPerClaim">Amount per Claim</label>
-              <input type="number" id="amountPerClaim" name="amountPerClaim" placeholder="100" step="0.01" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="totalClaims">Total Claims</label>
-              <input type="number" id="totalClaims" name="totalClaims" placeholder="1000" min="1" required>
-            </div>
-            <div class="form-group" id="maxClaimsGroup" style="display: none;">
-              <label for="maxClaimsPerLink">Max Claims per Link <span class="label-help">(How many wallets can claim from ONE link)</span></label>
-              <input type="number" id="maxClaimsPerLink" name="maxClaimsPerLink" placeholder="10" min="1">
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="tokenAddress">Token Contract</label>
-              <input type="text" id="tokenAddress" name="tokenAddress" placeholder="0x..." pattern="^0x[a-fA-F0-9]{40}$" required>
-            </div>
-            <div class="form-group">
-              <label for="tokenSymbol">Token Symbol</label>
-              <input type="text" id="tokenSymbol" name="tokenSymbol" placeholder="TOKEN" required>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="tokenDecimals">Token Decimals</label>
-              <input type="number" id="tokenDecimals" name="tokenDecimals" value="18" min="0" max="18" required>
-            </div>
-            <div class="form-group">
-              <label for="expiresInHours">Expires in Hours (optional)</label>
-              <input type="number" id="expiresInHours" name="expiresInHours" placeholder="72" min="1">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Total Budget Required</label>
-            <div class="budget-display">
-              <div class="budget-amount"><span id="totalBudget">0</span> <span id="budgetSymbol" class="budget-symbol">TOKENS</span></div>
-              <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Amount per claim × Total claims = Total budget needed</div>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 12px; margin-top: 24px;">
-            <button type="button" onclick="closeModal()" class="btn">Cancel</button>
-            <button type="submit" class="btn btn-success">Create Campaign</button>
-          </div>
-        </form>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -296,8 +218,6 @@ export default async function handler(req, res) {
     function showWalletSection() {
       document.getElementById('walletSection').classList.remove('hidden');
       document.getElementById('dashboardSection').classList.add('hidden');
-      // Close any open modals when showing wallet section
-      closeModal();
     }
 
     function showDashboard() {
@@ -305,64 +225,20 @@ export default async function handler(req, res) {
       document.getElementById('walletSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
       document.getElementById('userWallet').textContent = currentUser;
-      
-      // Ensure modal is closed when showing dashboard
-      const modal = document.getElementById('createCampaignModal');
-      console.log('Modal state check - hidden class present:', modal?.classList.contains('hidden'));
-      console.log('Modal display style:', modal?.style.display);
-      
-      if (modal && !modal.classList.contains('hidden')) {
-        console.log('FORCING modal to close - it was open when showing dashboard');
-        modal.classList.add('hidden');
-      } else {
-        console.log('Modal is already hidden, that is correct');
-      }
     }
 
     // Campaign management
-    function openCreateCampaignModal() {
-      console.log('openCreateCampaignModal called, currentUser:', currentUser);
-      // Only allow opening modal if user is connected
+    function goToCreateCampaign() {
+      console.log('goToCreateCampaign called, currentUser:', currentUser);
+      // Only allow creating campaign if user is connected
       if (!currentUser) {
         showToast('Please connect your wallet first', 'error');
         return;
       }
-      console.log('Opening create campaign modal...');
-      document.getElementById('createCampaignModal').classList.remove('hidden');
+      console.log('Redirecting to create campaign page...');
+      window.location.href = '/create-campaign?wallet=' + currentUser;
     }
 
-    function closeModal() {
-      console.log('closeModal called');
-      document.getElementById('createCampaignModal').classList.add('hidden');
-    }
-
-    function toggleClaimType() {
-      const claimType = document.getElementById('claimType').value;
-      const maxClaimsGroup = document.getElementById('maxClaimsGroup');
-      
-      if (claimType === 'multi') {
-        maxClaimsGroup.style.display = 'block';
-        // Set default value for multi-claim
-        const maxClaimsInput = document.getElementById('maxClaimsPerLink');
-        if (!maxClaimsInput.value) {
-          maxClaimsInput.value = document.getElementById('totalClaims').value || 10;
-        }
-      } else {
-        maxClaimsGroup.style.display = 'none';
-      }
-      
-      calculateBudget();
-    }
-
-    function calculateBudget() {
-      const amount = parseFloat(document.getElementById('amountPerClaim').value) || 0;
-      const totalClaims = parseInt(document.getElementById('totalClaims').value) || 0;
-      const symbol = document.getElementById('tokenSymbol').value || 'TOKENS';
-      
-      const budget = amount * totalClaims;
-      document.getElementById('totalBudget').textContent = budget.toLocaleString();
-      document.getElementById('budgetSymbol').textContent = symbol;
-    }
 
     async function loadCampaigns() {
       try {
@@ -425,56 +301,6 @@ export default async function handler(req, res) {
       }, 3000);
     }
 
-    // Form submission handler (defined here but will be attached in load event)
-    async function handleFormSubmission(e) {
-      e.preventDefault();
-      
-      const formData = new FormData(e.target);
-      const campaignData = {
-        walletAddress: currentUser,
-        title: formData.get('title'),
-        description: formData.get('description'),
-        claimType: formData.get('claimType'),
-        amountPerClaim: Number(formData.get('amountPerClaim')),
-        totalClaims: Number(formData.get('totalClaims')),
-        maxClaimsPerLink: formData.get('claimType') === 'multi' ? Number(formData.get('maxClaimsPerLink')) : null,
-        tokenAddress: formData.get('tokenAddress'),
-        tokenSymbol: formData.get('tokenSymbol'),
-        tokenDecimals: Number(formData.get('tokenDecimals')),
-        expiresInHours: formData.get('expiresInHours') ? Number(formData.get('expiresInHours')) : null
-      };
-      
-      try {
-        const submitBtn = e.target.querySelector('button[type=\"submit\"]');
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Creating...';
-        
-        const response = await fetch('/api/campaigns', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(campaignData)
-        });
-        
-        const result = await response.json();
-        
-        if (response.ok) {
-          showToast('Campaign created successfully!', 'success');
-          closeModal();
-          loadCampaigns();
-          e.target.reset();
-          calculateBudget();
-        } else {
-          showToast(result.error || 'Failed to create campaign', 'error');
-        }
-      } catch (error) {
-        console.error('Campaign creation error:', error);
-        showToast('Failed to create campaign', 'error');
-      } finally {
-        const submitBtn = e.target.querySelector('button[type=\"submit\"]');
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Campaign';
-      }
-    }
 
     // Campaign action functions
     window.checkFunding = async function(campaignId) {
@@ -539,35 +365,12 @@ export default async function handler(req, res) {
       
       const createBtn = document.getElementById('createCampaignBtn');
       if (createBtn) {
-        createBtn.addEventListener('click', openCreateCampaignModal);
+        createBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          goToCreateCampaign();
+        });
       }
       
-      const closeBtn = document.getElementById('closeModalBtn');
-      if (closeBtn) {
-        closeBtn.addEventListener('click', closeModal);
-      }
-      
-      // Form event listeners
-      document.getElementById('amountPerClaim').addEventListener('input', calculateBudget);
-      document.getElementById('totalClaims').addEventListener('input', calculateBudget);
-      document.getElementById('tokenSymbol').addEventListener('input', calculateBudget);
-      
-      // Form submission
-      document.getElementById('campaignForm').addEventListener('submit', handleFormSubmission);
-      
-      // Close modal when clicking outside
-      document.getElementById('createCampaignModal').addEventListener('click', function(e) {
-        if (e.target === this) {
-          closeModal();
-        }
-      });
-      
-      // Ensure modal is hidden on page load
-      const modal = document.getElementById('createCampaignModal');
-      if (modal) {
-        modal.classList.add('hidden');
-        console.log('Modal hidden on page load');
-      }
       
       checkWalletAvailability();
       
