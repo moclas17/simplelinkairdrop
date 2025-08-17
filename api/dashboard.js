@@ -178,7 +178,7 @@ export default async function handler(req, res) {
       </div>
     </div>
 
-    <!-- Create Campaign Modal -->
+  <!-- Create Campaign Modal -->
     <div id="createCampaignModal" class="modal hidden">
       <div class="modal-content">
         <span class="close-btn" onclick="closeModal()">&times;</span>
@@ -301,18 +301,28 @@ export default async function handler(req, res) {
     }
 
     function showDashboard() {
+      console.log('Showing dashboard...');
       document.getElementById('walletSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
       document.getElementById('userWallet').textContent = currentUser;
+      
+      // Ensure modal is closed when showing dashboard
+      const modal = document.getElementById('createCampaignModal');
+      if (modal && !modal.classList.contains('hidden')) {
+        console.log('Closing modal that was open...');
+        modal.classList.add('hidden');
+      }
     }
 
     // Campaign management
     function openCreateCampaignModal() {
+      console.log('openCreateCampaignModal called, currentUser:', currentUser);
       // Only allow opening modal if user is connected
       if (!currentUser) {
         showToast('Please connect your wallet first', 'error');
         return;
       }
+      console.log('Opening create campaign modal...');
       document.getElementById('createCampaignModal').classList.remove('hidden');
     }
 
@@ -540,6 +550,13 @@ export default async function handler(req, res) {
           closeModal();
         }
       });
+      
+      // Ensure modal is hidden on page load
+      const modal = document.getElementById('createCampaignModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        console.log('Modal hidden on page load');
+      }
       
       checkWalletAvailability();
       
