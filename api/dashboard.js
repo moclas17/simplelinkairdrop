@@ -18,34 +18,114 @@ export default async function handler(req, res) {
     .card { background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:32px; margin-bottom:24px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
     h1 { margin:0 0 16px; font-size: clamp(24px, 4vw, 32px); letter-spacing: 0.3px; color: var(--acc); }
     h2 { margin:24px 0 12px; font-size: 20px; color: var(--acc); }
+    h3 { margin:16px 0 8px; font-size: 16px; color: var(--acc); }
     p { margin:0 0 16px; color: var(--muted); line-height: 1.6; }
-    .btn { display:inline-flex; align-items:center; gap:8px; padding:12px 24px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background: linear-gradient(180deg, #1e293b, #0f172a); color:white; font-weight:600; cursor:pointer; text-decoration:none; transition: transform .04s ease; }
-    .btn:hover { transform: translateY(-1px); }
-    .btn-primary { background: linear-gradient(180deg, var(--acc), #0ea5e9); color: #0b1220; }
-    .btn-success { background: linear-gradient(180deg, var(--green), #16a34a); }
-    .btn-danger { background: linear-gradient(180deg, var(--red), #dc2626); }
-    .wallet-section { text-align: center; padding: 40px 20px; }
-    .wallet-btn { font-size: 18px; padding: 16px 32px; }
-    .user-info { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: rgba(125,211,252,0.05); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; margin-bottom: 24px; }
-    .campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-    .campaign-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; }
-    .status { padding: 4px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; }
+    
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 24px; border-radius:12px; border:1px solid rgba(255,255,255,0.12); background: linear-gradient(180deg, #1e293b, #0f172a); color:white; font-weight:600; cursor:pointer; text-decoration:none; transition: all 0.2s ease; min-height: 44px; }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: linear-gradient(180deg, var(--acc), #0ea5e9); color: #0b1220; border-color: var(--acc); }
+    .btn-success { background: linear-gradient(180deg, var(--green), #16a34a); border-color: var(--green); }
+    .btn-danger { background: linear-gradient(180deg, var(--red), #dc2626); border-color: var(--red); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    
+    /* Wallet section */
+    .wallet-section { text-align: center; padding: 60px 20px; }
+    .wallet-btn { font-size: 18px; padding: 16px 32px; min-width: 200px; }
+    .metamask-icon { width: 24px; height: 24px; margin-right: 8px; }
+    
+    /* User info */
+    .user-info { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(125,211,252,0.08); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; margin-bottom: 24px; }
+    .wallet-address { font-family: 'Monaco', 'Consolas', monospace; font-size: 14px; color: var(--acc); }
+    
+    /* Campaigns */
+    .campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
+    .campaign-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; transition: transform 0.2s ease; }
+    .campaign-card:hover { transform: translateY(-2px); }
+    
+    /* Status badges */
+    .status { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; }
     .status-draft { background: rgba(126,138,160,0.2); color: var(--muted); }
     .status-pending { background: rgba(245,158,11,0.2); color: var(--orange); }
     .status-active { background: rgba(34,197,94,0.2); color: var(--green); }
     .status-completed { background: rgba(34,197,94,0.3); color: var(--green); }
+    
+    /* Forms */
     .hidden { display: none; }
-    .form-group { margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; color: var(--text); font-weight: 500; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; background: #0f1729; color: var(--text); }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--acc); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-    .modal-content { background: var(--card); border: 1px solid rgba(255,255,255,0.08); border-radius: 20px; padding: 32px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; }
-    .close-btn { float: right; font-size: 24px; cursor: pointer; color: var(--muted); }
-    .toast { position: fixed; bottom: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; font-weight: 500; z-index: 1001; }
+    .form-group { margin-bottom: 24px; }
+    .form-group label { display: block; margin-bottom: 8px; color: var(--text); font-weight: 500; font-size: 14px; }
+    .form-group .label-help { font-size: 12px; color: var(--muted); font-weight: 400; margin-left: 4px; }
+    .form-group input, .form-group select, .form-group textarea { 
+      width: 100%; 
+      padding: 14px 16px; 
+      border: 1px solid rgba(255,255,255,0.15); 
+      border-radius: 10px; 
+      background: rgba(15,23,41,0.8); 
+      color: var(--text); 
+      font-size: 14px;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
+      outline: none; 
+      border-color: var(--acc); 
+      box-shadow: 0 0 0 3px rgba(125,211,252,0.1);
+    }
+    .form-group input::placeholder { color: rgba(126,138,160,0.6); }
+    
+    /* Form layout */
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 768px) {
+      .form-row { grid-template-columns: 1fr; gap: 16px; }
+    }
+    
+    /* Explanations */
+    .explanation-box { 
+      background: rgba(125,211,252,0.05); 
+      border: 1px solid rgba(125,211,252,0.15); 
+      border-radius: 8px; 
+      padding: 12px 16px; 
+      margin-top: 8px; 
+      font-size: 13px; 
+      color: var(--muted); 
+      line-height: 1.4;
+    }
+    
+    /* Budget display */
+    .budget-display { 
+      background: linear-gradient(135deg, rgba(125,211,252,0.1), rgba(34,197,94,0.1)); 
+      border: 1px solid rgba(125,211,252,0.2); 
+      border-radius: 12px; 
+      padding: 20px; 
+      text-align: center;
+    }
+    .budget-amount { font-size: 24px; font-weight: 700; color: var(--green); }
+    .budget-symbol { font-size: 18px; color: var(--acc); margin-left: 8px; }
+    
+    /* Modal */
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal-content { 
+      background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); 
+      border: 1px solid rgba(255,255,255,0.1); 
+      border-radius: 24px; 
+      padding: 32px; 
+      max-width: 700px; 
+      width: 90%; 
+      max-height: 85vh; 
+      overflow-y: auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .close-btn { float: right; font-size: 28px; cursor: pointer; color: var(--muted); line-height: 1; padding: 4px; border-radius: 4px; transition: color 0.2s ease; }
+    .close-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+    
+    /* Toast */
+    .toast { position: fixed; bottom: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; font-weight: 500; z-index: 1001; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
     .toast-success { background: var(--green); color: white; }
     .toast-error { background: var(--red); color: white; }
+    
+    /* Empty state */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -53,9 +133,22 @@ export default async function handler(req, res) {
     <!-- Wallet Connection Section -->
     <div id="walletSection" class="card wallet-section">
       <h1>🎯 Campaign Dashboard</h1>
-      <p>Connect your wallet to create and manage token distribution campaigns</p>
+      <p style="margin-bottom: 24px;">Connect your wallet to create and manage token distribution campaigns</p>
+      
+      <div id="walletStatus" style="margin-bottom: 20px;">
+        <div id="noWalletMessage" class="explanation-box" style="margin-bottom: 16px; display: none;">
+          ⚠️ MetaMask not detected. Please install MetaMask or another Web3 wallet to continue.
+        </div>
+        <div id="walletDetectedMessage" class="explanation-box" style="margin-bottom: 16px; background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); display: none;">
+          ✅ MetaMask detected! Click the button below to connect your wallet.
+        </div>
+      </div>
+      
       <button id="connectWallet" class="btn btn-primary wallet-btn">
-        🔐 Connect Wallet
+        <svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M22.05 8.5l-1.2-4.1c-.4-1.3-1.8-2.2-3.2-1.9L12 3.8 6.35 2.5c-1.4-.3-2.8.6-3.2 1.9L2 8.5c-.4 1.3.5 2.7 1.9 2.9l3.1.5v6.6c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-6.6l3.1-.5c1.4-.2 2.3-1.6 1.9-2.9z"/>
+        </svg>
+        Connect Wallet
       </button>
     </div>
 
@@ -121,8 +214,12 @@ export default async function handler(req, res) {
               <input type="number" id="totalClaims" name="totalClaims" placeholder="1000" min="1" required>
             </div>
             <div class="form-group" id="maxClaimsGroup" style="display: none;">
-              <label for="maxClaimsPerLink">Max Claims per Link</label>
+              <label for="maxClaimsPerLink">Max Claims per Link <span class="label-help">(How many wallets can claim from ONE link)</span></label>
               <input type="number" id="maxClaimsPerLink" name="maxClaimsPerLink" placeholder="10" min="1">
+              <div class="explanation-box">
+                <strong>Multi-claim explanation:</strong> With multi-claim links, ONE link allows multiple different wallets to claim.<br>
+                Example: 100 total claims + 10 max claims per link = 1 link that 100 different wallets can claim from (each wallet claims once).
+              </div>
             </div>
           </div>
 
@@ -150,8 +247,9 @@ export default async function handler(req, res) {
 
           <div class="form-group">
             <label>Total Budget Required</label>
-            <div style="padding: 12px; background: rgba(125,211,252,0.1); border-radius: 8px; font-weight: 600;">
-              <span id="totalBudget">0</span> <span id="budgetSymbol">TOKENS</span>
+            <div class="budget-display">
+              <div class="budget-amount"><span id="totalBudget">0</span> <span id="budgetSymbol" class="budget-symbol">TOKENS</span></div>
+              <div style="font-size: 12px; color: var(--muted); margin-top: 8px;">Amount per claim × Total claims = Total budget needed</div>
             </div>
           </div>
 
@@ -220,6 +318,11 @@ export default async function handler(req, res) {
       
       if (claimType === 'multi') {
         maxClaimsGroup.style.display = 'block';
+        // Set default value for multi-claim
+        const maxClaimsInput = document.getElementById('maxClaimsPerLink');
+        if (!maxClaimsInput.value) {
+          maxClaimsInput.value = document.getElementById('totalClaims').value || 10;
+        }
       } else {
         maxClaimsGroup.style.display = 'none';
       }
@@ -238,8 +341,39 @@ export default async function handler(req, res) {
     }
 
     async function loadCampaigns() {
-      // TODO: Implement API call to load user campaigns
-      console.log('Loading campaigns for user:', currentUser);
+      try {
+        const response = await fetch(`/api/campaigns?walletAddress=${currentUser}`);
+        const data = await response.json();
+        
+        const grid = document.getElementById('campaignsGrid');
+        
+        if (data.campaigns && data.campaigns.length > 0) {
+          grid.innerHTML = data.campaigns.map(campaign => `
+            <div class="campaign-card">
+              <h3>${campaign.title}</h3>
+              <p>${campaign.description || 'No description'}</p>
+              <div style="margin: 12px 0;">
+                <span class="status status-${campaign.status.replace('_', '-')}">${campaign.status.toUpperCase()}</span>
+              </div>
+              <div style="font-size: 14px; color: var(--muted);">
+                <div>Type: ${campaign.claim_type === 'multi' ? 'Multi-claim' : 'Single-use'}</div>
+                <div>Budget: ${campaign.total_budget} ${campaign.token_symbol}</div>
+                <div>Created: ${new Date(campaign.created_at).toLocaleDateString()}</div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          grid.innerHTML = `
+            <div class="empty-state">
+              <h3>No campaigns yet</h3>
+              <p>Create your first campaign to get started!</p>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error('Failed to load campaigns:', error);
+        showToast('Failed to load campaigns', 'error');
+      }
     }
 
     function showToast(message, type) {
@@ -262,6 +396,57 @@ export default async function handler(req, res) {
     document.getElementById('amountPerClaim').addEventListener('input', calculateBudget);
     document.getElementById('totalClaims').addEventListener('input', calculateBudget);
     document.getElementById('tokenSymbol').addEventListener('input', calculateBudget);
+    
+    // Form submission
+    document.getElementById('campaignForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const campaignData = {
+        walletAddress: currentUser,
+        title: formData.get('title'),
+        description: formData.get('description'),
+        claimType: formData.get('claimType'),
+        amountPerClaim: Number(formData.get('amountPerClaim')),
+        totalClaims: Number(formData.get('totalClaims')),
+        maxClaimsPerLink: formData.get('claimType') === 'multi' ? Number(formData.get('maxClaimsPerLink')) : null,
+        tokenAddress: formData.get('tokenAddress'),
+        tokenSymbol: formData.get('tokenSymbol'),
+        tokenDecimals: Number(formData.get('tokenDecimals')),
+        expiresInHours: formData.get('expiresInHours') ? Number(formData.get('expiresInHours')) : null
+      };
+      
+      try {
+        const submitBtn = e.target.querySelector('button[type=\"submit\"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+        
+        const response = await fetch('/api/campaigns', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(campaignData)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showToast('Campaign created successfully!', 'success');
+          closeModal();
+          loadCampaigns();
+          e.target.reset();
+          calculateBudget();
+        } else {
+          showToast(result.error || 'Failed to create campaign', 'error');
+        }
+      } catch (error) {
+        console.error('Campaign creation error:', error);
+        showToast('Failed to create campaign', 'error');
+      } finally {
+        const submitBtn = e.target.querySelector('button[type=\"submit\"]');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Campaign';
+      }
+    });
 
     // Close modal when clicking outside
     document.getElementById('createCampaignModal').addEventListener('click', function(e) {
@@ -270,16 +455,40 @@ export default async function handler(req, res) {
       }
     });
 
-    // Check if wallet is already connected
-    if (typeof window.ethereum !== 'undefined') {
-      window.ethereum.request({ method: 'eth_accounts' })
-        .then(accounts => {
+    // Check wallet availability and connection on page load
+    window.addEventListener('load', async () => {
+      checkWalletAvailability();
+      
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
             currentUser = accounts[0];
             showDashboard();
             loadCampaigns();
           }
-        });
+        } catch (error) {
+          console.error('Error checking wallet connection:', error);
+        }
+      }
+    });
+    
+    function checkWalletAvailability() {
+      const noWalletMsg = document.getElementById('noWalletMessage');
+      const walletDetectedMsg = document.getElementById('walletDetectedMessage');
+      const connectBtn = document.getElementById('connectWallet');
+      
+      if (typeof window.ethereum !== 'undefined') {
+        noWalletMsg.style.display = 'none';
+        walletDetectedMsg.style.display = 'block';
+        connectBtn.style.opacity = '1';
+        connectBtn.disabled = false;
+      } else {
+        noWalletMsg.style.display = 'block';
+        walletDetectedMsg.style.display = 'none';
+        connectBtn.style.opacity = '0.5';
+        connectBtn.disabled = true;
+      }
     }
   </script>
 </body>
