@@ -106,6 +106,15 @@ async function updateCampaign(req, res) {
       return res.status(200).json(result);
     }
 
+    if (action === 'generate_links') {
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'Wallet address required for link generation' });
+      }
+
+      const result = await db.generateLinksForCampaign(campaignId, walletAddress);
+      return res.status(200).json(result);
+    }
+
     // Regular update
     const campaign = await db.updateCampaign(campaignId, updateData);
     return res.status(200).json({ campaign });

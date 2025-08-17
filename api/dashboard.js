@@ -334,14 +334,130 @@ export default async function handler(req, res) {
       }
     };
 
-    window.generateLinks = function(campaignId) {
-      // TODO: Implement link generation modal
-      showToast('Link generation coming soon!', 'success');
+    window.generateLinks = async function(campaignId) {
+      try {
+        console.log('Generating links for campaign:', campaignId);
+        showToast('Generating links...', 'success');
+        
+        const response = await fetch('/api/campaigns', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            campaignId: campaignId, 
+            action: 'generate_links',
+            walletAddress: currentUser 
+          })
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          showLinksModal(result);
+        } else {
+          showToast(result.error || 'Failed to generate links', 'error');
+        }
+      } catch (error) {
+        console.error('Link generation error:', error);
+        showToast('Failed to generate links', 'error');
+      }
     };
 
     window.viewStats = function(campaignId) {
       // TODO: Implement stats modal
       showToast('Stats view coming soon!', 'success');
+    };
+
+    function showLinksModal(data) {
+      console.log('Showing links modal with data:', data);
+      
+      // Create modal HTML
+      const modalHtml = '<div id="linksModal" class="modal" style="display: flex;">' +
+        '<div class="modal-content" style="max-width: 900px; width: 95%;">' +
+          '<span class="close-btn" onclick="closeLinksModal()" style="float: right; font-size: 28px; cursor: pointer; color: var(--muted); line-height: 1; padding: 4px; border-radius: 4px;">&times;</span>' +
+          '<h2 style="margin: 0 0 20px; color: var(--acc);">🔗 Generated Links</h2>' +
+          '<div style="background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin-bottom: 20px;">' +
+            '<h3 style="margin: 0 0 8px; color: var(--acc);">' + data.campaign.title + '</h3>' +
+            '<p style="margin: 0; color: var(--muted);">Type: ' + data.campaign.type + ' • Amount: ' + data.campaign.amountPerClaim + ' tokens per claim</p>' +
+            '<p style="margin: 8px 0 0; font-weight: 600; color: var(--green);">' + data.message + '</p>' +
+          '</div>' +
+          '<div style="margin-bottom: 16px;">' +
+            '<button onclick="copyAllLinks()" class="btn btn-primary" style="margin-right: 12px;">📋 Copy All Links</button>' +
+            '<button onclick="downloadLinks()" class="btn">📥 Download as CSV</button>' +
+          '</div>' +
+          '<div style="max-height: 400px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">' +
+            data.links.map((link, index) => 
+              '<div style="display: flex; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); background: ' + (index % 2 === 0 ? 'rgba(255,255,255,0.02)' : 'transparent') + ';">' +
+                '<div style="flex: 1; font-family: monospace; font-size: 13px;">' +
+                  '<div style="color: var(--text); margin-bottom: 4px;">ID: ' + link.id + '</div>' +
+                  '<div style="color: var(--acc);">URL: ' + window.location.origin + link.url + '</div>' +
+                  (link.type === 'multi-claim' ? '<div style="color: var(--muted); font-size: 11px;">Max Claims: ' + link.maxClaims + '</div>' : '') +
+                '</div>' +
+                '<button onclick="copyLink(\'' + window.location.origin + link.url + '\')" class="btn" style="margin-left: 12px; font-size: 12px; padding: 8px 12px;">Copy</button>' +
+              '</div>'
+            ).join('') +
+          '</div>' +
+        '</div>' +
+      '</div>';
+      
+      // Add to page
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+      
+      // Store links data globally for copy/download functions
+      window.generatedLinksData = data;
+    }
+
+    window.closeLinksModal = function() {
+      const modal = document.getElementById('linksModal');
+      if (modal) {
+        modal.remove();
+      }
+    };
+
+    window.copyLink = function(url) {
+      navigator.clipboard.writeText(url).then(() => {
+        showToast('Link copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy link', 'error');
+      });
+    };
+
+    window.copyAllLinks = function() {
+      if (!window.generatedLinksData) return;
+      
+      const allLinks = window.generatedLinksData.links
+        .map(link => window.location.origin + link.url)
+        .join('\\n');
+      
+      navigator.clipboard.writeText(allLinks).then(() => {
+        showToast('All links copied to clipboard!', 'success');
+      }).catch(() => {
+        showToast('Failed to copy links', 'error');
+      });
+    };
+
+    window.downloadLinks = function() {
+      if (!window.generatedLinksData) return;
+      
+      const csvContent = 'Link ID,URL,Type,Amount,Max Claims\\n' +
+        window.generatedLinksData.links.map(link => 
+          link.id + ',' + 
+          window.location.origin + link.url + ',' + 
+          link.type + ',' + 
+          link.amount + ',' + 
+          (link.maxClaims || 1)
+        ).join('\\n');
+      
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'campaign-links-' + Date.now() + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      showToast('Links downloaded as CSV!', 'success');
     };
 
     // Check wallet availability and connection on page load
