@@ -7,17 +7,22 @@ export default async function handler(req, res) {
   // Get claim data from database
   const claimData = await db.get(id);
   if (!claimData) {
-    return res.status(404).send('Claim link not found');
+    return res.status(404).send(getErrorPage('Link Not Found', '🔍 This claim link does not exist or may have been removed.', 'The link you\'re trying to access is invalid or may have been deleted.'));
   }
 
   // Check if expired
   if (claimData.expires_at && new Date(claimData.expires_at).getTime() <= Date.now()) {
-    return res.status(400).send('Claim link has expired');
+    const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
+    const expiredDate = new Date(claimData.expires_at).toLocaleString();
+    return res.status(400).send(getErrorPage('Link Expired', `⏰ This ${claimData.amount} $${tokenSymbol} claim link has expired.`, `This link expired on ${expiredDate}. Please contact the distributor for a new link.`));
   }
 
   // Check if already claimed
   if (claimData.claimed) {
-    return res.status(400).send('This link has already been claimed');
+    const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
+    const claimedDate = claimData.claimed_at ? new Date(claimData.claimed_at).toLocaleString() : 'Unknown date';
+    const txHash = claimData.tx_hash;
+    return res.status(400).send(getAlreadyClaimedPage(claimData.amount, tokenSymbol, claimedDate, txHash));
   }
 
   // Get token info from environment
@@ -132,4 +137,84 @@ export default async function handler(req, res) {
   </script>
 </body>
 </html>`);
+}
+
+function getErrorPage(title, message, description) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>${title} - Token Claim</title>
+  <style>
+    :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --red:#ef4444; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial; background: radial-gradient(1000px 600px at 10% -10%, #1a2440, transparent), var(--bg); color: var(--text); min-height:100vh; display:grid; place-items:center; padding:24px; }
+    .card { width:100%; max-width:520px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(8px); text-align:center; }
+    h1 { margin:0 0 16px; font-size: clamp(22px, 3.5vw, 28px); letter-spacing: 0.3px; color: var(--red); }
+    p { margin:0 0 18px; color: var(--muted); line-height: 1.6; }
+    .message { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .logo { width:40px; height:40px; border-radius:12px; background: radial-gradient(circle at 30% 30%, #ef4444, #dc2626 45%, #b91c1c 65%, #991b1b); box-shadow: 0 0 32px #ef444455; margin: 0 auto 16px; }
+    .back-btn { display: inline-block; padding: 12px 24px; background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; color: var(--acc); text-decoration: none; margin-top: 20px; transition: all 0.2s; }
+    .back-btn:hover { background: rgba(125,211,252,0.2); transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"></div>
+    <h1>${title}</h1>
+    <div class="message">
+      <p style="font-size: 18px; margin-bottom: 12px; color: var(--text);">${message}</p>
+      <p style="margin: 0; font-size: 14px;">${description}</p>
+    </div>
+    <a href="/" class="back-btn">← Back to Home</a>
+  </div>
+</body>
+</html>`;
+}
+
+function getAlreadyClaimedPage(amount, tokenSymbol, claimedDate, txHash) {
+  const explorerUrl = process.env.RPC_URL?.includes('optimism') ? 
+    `https://optimistic.etherscan.io/tx/${txHash}` : 
+    `https://etherscan.io/tx/${txHash}`;
+    
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Already Claimed - $${tokenSymbol} Tokens</title>
+  <style>
+    :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --orange:#f59e0b; --green:#22c55e; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial; background: radial-gradient(1000px 600px at 10% -10%, #1a2440, transparent), var(--bg); color: var(--text); min-height:100vh; display:grid; place-items:center; padding:24px; }
+    .card { width:100%; max-width:520px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(8px); text-align:center; }
+    h1 { margin:0 0 16px; font-size: clamp(22px, 3.5vw, 28px); letter-spacing: 0.3px; color: var(--orange); }
+    p { margin:0 0 18px; color: var(--muted); line-height: 1.6; }
+    .claimed-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .amount { font-size: 24px; font-weight: 700; color: var(--green); margin: 8px 0; }
+    .logo { width:40px; height:40px; border-radius:12px; background: radial-gradient(circle at 30% 30%, #f59e0b, #d97706 45%, #b45309 65%, #92400e); box-shadow: 0 0 32px #f59e0b55; margin: 0 auto 16px; }
+    .info-item { margin: 12px 0; font-size: 14px; }
+    .info-item strong { color: var(--text); }
+    .tx-link { display: inline-block; padding: 8px 16px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; color: var(--green); text-decoration: none; margin: 8px 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; word-break: break-all; transition: all 0.2s; }
+    .tx-link:hover { background: rgba(34,197,94,0.2); }
+    .back-btn { display: inline-block; padding: 12px 24px; background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; color: var(--acc); text-decoration: none; margin-top: 20px; transition: all 0.2s; }
+    .back-btn:hover { background: rgba(125,211,252,0.2); transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"></div>
+    <h1>✅ Already Claimed</h1>
+    <div class="claimed-box">
+      <p style="font-size: 18px; margin-bottom: 8px; color: var(--text);">🎉 This claim has been successfully processed!</p>
+      <div class="amount">${amount} $${tokenSymbol}</div>
+      <div class="info-item"><strong>Claimed on:</strong> ${claimedDate}</div>
+      ${txHash ? `<div class="info-item"><strong>Transaction:</strong><br><a href="${explorerUrl}" target="_blank" class="tx-link">${txHash}</a></div>` : ''}
+    </div>
+    <p style="color: var(--muted); font-size: 14px;">The tokens have been transferred to the recipient wallet. Each claim link can only be used once for security.</p>
+    <a href="/" class="back-btn">← Back to Home</a>
+  </div>
+</body>
+</html>`;
 }
