@@ -15,10 +15,6 @@ console.log('[CLAIM] Module loaded - Environment check:', {
 
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
-const token = new ethers.Contract(TOKEN_ADDRESS, [
-  'function transfer(address,uint256)',
-  'function balanceOf(address) view returns (uint256)'
-], wallet);
 
 export default async function handler(req, res) {
   console.log('[CLAIM] Request received:', {
@@ -75,14 +71,35 @@ export default async function handler(req, res) {
     });
   }
 
-  // Check if this is a multi-claim or single-claim link
+  // Check if this is a multi-claim or single-claim link and get campaign info
   console.log('[CLAIM] Checking link validity for:', linkId);
-  const current = await db.get(linkId);
-  console.log('[CLAIM] Current link data:', current);
+  const current = await db.getClaimWithCampaignInfo(linkId);
+  console.log('[CLAIM] Current link data with campaign info:', current);
   
   if (!current) {
     console.log('[CLAIM] Link not found');
     return res.status(400).json({ error: 'Invalid link' });
+  }
+
+  // Get campaign token info (fallback to env if not found)
+  const campaignTokenAddress = current.campaigns?.token_address || TOKEN_ADDRESS;
+  const campaignTokenDecimals = current.campaigns?.token_decimals || TOKEN_DECIMALS;
+  const campaignTokenSymbol = current.campaigns?.token_symbol || 'TOKEN';
+  
+  console.log('[CLAIM] Using token info:', {
+    address: campaignTokenAddress,
+    decimals: campaignTokenDecimals,
+    symbol: campaignTokenSymbol
+  });
+
+  // Validate that the token is still a valid ERC-20
+  const tokenValidation = await db.validateERC20Contract(campaignTokenAddress);
+  if (!tokenValidation.isValid) {
+    console.error('[CLAIM] Token validation failed:', tokenValidation.error);
+    return res.status(400).json({ 
+      error: 'Invalid token contract',
+      details: `The token contract for this campaign is no longer valid: ${tokenValidation.error}`
+    });
   }
   
   if (current.expires_at && new Date(current.expires_at).getTime() <= Date.now()) {
@@ -168,12 +185,18 @@ export default async function handler(req, res) {
   }
 
   const amount = reserved.amount;
-  console.log('[CLAIM] Processing transfer:', { userWallet, amount, TOKEN_DECIMALS });
+  console.log('[CLAIM] Processing transfer:', { userWallet, amount, decimals: campaignTokenDecimals });
+  
+  // Create token contract instance for this specific campaign
+  const campaignToken = new ethers.Contract(campaignTokenAddress, [
+    'function transfer(address,uint256)',
+    'function balanceOf(address) view returns (uint256)'
+  ], wallet);
   
   // Check wallet balance before attempting transfer
   try {
-    const requiredAmount = ethers.parseUnits(amount.toString(), TOKEN_DECIMALS);
-    const walletBalance = await token.balanceOf(wallet.address);
+    const requiredAmount = ethers.parseUnits(amount.toString(), campaignTokenDecimals);
+    const walletBalance = await campaignToken.balanceOf(wallet.address);
     
     console.log('[CLAIM] Balance check:', {
       walletAddress: wallet.address,
@@ -202,7 +225,7 @@ export default async function handler(req, res) {
     }
     
     // Execute blockchain transfer
-    const tx = await token.transfer(userWallet, requiredAmount);
+    const tx = await campaignToken.transfer(userWallet, requiredAmount);
     console.log('[CLAIM] Transfer successful:', tx.hash);
     
     // Try to save to database - if this fails, we still have a successful blockchain transfer
