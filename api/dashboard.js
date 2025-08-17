@@ -216,10 +216,6 @@ export default async function handler(req, res) {
             <div class="form-group" id="maxClaimsGroup" style="display: none;">
               <label for="maxClaimsPerLink">Max Claims per Link <span class="label-help">(How many wallets can claim from ONE link)</span></label>
               <input type="number" id="maxClaimsPerLink" name="maxClaimsPerLink" placeholder="10" min="1">
-              <div class="explanation-box">
-                <strong>Multi-claim explanation:</strong> With multi-claim links, ONE link allows multiple different wallets to claim.<br>
-                Example: 100 total claims + 10 max claims per link = 1 link that 100 different wallets can claim from (each wallet claims once).
-              </div>
             </div>
           </div>
 
@@ -357,11 +353,28 @@ export default async function handler(req, res) {
         if (data.campaigns && data.campaigns.length > 0) {
           grid.innerHTML = data.campaigns.map(campaign => 
             '<div class="campaign-card">' +
-              '<h3>' + campaign.title + '</h3>' +
-              '<p>' + (campaign.description || 'No description') + '</p>' +
-              '<div style="margin: 12px 0;">' +
-                '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase() + '</span>' +
+              '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">' +
+                '<h3 style="margin: 0;">' + campaign.title + '</h3>' +
+                '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase().replace('_', ' ') + '</span>' +
               '</div>' +
+              '<p>' + (campaign.description || 'No description') + '</p>' +
+              
+              (campaign.status === 'pending_funding' ? 
+                '<div class="funding-info" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 16px; margin: 12px 0;">' +
+                  '<h4 style="margin: 0 0 8px; color: var(--orange);">💰 Fund Campaign</h4>' +
+                  '<p style="margin: 0 0 8px; font-size: 13px;">Send <strong>' + campaign.total_budget + ' ' + campaign.token_symbol + '</strong> to:</p>' +
+                  '<div style="font-family: monospace; font-size: 12px; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; word-break: break-all;">' + campaign.deposit_address + '</div>' +
+                  '<button onclick="checkFunding(\'' + campaign.id + '\')" class="btn" style="margin-top: 12px; width: 100%; font-size: 12px;">Check Funding Status</button>' +
+                '</div>' 
+                : '') +
+              
+              (campaign.status === 'active' ? 
+                '<div class="action-buttons" style="margin: 12px 0;">' +
+                  '<button onclick="generateLinks(\'' + campaign.id + '\')" class="btn btn-primary" style="margin-right: 8px; font-size: 12px;">Generate Links</button>' +
+                  '<button onclick="viewStats(\'' + campaign.id + '\')" class="btn" style="font-size: 12px;">View Stats</button>' +
+                '</div>' 
+                : '') +
+              
               '<div style="font-size: 14px; color: var(--muted);">' +
                 '<div>Type: ' + (campaign.claim_type === 'multi' ? 'Multi-claim' : 'Single-use') + '</div>' +
                 '<div>Budget: ' + campaign.total_budget + ' ' + campaign.token_symbol + '</div>' +
@@ -460,6 +473,48 @@ export default async function handler(req, res) {
         closeModal();
       }
     });
+
+    // Campaign action functions
+    window.checkFunding = async function(campaignId) {
+      try {
+        const response = await fetch('/api/campaigns', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            campaignId: campaignId, 
+            action: 'check_funding',
+            walletAddress: currentUser 
+          })
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+          if (result.funded) {
+            showToast(result.message || 'Campaign activated! You can now generate links.', 'success');
+            loadCampaigns(); // Refresh to show new status
+          } else {
+            const errorMsg = result.details || result.error || 'Funding not detected yet. Please send the required tokens first.';
+            showToast(errorMsg, 'error');
+          }
+        } else {
+          const errorMsg = result.details || result.error || 'Failed to check funding';
+          showToast(errorMsg, 'error');
+        }
+      } catch (error) {
+        console.error('Check funding error:', error);
+        showToast('Failed to check funding', 'error');
+      }
+    };
+
+    window.generateLinks = function(campaignId) {
+      // TODO: Implement link generation modal
+      showToast('Link generation coming soon!', 'success');
+    };
+
+    window.viewStats = function(campaignId) {
+      // TODO: Implement stats modal
+      showToast('Stats view coming soon!', 'success');
+    };
 
     // Check wallet availability and connection on page load
     window.addEventListener('load', async () => {

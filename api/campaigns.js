@@ -89,14 +89,33 @@ async function createCampaign(req, res) {
 }
 
 async function updateCampaign(req, res) {
-  const { campaignId, status, ...updateData } = req.body;
+  const { campaignId, action, walletAddress, status, ...updateData } = req.body;
   
   if (!campaignId) {
     return res.status(400).json({ error: 'Campaign ID required' });
   }
 
-  const campaign = await db.updateCampaign(campaignId, updateData);
-  return res.status(200).json({ campaign });
+  try {
+    // Handle special actions
+    if (action === 'check_funding') {
+      if (!walletAddress) {
+        return res.status(400).json({ error: 'Wallet address required for funding check' });
+      }
+
+      const result = await db.checkCampaignFunding(campaignId, walletAddress);
+      return res.status(200).json(result);
+    }
+
+    // Regular update
+    const campaign = await db.updateCampaign(campaignId, updateData);
+    return res.status(200).json({ campaign });
+  } catch (error) {
+    console.error('Error updating campaign:', error);
+    return res.status(500).json({ 
+      error: 'Failed to update campaign',
+      details: error.message 
+    });
+  }
 }
 
 async function deleteCampaign(req, res) {
