@@ -4,15 +4,19 @@ export default async function handler(req, res) {
   const { id } = req.query || {};
   if (!id) return res.status(400).send('Missing id');
 
-  // Get claim data from database
-  const claimData = await db.get(id);
+  // Get claim data with campaign info from database
+  const claimData = await db.getClaimWithCampaignInfo(id);
   if (!claimData) {
     return res.status(404).send(getErrorPage('Link Not Found', '🔍 This claim link does not exist or may have been removed.', 'The link you\'re trying to access is invalid or may have been deleted.'));
   }
 
+  // Extract token info from campaign
+  const tokenSymbol = claimData.campaigns?.token_symbol || 'TOKEN';
+  const tokenAddress = claimData.campaigns?.token_address;
+  const campaignTitle = claimData.campaigns?.title || 'Token Airdrop';
+
   // Check if expired
   if (claimData.expires_at && new Date(claimData.expires_at).getTime() <= Date.now()) {
-    const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
     const expiredDate = new Date(claimData.expires_at).toLocaleString();
     return res.status(400).send(getErrorPage('Link Expired', `⏰ This ${claimData.amount} $${tokenSymbol} claim link has expired.`, `This link expired on ${expiredDate}. Please contact the distributor for a new link.`));
   }
@@ -21,22 +25,17 @@ export default async function handler(req, res) {
   if (claimData.is_multi_claim) {
     // For multi-claim links, check if max claims reached
     if (claimData.current_claims >= claimData.max_claims) {
-      const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
       return res.status(400).send(getMultiClaimCompletePage(claimData.amount, tokenSymbol, claimData.max_claims, claimData.current_claims));
     }
   } else {
     // Check if single-use claim is already claimed
     if (claimData.claimed) {
-      const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
       const claimedDate = claimData.claimed_at ? new Date(claimData.claimed_at).toLocaleString() : 'Unknown date';
       const txHash = claimData.tx_hash;
       return res.status(400).send(getAlreadyClaimedPage(claimData.amount, tokenSymbol, claimedDate, txHash));
     }
   }
 
-  // Get token info from environment
-  const tokenAddress = process.env.TOKEN_ADDRESS || '0x...';
-  const tokenSymbol = tokenAddress === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
   const amount = claimData.amount;
   const expiryDate = claimData.expires_at ? new Date(claimData.expires_at).toLocaleString() : 'No expiration';
   
@@ -52,7 +51,7 @@ export default async function handler(req, res) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Claim your $${tokenSymbol}</title>
+  <title>Claim ${tokenSymbol} - ${campaignTitle}</title>
   <style>
     :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --green:#22c55e; }
     * { box-sizing: border-box; }
@@ -83,7 +82,8 @@ export default async function handler(req, res) {
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="logo"></div>
       <div>
-        <h1>Claim your $${tokenSymbol}</h1>
+        <h1>Claim $${tokenSymbol}</h1>
+        <p style="margin: 8px 0 16px; color: var(--muted); font-size: 14px;">${campaignTitle}</p>
         <div style="font-size:12px;color:#9fb0c7">${isMultiClaim ? `Multi-claim link • ${remainingClaims}/${maxClaims} claims remaining` : 'One-time link'} • Secure backend transfer</div>
       </div>
     </div>
