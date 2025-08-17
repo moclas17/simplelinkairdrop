@@ -47,10 +47,17 @@ export default async function handler(req, res) {
   try {
     if (userWalletInput.endsWith('.eth')) {
       console.log('[CLAIM] Resolving ENS name:', userWalletInput);
-      userWallet = await provider.resolveName(userWalletInput);
+      
+      // Use Ethereum mainnet provider specifically for ENS resolution
+      const ensProvider = new ethers.JsonRpcProvider('https://rpc.ankr.com/eth');
+      
+      userWallet = await ensProvider.resolveName(userWalletInput);
       if (!userWallet) {
         console.log('[CLAIM] ENS name not found:', userWalletInput);
-        return res.status(400).json({ error: 'ENS name not found or invalid' });
+        return res.status(400).json({ 
+          error: 'ENS name not found', 
+          details: `The ENS name "${userWalletInput}" could not be resolved. Please check if it exists or use a wallet address instead.`
+        });
       }
       console.log('[CLAIM] ENS resolved:', userWalletInput, '→', userWallet);
     } else if (ethers.isAddress(userWalletInput)) {
@@ -62,7 +69,10 @@ export default async function handler(req, res) {
     }
   } catch (ensError) {
     console.error('[CLAIM] ENS resolution failed:', ensError);
-    return res.status(400).json({ error: 'Failed to resolve ENS name' });
+    return res.status(400).json({ 
+      error: 'Failed to resolve ENS name', 
+      details: `ENS resolution error: ${ensError.message}. Try using a wallet address instead.`
+    });
   }
 
   // Check if this is a multi-claim or single-claim link
