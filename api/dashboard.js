@@ -31,8 +31,8 @@ export default async function handler(req, res) {
     .btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
     
     /* Wallet section */
-    .wallet-section { text-align: center; padding: 60px 20px; }
-    .wallet-btn { font-size: 18px; padding: 16px 32px; min-width: 200px; }
+    .wallet-section { text-align: center; padding: 60px 20px; position: relative; z-index: 1000; }
+    .wallet-btn { font-size: 18px; padding: 16px 32px; min-width: 200px; position: relative; z-index: 1001; }
     .metamask-icon { width: 24px; height: 24px; margin-right: 8px; }
     
     /* User info */
@@ -103,7 +103,7 @@ export default async function handler(req, res) {
     .budget-symbol { font-size: 18px; color: var(--acc); margin-left: 8px; }
     
     /* Modal */
-    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+    .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 999; backdrop-filter: blur(4px); }
     .modal-content { 
       background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); 
       border: 1px solid rgba(255,255,255,0.1); 
@@ -295,6 +295,8 @@ export default async function handler(req, res) {
     function showWalletSection() {
       document.getElementById('walletSection').classList.remove('hidden');
       document.getElementById('dashboardSection').classList.add('hidden');
+      // Close any open modals when showing wallet section
+      closeModal();
     }
 
     function showDashboard() {
@@ -305,6 +307,11 @@ export default async function handler(req, res) {
 
     // Campaign management
     function openCreateCampaignModal() {
+      // Only allow opening modal if user is connected
+      if (!currentUser) {
+        showToast('Please connect your wallet first', 'error');
+        return;
+      }
       document.getElementById('createCampaignModal').classList.remove('hidden');
     }
 
