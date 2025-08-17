@@ -154,6 +154,11 @@ export default async function handler(req, res) {
         if (!res.ok) throw new Error(data?.error || 'Transfer failed');
         show('Success! TX: ' + (data.txHash || 'pending'), 'success');
         btn.textContent = 'Already claimed';
+        
+        // For multi-claim links, reload page after 2 seconds to show updated counter
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } catch (err) {
         console.error(err);
         show(err.message || 'Error', 'error');
