@@ -102,5 +102,5 @@ Thumbs.db
 *.backup
 *.bak
 
-# Development server
-server.js
+# Development server (uncomment if you want to exclude)
+# server.js

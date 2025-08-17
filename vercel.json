@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/claim/(.*)",
+      "destination": "/api/claim-view?id=$1"
+    }
+  ],
+  "functions": {
+    "api/generate.js": {
+      "maxDuration": 30
+    },
+    "api/claim.js": {
+      "maxDuration": 30
+    }
+  }
+}
