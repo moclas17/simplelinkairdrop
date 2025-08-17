@@ -179,15 +179,19 @@ export default async function handler(req, res) {
           // Handle special case for already claimed with transaction details
           if (data && data.error === 'Wallet already claimed from this link' && data.details) {
             const details = data.details;
-            show('Already claimed! Amount: ' + details.amount + ' tokens. TX: ' + details.txHash, 'error');
+            
+            // Create a nice message with clickable link
+            const message = 'Already claimed! Amount: ' + details.amount + ' tokens on ' + details.claimedAt + '. TX: ' + details.txHash;
+            show(message, 'error');
             btn.textContent = 'Already claimed';
             
-            // Show link to explorer
-            setTimeout(function() {
-              if (confirm('This wallet already claimed ' + details.amount + ' tokens on ' + details.claimedAt + '. View transaction on explorer?')) {
-                window.open(details.explorerUrl, '_blank');
-              }
-            }, 2000);
+            // Add clickable link below the form
+            const linkDiv = document.createElement('div');
+            linkDiv.style.cssText = 'margin-top: 16px; padding: 12px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; text-align: center;';
+            linkDiv.innerHTML = '<a href="' + details.explorerUrl + '" target="_blank" style="color: var(--green); text-decoration: none; font-weight: 600;">🔍 View transaction on explorer</a>';
+            
+            // Insert after the form
+            document.getElementById('claimForm').parentNode.insertBefore(linkDiv, document.getElementById('claimForm').nextSibling);
             return;
           }
           throw new Error((data && data.error) || 'Transfer failed');
