@@ -181,7 +181,7 @@ export default async function handler(req, res) {
   <!-- Create Campaign Modal -->
     <div id="createCampaignModal" class="modal hidden">
       <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <span class="close-btn" id="closeModalBtn">&times;</span>
         <h2>🎯 Create New Campaign</h2>
         <form id="campaignForm">
           <div class="form-group">
@@ -308,9 +308,14 @@ export default async function handler(req, res) {
       
       // Ensure modal is closed when showing dashboard
       const modal = document.getElementById('createCampaignModal');
+      console.log('Modal state check - hidden class present:', modal?.classList.contains('hidden'));
+      console.log('Modal display style:', modal?.style.display);
+      
       if (modal && !modal.classList.contains('hidden')) {
-        console.log('Closing modal that was open...');
+        console.log('FORCING modal to close - it was open when showing dashboard');
         modal.classList.add('hidden');
+      } else {
+        console.log('Modal is already hidden, that is correct');
       }
     }
 
@@ -327,6 +332,7 @@ export default async function handler(req, res) {
     }
 
     function closeModal() {
+      console.log('closeModal called');
       document.getElementById('createCampaignModal').classList.add('hidden');
     }
 
@@ -534,6 +540,11 @@ export default async function handler(req, res) {
       const createBtn = document.getElementById('createCampaignBtn');
       if (createBtn) {
         createBtn.addEventListener('click', openCreateCampaignModal);
+      }
+      
+      const closeBtn = document.getElementById('closeModalBtn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
       }
       
       // Form event listeners
