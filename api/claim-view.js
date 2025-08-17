@@ -17,12 +17,21 @@ export default async function handler(req, res) {
     return res.status(400).send(getErrorPage('Link Expired', `⏰ This ${claimData.amount} $${tokenSymbol} claim link has expired.`, `This link expired on ${expiredDate}. Please contact the distributor for a new link.`));
   }
 
-  // Check if already claimed
-  if (claimData.claimed) {
-    const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
-    const claimedDate = claimData.claimed_at ? new Date(claimData.claimed_at).toLocaleString() : 'Unknown date';
-    const txHash = claimData.tx_hash;
-    return res.status(400).send(getAlreadyClaimedPage(claimData.amount, tokenSymbol, claimedDate, txHash));
+  // Handle multi-claim vs single-claim display logic
+  if (claimData.is_multi_claim) {
+    // For multi-claim links, check if max claims reached
+    if (claimData.current_claims >= claimData.max_claims) {
+      const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
+      return res.status(400).send(getMultiClaimCompletePage(claimData.amount, tokenSymbol, claimData.max_claims, claimData.current_claims));
+    }
+  } else {
+    // Check if single-use claim is already claimed
+    if (claimData.claimed) {
+      const tokenSymbol = process.env.TOKEN_ADDRESS === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
+      const claimedDate = claimData.claimed_at ? new Date(claimData.claimed_at).toLocaleString() : 'Unknown date';
+      const txHash = claimData.tx_hash;
+      return res.status(400).send(getAlreadyClaimedPage(claimData.amount, tokenSymbol, claimedDate, txHash));
+    }
   }
 
   // Get token info from environment
@@ -30,6 +39,12 @@ export default async function handler(req, res) {
   const tokenSymbol = tokenAddress === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
   const amount = claimData.amount;
   const expiryDate = claimData.expires_at ? new Date(claimData.expires_at).toLocaleString() : 'No expiration';
+  
+  // Multi-claim specific data
+  const isMultiClaim = claimData.is_multi_claim;
+  const maxClaims = claimData.max_claims || 1;
+  const currentClaims = claimData.current_claims || 0;
+  const remainingClaims = maxClaims - currentClaims;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(200).send(`<!doctype html>
@@ -69,7 +84,7 @@ export default async function handler(req, res) {
       <div class="logo"></div>
       <div>
         <h1>Claim your $${tokenSymbol}</h1>
-        <div style="font-size:12px;color:#9fb0c7">One-time link • Secure backend transfer</div>
+        <div style="font-size:12px;color:#9fb0c7">${isMultiClaim ? `Multi-claim link • ${remainingClaims}/${maxClaims} claims remaining` : 'One-time link'} • Secure backend transfer</div>
       </div>
     </div>
 
@@ -78,16 +93,27 @@ export default async function handler(req, res) {
       <p><strong>Amount:</strong> <span class="amount">${amount} $${tokenSymbol}</span></p>
       <p><strong>Token:</strong> <span class="token-address">${tokenAddress}</span></p>
       <p><strong>Expires:</strong> ${expiryDate}</p>
+      ${isMultiClaim ? `
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <p><strong>Claim Type:</strong> Multi-use link</p>
+        <p><strong>Remaining Claims:</strong> ${remainingClaims} of ${maxClaims}</p>
+        <div style="background: rgba(125,211,252,0.1); border-radius: 8px; padding: 8px; margin-top: 8px;">
+          <div style="width: 100%; background: rgba(0,0,0,0.2); border-radius: 4px; height: 6px;">
+            <div style="width: ${(currentClaims/maxClaims)*100}%; background: var(--acc); border-radius: 4px; height: 100%; transition: width 0.3s ease;"></div>
+          </div>
+          <div style="font-size: 12px; color: var(--muted); margin-top: 4px; text-align: center;">${currentClaims}/${maxClaims} claimed (${Math.round((currentClaims/maxClaims)*100)}%)</div>
+        </div>
+      </div>` : ''}
     </div>
 
-    <p style="margin-top:16px">Enter the wallet address where you want to receive your tokens. This link can be used only once.</p>
+    <p style="margin-top:16px">Enter the wallet address where you want to receive your tokens. ${isMultiClaim ? `Each wallet can claim only once from this multi-use link (${remainingClaims} claims remaining).` : 'This link can be used only once.'}</p>
 
     <form id="claimForm">
       <label for="wallet">Recipient wallet (0x…)</label>
       <input id="wallet" name="wallet" placeholder="0xabc..." required pattern="^0x[a-fA-F0-9]{40}$" />
       <input type="hidden" id="linkId" name="linkId" />
-      <button class="btn" id="submitBtn" type="submit">Claim ${amount} $${tokenSymbol}</button>
-      <div class="hint">We will submit a transfer from the distributor wallet once you confirm.</div>
+      <button class="btn" id="submitBtn" type="submit">Claim ${amount} $${tokenSymbol} ${isMultiClaim ? `(${remainingClaims} left)` : ''}</button>
+      <div class="hint">We will submit a transfer from the distributor wallet once you confirm. ${isMultiClaim ? 'Each wallet can only claim once.' : ''}</div>
     </form>
 
     <div id="toast" class="toast">Processing…</div>
@@ -167,6 +193,48 @@ function getErrorPage(title, message, description) {
       <p style="font-size: 18px; margin-bottom: 12px; color: var(--text);">${message}</p>
       <p style="margin: 0; font-size: 14px;">${description}</p>
     </div>
+    <a href="/" class="back-btn">← Back to Home</a>
+  </div>
+</body>
+</html>`;
+}
+
+function getMultiClaimCompletePage(amount, tokenSymbol, maxClaims, currentClaims) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>All Claims Used - $${tokenSymbol} Multi-Claim</title>
+  <style>
+    :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --orange:#f59e0b; --green:#22c55e; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial; background: radial-gradient(1000px 600px at 10% -10%, #1a2440, transparent), var(--bg); color: var(--text); min-height:100vh; display:grid; place-items:center; padding:24px; }
+    .card { width:100%; max-width:520px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(8px); text-align:center; }
+    h1 { margin:0 0 16px; font-size: clamp(22px, 3.5vw, 28px); letter-spacing: 0.3px; color: var(--orange); }
+    p { margin:0 0 18px; color: var(--muted); line-height: 1.6; }
+    .complete-box { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; padding: 20px; margin: 20px 0; }
+    .amount { font-size: 20px; font-weight: 700; color: var(--green); margin: 8px 0; }
+    .logo { width:40px; height:40px; border-radius:12px; background: radial-gradient(circle at 30% 30%, #f59e0b, #d97706 45%, #b45309 65%, #92400e); box-shadow: 0 0 32px #f59e0b55; margin: 0 auto 16px; }
+    .stats { font-size: 14px; margin: 12px 0; }
+    .progress-bar { width: 100%; background: rgba(0,0,0,0.2); border-radius: 4px; height: 8px; margin: 12px 0; }
+    .progress-fill { width: 100%; background: var(--green); border-radius: 4px; height: 100%; }
+    .back-btn { display: inline-block; padding: 12px 24px; background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; color: var(--acc); text-decoration: none; margin-top: 20px; transition: all 0.2s; }
+    .back-btn:hover { background: rgba(125,211,252,0.2); transform: translateY(-1px); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"></div>
+    <h1>🚫 All Claims Used</h1>
+    <div class="complete-box">
+      <p style="font-size: 18px; margin-bottom: 8px; color: var(--text);">📦 This multi-claim link has reached its limit!</p>
+      <div class="amount">${amount} $${tokenSymbol} per claim</div>
+      <div class="progress-bar"><div class="progress-fill"></div></div>
+      <div class="stats"><strong>Claims completed:</strong> ${currentClaims}/${maxClaims} (100%)</div>
+      <div class="stats"><strong>Total distributed:</strong> ${amount * maxClaims} $${tokenSymbol}</div>
+    </div>
+    <p style="color: var(--muted); font-size: 14px;">All available claims from this multi-use link have been successfully processed. Each wallet could claim only once.</p>
     <a href="/" class="back-btn">← Back to Home</a>
   </div>
 </body>

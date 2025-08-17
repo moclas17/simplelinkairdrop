@@ -44,14 +44,14 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid wallet address' });
   }
 
-  // Optional: check expiry before reserving
+  // Check if this is a multi-claim or single-claim link
   console.log('[CLAIM] Checking link validity for:', linkId);
   const current = await db.get(linkId);
   console.log('[CLAIM] Current link data:', current);
   
-  if (!current || current.claimed) {
-    console.log('[CLAIM] Link invalid or already claimed');
-    return res.status(400).json({ error: 'Invalid or already claimed' });
+  if (!current) {
+    console.log('[CLAIM] Link not found');
+    return res.status(400).json({ error: 'Invalid link' });
   }
   
   if (current.expires_at && new Date(current.expires_at).getTime() <= Date.now()) {
@@ -59,14 +59,41 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Link expired' });
   }
 
-  // Reserve this claim atomically
-  console.log('[CLAIM] Attempting to reserve link:', linkId);
-  const reserved = await db.reserve(linkId);
+  let reserved;
+  
+  if (current.is_multi_claim) {
+    console.log('[CLAIM] Processing multi-claim link');
+    
+    // Check if wallet already claimed from this multi-claim link
+    const alreadyClaimed = await db.checkWalletAlreadyClaimed(linkId, userWallet);
+    if (alreadyClaimed) {
+      console.log('[CLAIM] Wallet already claimed from this multi-claim link');
+      return res.status(400).json({ error: 'Wallet already claimed from this link' });
+    }
+    
+    // Check if multi-claim still has slots available
+    if (current.current_claims >= current.max_claims) {
+      console.log('[CLAIM] Multi-claim limit reached');
+      return res.status(400).json({ error: 'All claims have been used' });
+    }
+    
+    reserved = await db.reserveMultiClaim(linkId, userWallet);
+  } else {
+    console.log('[CLAIM] Processing single-use claim link');
+    
+    if (current.claimed) {
+      console.log('[CLAIM] Single-use link already claimed');
+      return res.status(400).json({ error: 'Invalid or already claimed' });
+    }
+    
+    reserved = await db.reserve(linkId);
+  }
+  
   console.log('[CLAIM] Reserved result:', reserved);
   
   if (!reserved) {
     console.log('[CLAIM] Failed to reserve link');
-    return res.status(400).json({ error: 'Invalid or already claimed' });
+    return res.status(400).json({ error: 'Failed to reserve claim' });
   }
 
   const amount = reserved.amount;
@@ -75,16 +102,27 @@ export default async function handler(req, res) {
   try {
     const tx = await token.transfer(userWallet, ethers.parseUnits(amount.toString(), TOKEN_DECIMALS));
     console.log('[CLAIM] Transfer successful:', tx.hash);
-    await db.markClaimed(linkId, tx.hash);
+    
+    if (current.is_multi_claim) {
+      await db.markMultiClaimed(linkId, userWallet, tx.hash, amount);
+    } else {
+      await db.markClaimed(linkId, tx.hash);
+    }
+    
     return res.status(200).json({ success: true, txHash: tx.hash });
   } catch (e) {
     console.error('[CLAIM] Transfer failed:', e);
-    try { 
-      await db.rollback(linkId); 
-      console.log('[CLAIM] Rollback successful');
-    } catch (rollbackError) {
-      console.error('[CLAIM] Rollback failed:', rollbackError);
+    
+    // Only rollback for single-use claims (multi-claims don't use processing status)
+    if (!current.is_multi_claim) {
+      try { 
+        await db.rollback(linkId); 
+        console.log('[CLAIM] Rollback successful');
+      } catch (rollbackError) {
+        console.error('[CLAIM] Rollback failed:', rollbackError);
+      }
     }
+    
     return res.status(500).json({ error: 'Transfer failed', details: e.message });
   }
 }
