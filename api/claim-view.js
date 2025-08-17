@@ -1,6 +1,30 @@
+import db from '../lib/db.js';
+
 export default async function handler(req, res) {
   const { id } = req.query || {};
   if (!id) return res.status(400).send('Missing id');
+
+  // Get claim data from database
+  const claimData = await db.get(id);
+  if (!claimData) {
+    return res.status(404).send('Claim link not found');
+  }
+
+  // Check if expired
+  if (claimData.expires_at && new Date(claimData.expires_at).getTime() <= Date.now()) {
+    return res.status(400).send('Claim link has expired');
+  }
+
+  // Check if already claimed
+  if (claimData.claimed) {
+    return res.status(400).send('This link has already been claimed');
+  }
+
+  // Get token info from environment
+  const tokenAddress = process.env.TOKEN_ADDRESS || '0x...';
+  const tokenSymbol = tokenAddress === '0x029263aa1be88127f1794780d9eef453221c2f30' ? 'PULPA' : 'TOKEN';
+  const amount = claimData.amount;
+  const expiryDate = claimData.expires_at ? new Date(claimData.expires_at).toLocaleString() : 'No expiration';
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   return res.status(200).send(`<!doctype html>
@@ -8,9 +32,9 @@ export default async function handler(req, res) {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Claim your $Pulpa</title>
+  <title>Claim your $${tokenSymbol}</title>
   <style>
-    :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; }
+    :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --green:#22c55e; }
     * { box-sizing: border-box; }
     body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial; background: radial-gradient(1000px 600px at 10% -10%, #1a2440, transparent), var(--bg); color: var(--text); min-height:100vh; display:grid; place-items:center; padding:24px; }
     .card { width:100%; max-width:520px; background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.08); border-radius:24px; padding:28px; box-shadow: 0 10px 30px rgba(0,0,0,0.35); backdrop-filter: blur(8px); }
@@ -27,6 +51,11 @@ export default async function handler(req, res) {
     .success { color:#b5f3c1; border-color: rgba(34,197,94,0.35); background: #062313; }
     .error { color:#ffb3b3; border-color: rgba(239,68,68,0.35); background: #290d0d; }
     .logo { width:28px; height:28px; border-radius:8px; background: radial-gradient(circle at 30% 30%, #7dd3fc, #38bdf8 45%, #0ea5e9 65%, #0369a1); box-shadow: 0 0 32px #0ea5e955; }
+    .info-box { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; padding: 16px; margin: 16px 0; }
+    .info-box h3 { margin: 0 0 8px; color: var(--green); font-size: 16px; }
+    .info-box p { margin: 4px 0; font-size: 14px; }
+    .amount { font-size: 24px; font-weight: 700; color: var(--green); }
+    .token-address { font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -34,9 +63,16 @@ export default async function handler(req, res) {
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="logo"></div>
       <div>
-        <h1>Claim your $Pulpa</h1>
+        <h1>Claim your $${tokenSymbol}</h1>
         <div style="font-size:12px;color:#9fb0c7">One-time link • Secure backend transfer</div>
       </div>
+    </div>
+
+    <div class="info-box">
+      <h3>🎁 Token Claim Details</h3>
+      <p><strong>Amount:</strong> <span class="amount">${amount} $${tokenSymbol}</span></p>
+      <p><strong>Token:</strong> <span class="token-address">${tokenAddress}</span></p>
+      <p><strong>Expires:</strong> ${expiryDate}</p>
     </div>
 
     <p style="margin-top:16px">Enter the wallet address where you want to receive your tokens. This link can be used only once.</p>
@@ -45,7 +81,7 @@ export default async function handler(req, res) {
       <label for="wallet">Recipient wallet (0x…)</label>
       <input id="wallet" name="wallet" placeholder="0xabc..." required pattern="^0x[a-fA-F0-9]{40}$" />
       <input type="hidden" id="linkId" name="linkId" />
-      <button class="btn" id="submitBtn" type="submit">Claim tokens</button>
+      <button class="btn" id="submitBtn" type="submit">Claim ${amount} $${tokenSymbol}</button>
       <div class="hint">We will submit a transfer from the distributor wallet once you confirm.</div>
     </form>
 
