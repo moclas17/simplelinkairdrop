@@ -363,7 +363,6 @@ export default async function handler(req, res) {
                 '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase().replace('_', ' ') + '</span>' +
               '</div>' +
               '<p>' + (campaign.description || 'No description') + '</p>' +
-              
               (campaign.status === 'pending_funding' ? 
                 '<div class="funding-info" style="background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 16px; margin: 12px 0;">' +
                   '<h4 style="margin: 0 0 8px; color: var(--orange);">💰 Fund Campaign</h4>' +
