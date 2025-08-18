@@ -242,10 +242,15 @@ export default async function handler(req, res) {
     };
     
     function getNetworkInfo(chainId) {
+      console.log('getNetworkInfo called with:', chainId, typeof chainId);
       const numericChainId = typeof chainId === 'string' 
         ? parseInt(chainId, chainId.startsWith('0x') ? 16 : 10)
         : chainId;
-      return SUPPORTED_NETWORKS[numericChainId] || null;
+      console.log('Converted to numeric:', numericChainId);
+      console.log('Available networks:', Object.keys(SUPPORTED_NETWORKS));
+      const result = SUPPORTED_NETWORKS[numericChainId] || null;
+      console.log('Network lookup result:', result);
+      return result;
     }
     
     async function detectNetwork() {
@@ -258,7 +263,9 @@ export default async function handler(req, res) {
           }
           
           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          console.log('Detected chainId:', chainId, typeof chainId);
           const networkInfo = getNetworkInfo(chainId);
+          console.log('Network info for chainId', chainId, ':', networkInfo);
           currentNetwork = networkInfo;
           updateNetworkDisplay();
           return networkInfo;
