@@ -12,7 +12,6 @@ export default async function handler(req, res) {
 
   // Extract token info from campaign
   const tokenSymbol = claimData.campaigns?.token_symbol || 'TOKEN';
-  const tokenAddress = claimData.campaigns?.token_address;
   const campaignTitle = claimData.campaigns?.title || 'Token Airdrop';
   const chainId = claimData.campaigns?.chain_id;
 
@@ -63,7 +62,7 @@ export default async function handler(req, res) {
     label { display:block; font-size:14px; color:#a9b5cc; margin:16px 0 8px; }
     input { width:100%; padding:14px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background:#0f1729; color:var(--text); outline:none; font-size:16px; }
     input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px rgba(125,211,252,0.15); }
-    .btn { width:100%; display:inline-flex; align-items:center; justify-content:center; gap:10px; padding:14px 16px; border-radius:14px; border:1px solid rgba(255,255,255,0.12); background: linear-gradient(180deg, #1e293b, #0f172a); color:white; font-weight:600; cursor:pointer; margin-top:18px; transition: transform .04s ease; }
+    .btn { width:100%; display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:16px 20px; border-radius:14px; border:1px solid rgba(125,211,252,0.3); background: linear-gradient(180deg, #0ea5e9, #0369a1); color:white; font-weight:600; cursor:pointer; margin-top:20px; transition: all .15s ease; font-size: 16px; }
     .btn:hover { transform: translateY(-1px); }
     .btn:disabled { opacity:.6; cursor:not-allowed; }
     .hint { font-size:12px; color:#9fb0c7; margin-top:8px; }
@@ -71,9 +70,7 @@ export default async function handler(req, res) {
     .success { color:#b5f3c1; border-color: rgba(34,197,94,0.35); background: #062313; }
     .error { color:#ffb3b3; border-color: rgba(239,68,68,0.35); background: #290d0d; }
     .logo { width:28px; height:28px; border-radius:8px; background: radial-gradient(circle at 30% 30%, #7dd3fc, #38bdf8 45%, #0ea5e9 65%, #0369a1); box-shadow: 0 0 32px #0ea5e955; }
-    .info-box { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 12px; padding: 16px; margin: 16px 0; }
-    .info-box h3 { margin: 0 0 8px; color: var(--green); font-size: 16px; }
-    .info-box p { margin: 4px 0; font-size: 14px; }
+    .progress-box { background: rgba(125,211,252,0.08); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin: 16px 0; }
     .amount { font-size: 24px; font-weight: 700; color: var(--green); }
     .token-address { font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; word-break: break-all; }
     .network-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; margin-left: 8px; }
@@ -82,45 +79,50 @@ export default async function handler(req, res) {
 </head>
 <body>
   <div class="card">
-    <div style="display:flex;align-items:center;gap:12px;">
+    <!-- Header with logo and title -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
       <div class="logo"></div>
-      <div>
-        <div style="display: flex; align-items: center; margin-bottom: 8px;">
-          <h1 style="margin: 0;">Claim $${tokenSymbol}</h1>
+      <div style="flex: 1;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+          <h1 style="margin: 0; font-size: 24px;">Claim ${amount} $${tokenSymbol}</h1>
           <span id="networkBadge" class="network-badge" style="display: none;"></span>
         </div>
-        <p style="margin: 0 0 16px; color: var(--muted); font-size: 14px;">${campaignTitle}</p>
-        <div style="font-size:12px;color:#9fb0c7">${isMultiClaim ? `Multi-claim link • ${remainingClaims}/${maxClaims} claims remaining` : 'One-time link'} • Secure backend transfer</div>
+        <p style="margin: 0; color: var(--muted); font-size: 14px;">${campaignTitle}</p>
       </div>
     </div>
 
-    <div class="info-box">
-      <h3>🎁 Token Claim Details</h3>
-      <p><strong>Amount:</strong> <span class="amount">${amount} $${tokenSymbol}</span></p>
-      <p><strong>Token:</strong> <span class="token-address">${tokenAddress}</span></p>
-      <p><strong>Expires:</strong> ${expiryDate}</p>
-      ${isMultiClaim ? `
-      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
-        <p><strong>Claim Type:</strong> Multi-use link</p>
-        <p><strong>Remaining Claims:</strong> ${remainingClaims} of ${maxClaims}</p>
-        <div style="background: rgba(125,211,252,0.1); border-radius: 8px; padding: 8px; margin-top: 8px;">
-          <div style="width: 100%; background: rgba(0,0,0,0.2); border-radius: 4px; height: 6px;">
-            <div style="width: ${(currentClaims/maxClaims)*100}%; background: var(--acc); border-radius: 4px; height: 100%; transition: width 0.3s ease;"></div>
-          </div>
-          <div style="font-size: 12px; color: var(--muted); margin-top: 4px; text-align: center;">${currentClaims}/${maxClaims} claimed (${Math.round((currentClaims/maxClaims)*100)}%)</div>
-        </div>
-      </div>` : ''}
-    </div>
+    <!-- Progress indicator for multi-claim -->
+    ${isMultiClaim ? `
+    <div style="background: rgba(125,211,252,0.08); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 14px; font-weight: 500;">Multi-use Link</span>
+        <span style="font-size: 12px; color: var(--muted);">${remainingClaims} of ${maxClaims} remaining</span>
+      </div>
+      <div style="width: 100%; background: rgba(0,0,0,0.2); border-radius: 4px; height: 6px;">
+        <div style="width: ${(currentClaims/maxClaims)*100}%; background: var(--acc); border-radius: 4px; height: 100%; transition: width 0.3s ease;"></div>
+      </div>
+    </div>` : ''}
 
-    <p style="margin-top:16px">Enter the wallet address or ENS name where you want to receive your tokens. ${isMultiClaim ? `Each wallet can claim only once from this multi-use link (${remainingClaims} claims remaining).` : 'This link can be used only once.'}</p>
-
+    <!-- Claim form -->
     <form id="claimForm">
-      <label for="wallet">Recipient wallet (0x… or ENS)</label>
+      <label for="wallet">Enter your wallet address or ENS name</label>
       <input id="wallet" name="wallet" placeholder="0xabc... or vitalik.eth" required />
       <input type="hidden" id="linkId" name="linkId" />
-      <button class="btn" id="submitBtn" type="submit">Claim ${amount} $${tokenSymbol} ${isMultiClaim ? `(${remainingClaims} left)` : ''}</button>
-      <div class="hint">We will submit a transfer from the distributor wallet once you confirm. ${isMultiClaim ? 'Each wallet can only claim once.' : ''}</div>
+      <button class="btn" id="submitBtn" type="submit">
+        🎁 Claim ${amount} $${tokenSymbol}
+      </button>
     </form>
+
+    <!-- Footer info -->
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
+      <div style="font-size: 12px; color: var(--muted); line-height: 1.5;">
+        ${isMultiClaim ? 
+          `🔄 Multi-use link • Each wallet can claim once<br>` : 
+          `🔒 Single-use link • Can only be claimed once<br>`}
+        ⏰ Expires: ${expiryDate}<br>
+        🛡️ Secure backend transfer
+      </div>
+    </div>
 
     <div id="toast" class="toast">Processing…</div>
   </div>
