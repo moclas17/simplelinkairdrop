@@ -251,6 +251,12 @@ export default async function handler(req, res) {
     async function detectNetwork() {
       if (typeof window.ethereum !== 'undefined') {
         try {
+          // Check if request method is available
+          if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
+            console.warn('Wallet does not support eth_chainId request');
+            return null;
+          }
+          
           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
           const networkInfo = getNetworkInfo(chainId);
           currentNetwork = networkInfo;
@@ -258,6 +264,7 @@ export default async function handler(req, res) {
           return networkInfo;
         } catch (error) {
           console.error('Error detecting network:', error);
+          // Don't show error to user for network detection, just log it
           return null;
         }
       }
@@ -284,26 +291,52 @@ export default async function handler(req, res) {
       console.log('connectWallet function called');
       try {
         if (typeof window.ethereum !== 'undefined') {
-          console.log('MetaMask detected, requesting accounts...');
+          console.log('Web3 wallet detected, requesting accounts...');
+          
+          // Check if ethereum object has the request method
+          if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
+            throw new Error('Wallet does not support the standard request method');
+          }
+          
           const accounts = await window.ethereum.request({ 
             method: 'eth_requestAccounts' 
           });
           
           console.log('Accounts received:', accounts);
-          if (accounts.length > 0) {
+          if (accounts && accounts.length > 0) {
             currentUser = accounts[0];
             console.log('Current user set to:', currentUser);
-            await detectNetwork();
+            
+            // Detect network after successful connection
+            try {
+              await detectNetwork();
+            } catch (networkError) {
+              console.warn('Network detection failed, but connection succeeded:', networkError);
+            }
+            
             showDashboard();
             loadCampaigns();
+          } else {
+            throw new Error('No accounts returned from wallet');
           }
         } else {
-          console.log('MetaMask not detected');
+          console.log('No Web3 wallet detected');
           showToast('Please install MetaMask or another Web3 wallet', 'error');
         }
       } catch (error) {
         console.error('Wallet connection failed:', error);
-        showToast('Wallet connection failed: ' + error.message, 'error');
+        
+        // Handle specific error cases
+        if (error.code === 4001) {
+          showToast('Connection request was rejected', 'error');
+        } else if (error.code === -32002) {
+          showToast('Connection request is already pending. Please check your wallet.', 'error');
+        } else if (error.message && (error.message.includes('addListener') || error.message.includes('addEventListener'))) {
+          console.error('Event listener compatibility issue:', error.message);
+          showToast('Wallet compatibility issue detected. Please try refreshing the page or using a different browser.', 'error');
+        } else {
+          showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
+        }
       }
     };
 
@@ -796,10 +829,60 @@ export default async function handler(req, res) {
       
       // Set up network change listener
       if (typeof window.ethereum !== 'undefined') {
-        window.ethereum.on('chainChanged', async (chainId) => {
-          console.log('Network changed to:', chainId);
-          await detectNetwork();
-        });
+        try {
+          // Try modern approach first (EIP-1193)
+          if (window.ethereum.on && typeof window.ethereum.on === 'function') {
+            window.ethereum.on('chainChanged', async (chainId) => {
+              console.log('Network changed to:', chainId);
+              await detectNetwork();
+            });
+            console.log('Network change listener set up successfully using .on()');
+          } else if (window.ethereum.addEventListener && typeof window.ethereum.addEventListener === 'function') {
+            // Try addEventListener method
+            window.ethereum.addEventListener('chainChanged', async (chainId) => {
+              console.log('Network changed to:', chainId);
+              await detectNetwork();
+            });
+            console.log('Network change listener set up successfully using addEventListener()');
+          } else {
+            console.warn('No supported chainChanged event listener method available');
+            console.log('Available methods:', Object.keys(window.ethereum).filter(key => 
+              key.includes('listener') || key.includes('on') || key.includes('Event')
+            ));
+          }
+          
+          // Also set up account change listener
+          if (window.ethereum.on && typeof window.ethereum.on === 'function') {
+            window.ethereum.on('accountsChanged', async (accounts) => {
+              console.log('Accounts changed:', accounts);
+              if (accounts.length === 0) {
+                // User disconnected their wallet
+                disconnectWallet();
+              } else if (currentUser && accounts[0] !== currentUser) {
+                // User switched to a different account
+                currentUser = accounts[0];
+                console.log('Switched to account:', currentUser);
+                loadCampaigns();
+              }
+            });
+            console.log('Account change listener set up successfully');
+          } else if (window.ethereum.addEventListener && typeof window.ethereum.addEventListener === 'function') {
+            window.ethereum.addEventListener('accountsChanged', async (accounts) => {
+              console.log('Accounts changed:', accounts);
+              if (accounts.length === 0) {
+                disconnectWallet();
+              } else if (currentUser && accounts[0] !== currentUser) {
+                currentUser = accounts[0];
+                console.log('Switched to account:', currentUser);
+                loadCampaigns();
+              }
+            });
+            console.log('Account change listener set up successfully using addEventListener');
+          }
+        } catch (error) {
+          console.error('Failed to set up network change listener:', error);
+          // Don't throw here, just log the error as this is not critical for basic functionality
+        }
       }
       
       // Wait a moment for ethereum to be injected, then check wallet
@@ -812,15 +895,29 @@ export default async function handler(req, res) {
     async function checkExistingConnection() {
       if (typeof window.ethereum !== 'undefined') {
         try {
+          // Check if request method is available
+          if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
+            console.warn('Wallet does not support account checking');
+            return;
+          }
+          
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts.length > 0) {
+          if (accounts && accounts.length > 0) {
             currentUser = accounts[0];
-            await detectNetwork();
+            
+            // Detect network after getting accounts
+            try {
+              await detectNetwork();
+            } catch (networkError) {
+              console.warn('Network detection failed during existing connection check:', networkError);
+            }
+            
             showDashboard();
             loadCampaigns();
           }
         } catch (error) {
           console.error('Error checking wallet connection:', error);
+          // Don't show error to user for connection checking
         }
       }
     }
