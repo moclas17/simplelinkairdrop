@@ -353,7 +353,7 @@ export default async function handler(req, res) {
       let networkOptions = '';
       
       supportedNetworks.forEach(function(network) {
-        networkOptions += '<button onclick="switchToNetwork(\'' + network.chainIdHex + '\')" ' +
+        networkOptions += '<button onclick="switchToNetwork(&quot;' + network.chainIdHex + '&quot;)" ' +
           'style="display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: none; border-radius: 4px; cursor: pointer;">' +
           network.icon + ' Switch to ' + network.name +
           '</button>';
