@@ -195,60 +195,17 @@ export default async function handler(req, res) {
     let currentUser = null;
     let currentNetwork = null;
     
-    // Network configuration
-    const SUPPORTED_NETWORKS = {
-      10: {
-        name: 'Optimism',
-        shortName: 'Optimism',
-        chainId: 10,
-        chainIdHex: '0xa',
-        currency: 'ETH',
-        color: '#FF0420',
-        icon: '🔴'
-      },
-      42161: {
-        name: 'Arbitrum One',
-        shortName: 'Arbitrum',
-        chainId: 42161,
-        chainIdHex: '0xa4b1',
-        currency: 'ETH',
-        color: '#96BEDC',
-        icon: '🔵'
-      },
-      8453: {
-        name: 'Base',
-        shortName: 'Base', 
-        chainId: 8453,
-        chainIdHex: '0x2105',
-        currency: 'ETH',
-        color: '#0052FF',
-        icon: '🔷'
-      },
-      534352: {
-        name: 'Scroll',
-        shortName: 'Scroll',
-        chainId: 534352,
-        chainIdHex: '0x82750', 
-        currency: 'ETH',
-        color: '#FFEEDA',
-        icon: '📜'
-      },
-      5000: {
-        name: 'Mantle',
-        shortName: 'Mantle',
-        chainId: 5000,
-        chainIdHex: '0x1388',
-        currency: 'MNT',
-        color: '#000000', 
-        icon: '🟫'
-      }
-    };
+    // Import network configuration
+    let networks;
+    
+    // Load network configuration
+    (async () => {
+      networks = await import('../lib/networks.js');
+    })();
     
     function getNetworkInfo(chainId) {
-      const numericChainId = typeof chainId === 'string' 
-        ? parseInt(chainId, chainId.startsWith('0x') ? 16 : 10)
-        : chainId;
-      return SUPPORTED_NETWORKS[numericChainId] || null;
+      if (!networks) return null;
+      return networks.getNetworkInfo(chainId);
     }
     
     async function detectNetwork() {
@@ -348,7 +305,9 @@ export default async function handler(req, res) {
     }
     
     window.showNetworkSwitchOptions = function() {
-      const supportedNetworks = Object.values(SUPPORTED_NETWORKS);
+      if (!networks) return; // Wait for networks to load
+      
+      const supportedNetworks = networks.getAllNetworks();
       let networkOptions = '';
       
       // Get current network info for highlighting
@@ -357,10 +316,9 @@ export default async function handler(req, res) {
       supportedNetworks.forEach(function(network) {
         const isCurrentNetwork = currentChainId === network.chainId;
         
-        // Determine text color based on background brightness
-        // Light colors need dark text for better contrast
-        const isLightColor = network.color === '#FFEEDA' || network.color === '#96BEDC';
-        const textColor = isLightColor ? '#000' : '#fff';
+        // Use centralized light color detection
+        const isLight = networks.isLightColor(network.chainId);
+        const textColor = isLight ? '#000' : '#fff';
         
         const buttonStyle = isCurrentNetwork ? 
           'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :

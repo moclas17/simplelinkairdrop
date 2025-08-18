@@ -203,13 +203,13 @@ export default async function handler(req, res) {
     let currentChainId = null;
     
     // Network configuration
-    const SUPPORTED_NETWORKS = {
-      10: { name: 'Optimism', shortName: 'Optimism', currency: 'ETH', icon: '🔴' },
-      42161: { name: 'Arbitrum One', shortName: 'Arbitrum', currency: 'ETH', icon: '🔵' },
-      8453: { name: 'Base', shortName: 'Base', currency: 'ETH', icon: '🔷' },
-      534352: { name: 'Scroll', shortName: 'Scroll', currency: 'ETH', icon: '📜' },
-      5000: { name: 'Mantle', shortName: 'Mantle', currency: 'MNT', icon: '🟫' }
-    };
+    // Import network configuration
+    let networks;
+    
+    // Load network configuration
+    (async () => {
+      networks = await import('../lib/networks.js');
+    })();
     
     // Update wallet display
     if (walletAddress && walletAddress !== 'null') {
@@ -228,14 +228,15 @@ export default async function handler(req, res) {
           const numericChainId = parseInt(chainId, 16);
           currentChainId = numericChainId;
           
-          const networkInfo = SUPPORTED_NETWORKS[numericChainId];
+          const networkInfo = networks ? networks.getNetworkInfo(numericChainId) : null;
           if (networkInfo) {
             console.log('Detected network:', networkInfo.name, '(Chain ID:', numericChainId + ')');
             // Recalculate budget and gas costs when network changes
             calculateBudget();
           } else {
             console.warn('Unsupported network detected:', numericChainId);
-            showToast('Unsupported network detected. Please switch to Optimism, Arbitrum, Base, Scroll, or Mantle.', 'error');
+            const networksList = networks ? networks.getNetworkNamesList() : 'supported networks';
+            showToast('Unsupported network detected. Please switch to ' + networksList + '.', 'error');
           }
         } catch (error) {
           console.error('Error detecting network:', error);
@@ -284,48 +285,25 @@ export default async function handler(req, res) {
     }
     
     function calculateGasCosts(totalTransactions) {
-      // Gas cost estimates for different networks
-      const gasEstimates = {
-        10: { // Optimism
-          costPerTx: 0.000021,
-          currency: 'ETH'
-        },
-        42161: { // Arbitrum
-          costPerTx: 0.0021,
-          currency: 'ETH'
-        },
-        8453: { // Base
-          costPerTx: 0.000021,
-          currency: 'ETH'
-        },
-        534352: { // Scroll
-          costPerTx: 0.000021,
-          currency: 'ETH'
-        },
-        5000: { // Mantle
-          costPerTx: 0.000021,
-          currency: 'MNT'
-        }
-      };
-      
-      const estimate = gasEstimates[currentChainId];
-      if (!estimate) {
+      if (!networks || !currentChainId) {
         document.getElementById('gasCostSection').style.display = 'none';
         return;
       }
       
-      const totalCost = estimate.costPerTx * totalTransactions;
-      const safetyMargin = 1.5; // 50% extra
-      const recommendedAmount = totalCost * safetyMargin;
+      const gasEstimate = networks.getGasCostEstimate(currentChainId, totalTransactions);
+      if (!gasEstimate) {
+        document.getElementById('gasCostSection').style.display = 'none';
+        return;
+      }
       
       // Update UI
-      document.getElementById('costPerClaim').textContent = estimate.costPerTx.toFixed(6);
-      document.getElementById('costCurrency').textContent = estimate.currency;
-      document.getElementById('totalTxCount').textContent = totalTransactions;
-      document.getElementById('totalGasCost').textContent = totalCost.toFixed(6);
-      document.getElementById('totalCostCurrency').textContent = estimate.currency;
-      document.getElementById('recommendedGas').textContent = recommendedAmount.toFixed(6);
-      document.getElementById('gasCurrency').textContent = estimate.currency;
+      document.getElementById('costPerClaim').textContent = gasEstimate.costPerTransaction.toFixed(6);
+      document.getElementById('costCurrency').textContent = gasEstimate.currency;
+      document.getElementById('totalTxCount').textContent = gasEstimate.totalTransactions;
+      document.getElementById('totalGasCost').textContent = gasEstimate.formattedCost;
+      document.getElementById('totalCostCurrency').textContent = gasEstimate.currency;
+      document.getElementById('recommendedGas').textContent = gasEstimate.formattedRecommended;
+      document.getElementById('gasCurrency').textContent = gasEstimate.currency;
       
       document.getElementById('gasCostSection').style.display = 'block';
     }
