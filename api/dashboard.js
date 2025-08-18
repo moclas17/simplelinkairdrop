@@ -316,6 +316,9 @@ export default async function handler(req, res) {
             
             showDashboard();
             loadCampaigns();
+            
+            // Set up event listeners after successful connection
+            setupWalletEventListeners();
           } else {
             throw new Error('No accounts returned from wallet');
           }
@@ -332,8 +335,8 @@ export default async function handler(req, res) {
         } else if (error.code === -32002) {
           showToast('Connection request is already pending. Please check your wallet.', 'error');
         } else if (error.message && (error.message.includes('addListener') || error.message.includes('addEventListener'))) {
-          console.error('Event listener compatibility issue:', error.message);
-          showToast('Wallet compatibility issue detected. Please try refreshing the page or using a different browser.', 'error');
+          console.warn('Event listener setup issue (non-critical):', error.message);
+          // Don't show error toast for event listener issues as they're not critical for basic wallet connection
         } else {
           showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
         }
@@ -343,6 +346,43 @@ export default async function handler(req, res) {
     function disconnectWallet() {
       currentUser = null;
       showWalletSection();
+    }
+    
+    function setupWalletEventListeners() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          // Only set up if not already set up (prevent duplicates)
+          if (!window.ethereum._listenersSetUp) {
+            if (window.ethereum.on && typeof window.ethereum.on === 'function') {
+              window.ethereum.on('chainChanged', async (chainId) => {
+                console.log('Network changed to:', chainId);
+                try {
+                  await detectNetwork();
+                } catch (error) {
+                  console.warn('Failed to detect network after change:', error);
+                }
+              });
+              
+              window.ethereum.on('accountsChanged', async (accounts) => {
+                console.log('Accounts changed:', accounts);
+                if (accounts.length === 0) {
+                  disconnectWallet();
+                } else if (currentUser && accounts[0] !== currentUser) {
+                  currentUser = accounts[0];
+                  console.log('Switched to account:', currentUser);
+                  loadCampaigns();
+                }
+              });
+              
+              // Mark as set up to prevent duplicates
+              window.ethereum._listenersSetUp = true;
+              console.log('Wallet event listeners set up successfully');
+            }
+          }
+        } catch (error) {
+          console.warn('Non-critical: Failed to set up wallet event listeners:', error);
+        }
+      }
     }
 
     function showWalletSection() {
@@ -827,63 +867,8 @@ export default async function handler(req, res) {
         });
       }
       
-      // Set up network change listener
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          // Try modern approach first (EIP-1193)
-          if (window.ethereum.on && typeof window.ethereum.on === 'function') {
-            window.ethereum.on('chainChanged', async (chainId) => {
-              console.log('Network changed to:', chainId);
-              await detectNetwork();
-            });
-            console.log('Network change listener set up successfully using .on()');
-          } else if (window.ethereum.addEventListener && typeof window.ethereum.addEventListener === 'function') {
-            // Try addEventListener method
-            window.ethereum.addEventListener('chainChanged', async (chainId) => {
-              console.log('Network changed to:', chainId);
-              await detectNetwork();
-            });
-            console.log('Network change listener set up successfully using addEventListener()');
-          } else {
-            console.warn('No supported chainChanged event listener method available');
-            console.log('Available methods:', Object.keys(window.ethereum).filter(key => 
-              key.includes('listener') || key.includes('on') || key.includes('Event')
-            ));
-          }
-          
-          // Also set up account change listener
-          if (window.ethereum.on && typeof window.ethereum.on === 'function') {
-            window.ethereum.on('accountsChanged', async (accounts) => {
-              console.log('Accounts changed:', accounts);
-              if (accounts.length === 0) {
-                // User disconnected their wallet
-                disconnectWallet();
-              } else if (currentUser && accounts[0] !== currentUser) {
-                // User switched to a different account
-                currentUser = accounts[0];
-                console.log('Switched to account:', currentUser);
-                loadCampaigns();
-              }
-            });
-            console.log('Account change listener set up successfully');
-          } else if (window.ethereum.addEventListener && typeof window.ethereum.addEventListener === 'function') {
-            window.ethereum.addEventListener('accountsChanged', async (accounts) => {
-              console.log('Accounts changed:', accounts);
-              if (accounts.length === 0) {
-                disconnectWallet();
-              } else if (currentUser && accounts[0] !== currentUser) {
-                currentUser = accounts[0];
-                console.log('Switched to account:', currentUser);
-                loadCampaigns();
-              }
-            });
-            console.log('Account change listener set up successfully using addEventListener');
-          }
-        } catch (error) {
-          console.error('Failed to set up network change listener:', error);
-          // Don't throw here, just log the error as this is not critical for basic functionality
-        }
-      }
+      // Event listeners are now set up after successful wallet connection
+      // This prevents compatibility issues during initial page load
       
       // Wait a moment for ethereum to be injected, then check wallet
       setTimeout(() => {
