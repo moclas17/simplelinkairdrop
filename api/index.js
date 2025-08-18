@@ -162,11 +162,13 @@ curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') 
 
     <div class="card">
       <h2>⚙️ Configuration</h2>
-      <p>System configured for:</p>
+      <p>Multi-chain system supporting:</p>
       <ul style="color:var(--muted); line-height:1.8;">
-        <li><strong>Network:</strong> ${process.env.RPC_URL ? new URL(process.env.RPC_URL).hostname : 'Not configured'}</li>
-        <li><strong>Token:</strong> ${process.env.TOKEN_ADDRESS || 'Not configured'}</li>
-        <li><strong>Decimals:</strong> ${process.env.TOKEN_DECIMALS || 18}</li>
+        <li><strong>🔴 Optimism:</strong> Layer 2 scaling solution (Original network)</li>
+        <li><strong>🔵 Arbitrum One:</strong> Optimistic rollup with fast withdrawals</li>
+        <li><strong>🔷 Base:</strong> Coinbase's Layer 2 built on OP Stack</li>
+        <li><strong>📜 Scroll:</strong> zkEVM-based Layer 2 solution</li>
+        <li><strong>🟫 Mantle:</strong> Modular Layer 2 with native yield</li>
         <li><strong>Database:</strong> ${process.env.SUPABASE_URL ? 'Supabase Connected' : 'Not configured'}</li>
       </ul>
     </div>
@@ -174,13 +176,14 @@ curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') 
     <div class="card">
       <h2>🆕 Recent Updates</h2>
       <ul style="color:var(--muted); line-height:1.8;">
+        <li><strong>🌐 Multi-Chain Support:</strong> Full support for Optimism, Arbitrum, Base, Scroll, and Mantle networks</li>
+        <li><strong>🎯 Network Detection:</strong> Automatic detection of connected wallet network with real-time updates</li>
+        <li><strong>⚙️ Dynamic RPCs:</strong> Smart routing to correct RPC endpoints based on campaign network</li>
         <li><strong>Campaign System:</strong> Organize airdrops by campaigns - wallets can participate in multiple campaigns</li>
         <li><strong>Multi-Claim Links:</strong> Create links that allow multiple different wallets to claim</li>
         <li><strong>ENS Resolution:</strong> Users can claim using ENS names like vitalik.eth</li>
         <li><strong>Balance Verification:</strong> Pre-transfer checks prevent failed transactions and gas waste</li>
         <li><strong>Transaction History:</strong> Already-claimed errors show transaction hash and explorer links</li>
-        <li><strong>Real-time Updates:</strong> Multi-claim pages show live progress and remaining claims</li>
-        <li><strong>Error Handling:</strong> Improved rollback mechanisms for failed transfers</li>
       </ul>
     </div>
     

@@ -1,20 +1,12 @@
 import { ethers } from 'ethers';
 import db from '../lib/db.js';
+import { getRpcUrl, getExplorerUrl } from '../lib/networks.js';
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
-const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS;
-const RPC_URL = process.env.RPC_URL;
-const TOKEN_DECIMALS = Number(process.env.TOKEN_DECIMALS || 18);
 
 console.log('[CLAIM] Module loaded - Environment check:', {
-  PRIVATE_KEY: !!PRIVATE_KEY,
-  TOKEN_ADDRESS: !!TOKEN_ADDRESS,
-  RPC_URL: !!RPC_URL,
-  TOKEN_DECIMALS
+  PRIVATE_KEY: !!PRIVATE_KEY
 });
-
-const provider = new ethers.JsonRpcProvider(RPC_URL);
-const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
 export default async function handler(req, res) {
   console.log('[CLAIM] Request received:', {
@@ -81,19 +73,37 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Invalid link' });
   }
 
-  // Get campaign token info (fallback to env if not found)
-  const campaignTokenAddress = current.campaigns?.token_address || TOKEN_ADDRESS;
-  const campaignTokenDecimals = current.campaigns?.token_decimals || TOKEN_DECIMALS;
+  // Get campaign info including chain_id
+  const campaignTokenAddress = current.campaigns?.token_address || process.env.TOKEN_ADDRESS;
+  const campaignTokenDecimals = current.campaigns?.token_decimals || Number(process.env.TOKEN_DECIMALS || 18);
   const campaignTokenSymbol = current.campaigns?.token_symbol || 'TOKEN';
+  const campaignChainId = current.campaigns?.chain_id;
   
-  console.log('[CLAIM] Using token info:', {
+  console.log('[CLAIM] Using campaign info:', {
     address: campaignTokenAddress,
     decimals: campaignTokenDecimals,
-    symbol: campaignTokenSymbol
+    symbol: campaignTokenSymbol,
+    chainId: campaignChainId
   });
+  
+  // Get RPC URL for the campaign's chain
+  const rpcUrl = campaignChainId ? getRpcUrl(campaignChainId) : process.env.RPC_URL;
+  console.log('[CLAIM] Using RPC URL:', rpcUrl);
+  
+  if (!rpcUrl) {
+    console.error('[CLAIM] No RPC URL found for chain ID:', campaignChainId);
+    return res.status(400).json({ 
+      error: 'Unsupported network',
+      details: 'The network for this campaign is not supported'
+    });
+  }
+  
+  // Create provider and wallet for this specific chain
+  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-  // Validate that the token is still a valid ERC-20
-  const tokenValidation = await db.validateERC20Contract(campaignTokenAddress);
+  // Validate that the token is still a valid ERC-20 using the campaign's RPC
+  const tokenValidation = await db.validateERC20Contract(campaignTokenAddress, rpcUrl);
   if (!tokenValidation.isValid) {
     console.error('[CLAIM] Token validation failed:', tokenValidation.error);
     return res.status(400).json({ 
@@ -117,10 +127,9 @@ export default async function handler(req, res) {
     if (alreadyClaimed) {
       console.log('[CLAIM] Wallet already claimed from this multi-claim link');
       
-      // Get explorer URL based on RPC
-      const explorerUrl = RPC_URL?.includes('optimism') ? 
-        `https://optimistic.etherscan.io/tx/${alreadyClaimed.tx_hash}` : 
-        `https://etherscan.io/tx/${alreadyClaimed.tx_hash}`;
+      // Get explorer URL based on chain ID
+      const explorerBaseUrl = getExplorerUrl(campaignChainId) || 'https://etherscan.io';
+      const explorerUrl = `${explorerBaseUrl}/tx/${alreadyClaimed.tx_hash}`;
       
       const claimedDate = alreadyClaimed.claimed_at ? 
         new Date(alreadyClaimed.claimed_at).toLocaleString() : 
@@ -149,9 +158,8 @@ export default async function handler(req, res) {
     // Handle already claimed error from reserveMultiClaim
     if (reserveResult?.error === 'already_claimed') {
       const claimData = reserveResult.claimData;
-      const explorerUrl = RPC_URL?.includes('optimism') ? 
-        `https://optimistic.etherscan.io/tx/${claimData.tx_hash}` : 
-        `https://etherscan.io/tx/${claimData.tx_hash}`;
+      const explorerBaseUrl = getExplorerUrl(campaignChainId) || 'https://etherscan.io';
+      const explorerUrl = `${explorerBaseUrl}/tx/${claimData.tx_hash}`;
       
       return res.status(400).json({ 
         error: 'Wallet already claimed from this link',

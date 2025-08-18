@@ -184,13 +184,45 @@ export default async function handler(req, res) {
   <script>
     const urlParams = new URLSearchParams(window.location.search);
     const walletAddress = urlParams.get('wallet') || '${wallet}';
+    let currentChainId = null;
+    
+    // Network configuration
+    const SUPPORTED_NETWORKS = {
+      10: { name: 'Optimism', shortName: 'Optimism', currency: 'ETH', icon: '🔴' },
+      42161: { name: 'Arbitrum One', shortName: 'Arbitrum', currency: 'ETH', icon: '🔵' },
+      8453: { name: 'Base', shortName: 'Base', currency: 'ETH', icon: '🔷' },
+      534352: { name: 'Scroll', shortName: 'Scroll', currency: 'ETH', icon: '📜' },
+      5000: { name: 'Mantle', shortName: 'Mantle', currency: 'MNT', icon: '🟫' }
+    };
     
     // Update wallet display
     if (walletAddress && walletAddress !== 'null') {
       document.getElementById('userWallet').textContent = walletAddress;
+      // Detect current network
+      detectNetwork();
     } else {
       // Redirect to dashboard if no wallet
       window.location.href = '/dashboard';
+    }
+    
+    async function detectNetwork() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          const numericChainId = parseInt(chainId, 16);
+          currentChainId = numericChainId;
+          
+          const networkInfo = SUPPORTED_NETWORKS[numericChainId];
+          if (networkInfo) {
+            console.log('Detected network:', networkInfo.name, '(Chain ID:', numericChainId + ')');
+          } else {
+            console.warn('Unsupported network detected:', numericChainId);
+            showToast('Unsupported network detected. Please switch to Optimism, Arbitrum, Base, Scroll, or Mantle.', 'error');
+          }
+        } catch (error) {
+          console.error('Error detecting network:', error);
+        }
+      }
     }
 
     function toggleClaimType() {
@@ -261,7 +293,10 @@ export default async function handler(req, res) {
         const response = await fetch('/api/validate-token', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tokenAddress: address })
+          body: JSON.stringify({ 
+            tokenAddress: address,
+            chainId: currentChainId 
+          })
         });
         
         const result = await response.json();
@@ -333,7 +368,8 @@ export default async function handler(req, res) {
         tokenAddress: formData.get('tokenAddress'),
         tokenSymbol: formData.get('tokenSymbol'),
         tokenDecimals: Number(formData.get('tokenDecimals')),
-        expiresInHours: formData.get('expiresInHours') ? Number(formData.get('expiresInHours')) : null
+        expiresInHours: formData.get('expiresInHours') ? Number(formData.get('expiresInHours')) : null,
+        chainId: currentChainId
       };
       
       try {

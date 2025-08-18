@@ -45,12 +45,17 @@ async function createCampaign(req, res) {
     tokenAddress,
     tokenSymbol,
     tokenDecimals,
-    expiresInHours
+    expiresInHours,
+    chainId
   } = req.body;
 
   // Validation
   if (!walletAddress || !title || !claimType || !amountPerClaim || !totalClaims || !tokenAddress) {
     return res.status(400).json({ error: 'Missing required fields' });
+  }
+  
+  if (!chainId) {
+    return res.status(400).json({ error: 'Chain ID required' });
   }
 
   try {
@@ -65,7 +70,8 @@ async function createCampaign(req, res) {
       tokenAddress,
       tokenSymbol,
       tokenDecimals: Number(tokenDecimals) || 18,
-      expiresInHours: expiresInHours ? Number(expiresInHours) : null
+      expiresInHours: expiresInHours ? Number(expiresInHours) : null,
+      chainId: Number(chainId)
     };
 
     const campaign = await db.createCampaign(campaignData);

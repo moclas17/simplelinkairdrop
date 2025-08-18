@@ -1,11 +1,12 @@
 import db from '../lib/db.js';
+import { getRpcUrl, isNetworkSupported } from '../lib/networks.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { tokenAddress } = req.body;
+  const { tokenAddress, chainId } = req.body;
 
   if (!tokenAddress) {
     return res.status(400).json({ 
@@ -13,10 +14,22 @@ export default async function handler(req, res) {
       error: 'Token address is required' 
     });
   }
+  
+  // Check if network is supported
+  if (chainId && !isNetworkSupported(chainId)) {
+    return res.status(400).json({
+      isValid: false,
+      error: 'Unsupported network. Please switch to Optimism, Arbitrum, Base, Scroll, or Mantle.'
+    });
+  }
 
   try {
     console.log('[API] Validating ERC-20 token:', tokenAddress);
-    console.log('[API] Current RPC URL:', process.env.RPC_URL);
+    console.log('[API] Chain ID:', chainId);
+    
+    // Use dynamic RPC based on chain ID, fallback to env RPC
+    const rpcUrl = chainId ? getRpcUrl(chainId) : process.env.RPC_URL;
+    console.log('[API] Using RPC URL:', rpcUrl);
     
     // Add timeout to prevent hanging
     const timeoutPromise = new Promise((_, reject) => 
@@ -24,7 +37,7 @@ export default async function handler(req, res) {
     );
     
     const validation = await Promise.race([
-      db.validateERC20Contract(tokenAddress),
+      db.validateERC20Contract(tokenAddress, rpcUrl),
       timeoutPromise
     ]);
     

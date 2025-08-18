@@ -160,7 +160,12 @@ export default async function handler(req, res) {
       <!-- User Info -->
       <div class="user-info">
         <div>
-          <strong>Connected Wallet:</strong> <span id="userWallet">-</span>
+          <div style="margin-bottom: 8px;">
+            <strong>Connected Wallet:</strong> <span id="userWallet">-</span>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <strong>Network:</strong> <span id="networkInfo" style="display: inline-flex; align-items: center; gap: 6px;">-</span>
+          </div>
         </div>
         <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
       </div>
@@ -185,6 +190,94 @@ export default async function handler(req, res) {
 
   <script>
     let currentUser = null;
+    let currentNetwork = null;
+    
+    // Network configuration
+    const SUPPORTED_NETWORKS = {
+      10: {
+        name: 'Optimism',
+        shortName: 'Optimism',
+        chainId: 10,
+        chainIdHex: '0xa',
+        currency: 'ETH',
+        color: '#FF0420',
+        icon: '🔴'
+      },
+      42161: {
+        name: 'Arbitrum One',
+        shortName: 'Arbitrum',
+        chainId: 42161,
+        chainIdHex: '0xa4b1',
+        currency: 'ETH',
+        color: '#96BEDC',
+        icon: '🔵'
+      },
+      8453: {
+        name: 'Base',
+        shortName: 'Base', 
+        chainId: 8453,
+        chainIdHex: '0x2105',
+        currency: 'ETH',
+        color: '#0052FF',
+        icon: '🔷'
+      },
+      534352: {
+        name: 'Scroll',
+        shortName: 'Scroll',
+        chainId: 534352,
+        chainIdHex: '0x82750', 
+        currency: 'ETH',
+        color: '#FFEEDA',
+        icon: '📜'
+      },
+      5000: {
+        name: 'Mantle',
+        shortName: 'Mantle',
+        chainId: 5000,
+        chainIdHex: '0x1388',
+        currency: 'MNT',
+        color: '#000000', 
+        icon: '🟫'
+      }
+    };
+    
+    function getNetworkInfo(chainId) {
+      const numericChainId = typeof chainId === 'string' 
+        ? parseInt(chainId, chainId.startsWith('0x') ? 16 : 10)
+        : chainId;
+      return SUPPORTED_NETWORKS[numericChainId] || null;
+    }
+    
+    async function detectNetwork() {
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+          const networkInfo = getNetworkInfo(chainId);
+          currentNetwork = networkInfo;
+          updateNetworkDisplay();
+          return networkInfo;
+        } catch (error) {
+          console.error('Error detecting network:', error);
+          return null;
+        }
+      }
+      return null;
+    }
+    
+    function updateNetworkDisplay() {
+      const networkInfoElement = document.getElementById('networkInfo');
+      if (!networkInfoElement) return;
+      
+      if (currentNetwork) {
+        networkInfoElement.innerHTML = '<span style="color: ' + currentNetwork.color + ';">' + currentNetwork.icon + '</span>' +
+                                       '<span>' + currentNetwork.name + '</span>' +
+                                       '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>';
+        networkInfoElement.style.color = currentNetwork.color;
+      } else {
+        networkInfoElement.innerHTML = '<span style="color: var(--red);">❌ Unsupported Network</span>';
+        networkInfoElement.style.color = 'var(--red)';
+      }
+    }
 
     // Make connectWallet available immediately (before DOM load)
     window.connectWallet = async function() {
@@ -200,6 +293,7 @@ export default async function handler(req, res) {
           if (accounts.length > 0) {
             currentUser = accounts[0];
             console.log('Current user set to:', currentUser);
+            await detectNetwork();
             showDashboard();
             loadCampaigns();
           }
@@ -700,6 +794,14 @@ export default async function handler(req, res) {
         });
       }
       
+      // Set up network change listener
+      if (typeof window.ethereum !== 'undefined') {
+        window.ethereum.on('chainChanged', async (chainId) => {
+          console.log('Network changed to:', chainId);
+          await detectNetwork();
+        });
+      }
+      
       // Wait a moment for ethereum to be injected, then check wallet
       setTimeout(() => {
         checkWalletAvailability();
@@ -713,6 +815,7 @@ export default async function handler(req, res) {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
             currentUser = accounts[0];
+            await detectNetwork();
             showDashboard();
             loadCampaigns();
           }
