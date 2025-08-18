@@ -372,11 +372,30 @@ export default async function handler(req, res) {
         '</div>';
       document.body.appendChild(modal);
     }
+    
+    // Test function to verify basic wallet connectivity
+    window.testWalletConnection = async function() {
+      console.log('Testing wallet connection...');
+      if (typeof window.ethereum !== 'undefined') {
+        try {
+          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+          console.log('Test successful - accounts:', accounts);
+          return accounts;
+        } catch (error) {
+          console.error('Test failed:', error);
+          return null;
+        }
+      } else {
+        console.log('No wallet detected');
+        return null;
+      }
+    }
 
     // Make connectWallet available immediately (before DOM load)
     window.connectWallet = async function() {
       console.log('connectWallet function called');
       try {
+        console.log('window.ethereum exists:', typeof window.ethereum !== 'undefined');
         if (typeof window.ethereum !== 'undefined') {
           console.log('Web3 wallet detected, requesting accounts...');
           
@@ -401,11 +420,24 @@ export default async function handler(req, res) {
               console.warn('Network detection failed, but connection succeeded:', networkError);
             }
             
-            showDashboard();
-            loadCampaigns();
+            try {
+              showDashboard();
+            } catch (dashboardError) {
+              console.error('Error showing dashboard:', dashboardError);
+            }
             
-            // Set up event listeners after successful connection
-            setupWalletEventListeners();
+            try {
+              loadCampaigns();
+            } catch (campaignsError) {
+              console.error('Error loading campaigns:', campaignsError);
+            }
+            
+            // Set up event listeners after successful connection (non-critical)
+            try {
+              setupWalletEventListeners();
+            } catch (eventListenerError) {
+              console.warn('Non-critical: Failed to set up event listeners:', eventListenerError);
+            }
           } else {
             throw new Error('No accounts returned from wallet');
           }
