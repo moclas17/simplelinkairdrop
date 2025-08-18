@@ -276,9 +276,13 @@ export default async function handler(req, res) {
       if (!networkInfoElement) return;
       
       if (currentNetwork) {
-        networkInfoElement.innerHTML = '<span style="color: ' + currentNetwork.color + ';">' + currentNetwork.icon + '</span>' +
-                                       '<span>' + currentNetwork.name + '</span>' +
-                                       '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>';
+        networkInfoElement.innerHTML = 
+          '<span style="color: ' + currentNetwork.color + ';">' + currentNetwork.icon + '</span>' +
+          '<span>' + currentNetwork.name + '</span>' +
+          '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>' +
+          '<button onclick="showNetworkSwitchOptions()" style="margin-left: 8px; padding: 2px 8px; font-size: 11px; background: ' + currentNetwork.color + '; color: white; border: none; border-radius: 4px; cursor: pointer; opacity: 0.8;">' +
+            'Switch' +
+          '</button>';
         networkInfoElement.style.color = currentNetwork.color;
       } else {
         networkInfoElement.innerHTML = 
@@ -352,10 +356,23 @@ export default async function handler(req, res) {
       const supportedNetworks = Object.values(SUPPORTED_NETWORKS);
       let networkOptions = '';
       
+      // Get current network info for highlighting
+      const currentChainId = currentNetwork ? currentNetwork.chainId : null;
+      
       supportedNetworks.forEach(function(network) {
+        const isCurrentNetwork = currentChainId === network.chainId;
+        const buttonStyle = isCurrentNetwork ? 
+          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
+          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: none; border-radius: 4px; cursor: pointer;';
+        
+        const buttonText = isCurrentNetwork ? 
+          network.icon + ' ' + network.name + ' (Current)' :
+          network.icon + ' Switch to ' + network.name;
+          
         networkOptions += '<button onclick="switchToNetwork(&quot;' + network.chainIdHex + '&quot;)" ' +
-          'style="display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: none; border-radius: 4px; cursor: pointer;">' +
-          network.icon + ' Switch to ' + network.name +
+          'style="' + buttonStyle + '"' +
+          (isCurrentNetwork ? ' disabled' : '') + '>' +
+          buttonText +
           '</button>';
       });
       
@@ -363,8 +380,8 @@ export default async function handler(req, res) {
       modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
       modal.innerHTML = 
         '<div style="background: var(--card-bg, white); padding: 20px; border-radius: 8px; max-width: 400px; width: 90%;">' +
-          '<h3 style="margin-top: 0;">Switch to Supported Network</h3>' +
-          '<p>Please switch to one of our supported networks:</p>' +
+          '<h3 style="margin-top: 0;">Select Network</h3>' +
+          '<p style="font-size: 14px; color: var(--muted);">Choose a network to switch to:</p>' +
           networkOptions +
           '<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 12px; padding: 8px 16px; background: var(--muted, #ccc); border: none; border-radius: 4px; cursor: pointer; width: 100%;">' +
             'Cancel' +
