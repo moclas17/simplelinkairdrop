@@ -173,6 +173,22 @@ export default async function handler(req, res) {
           </div>
         </div>
 
+        <div class="form-group" id="gasCostSection" style="display: none;">
+          <label>⛽ Gas Cost Estimation</label>
+          <div class="budget-display" style="background: #f8f9fa; border-left: 4px solid var(--primary);">
+            <div style="font-size: 14px; margin-bottom: 8px;">
+              <span style="color: var(--primary); font-weight: 500;">💡 Recommended:</span> Send 
+              <span id="recommendedGas" style="font-weight: bold; color: var(--primary);">0</span> 
+              <span id="gasCurrency">ETH</span> to cover transaction costs
+            </div>
+            <div style="font-size: 12px; color: var(--muted);">
+              • Estimated cost per claim: <span id="costPerClaim">0</span> <span id="costCurrency">ETH</span><br>
+              • Total for <span id="totalTxCount">0</span> transactions: <span id="totalGasCost">0</span> <span id="totalCostCurrency">ETH</span><br>
+              • Includes 50% safety margin for gas price fluctuations
+            </div>
+          </div>
+        </div>
+
         <div style="display: flex; gap: 12px; margin-top: 24px;">
           <a href="/dashboard" class="btn">Cancel</a>
           <button type="submit" class="btn btn-success">Create Campaign</button>
@@ -215,6 +231,8 @@ export default async function handler(req, res) {
           const networkInfo = SUPPORTED_NETWORKS[numericChainId];
           if (networkInfo) {
             console.log('Detected network:', networkInfo.name, '(Chain ID:', numericChainId + ')');
+            // Recalculate budget and gas costs when network changes
+            calculateBudget();
           } else {
             console.warn('Unsupported network detected:', numericChainId);
             showToast('Unsupported network detected. Please switch to Optimism, Arbitrum, Base, Scroll, or Mantle.', 'error');
@@ -256,6 +274,60 @@ export default async function handler(req, res) {
       const budget = amount * totalClaims;
       document.getElementById('totalBudget').textContent = budget.toLocaleString();
       document.getElementById('budgetSymbol').textContent = symbol;
+      
+      // Calculate gas costs if we have network and transaction count
+      if (currentChainId && totalClaims > 0) {
+        calculateGasCosts(totalClaims);
+      } else {
+        document.getElementById('gasCostSection').style.display = 'none';
+      }
+    }
+    
+    function calculateGasCosts(totalTransactions) {
+      // Gas cost estimates for different networks
+      const gasEstimates = {
+        10: { // Optimism
+          costPerTx: 0.000021,
+          currency: 'ETH'
+        },
+        42161: { // Arbitrum
+          costPerTx: 0.0021,
+          currency: 'ETH'
+        },
+        8453: { // Base
+          costPerTx: 0.000021,
+          currency: 'ETH'
+        },
+        534352: { // Scroll
+          costPerTx: 0.000021,
+          currency: 'ETH'
+        },
+        5000: { // Mantle
+          costPerTx: 0.000021,
+          currency: 'MNT'
+        }
+      };
+      
+      const estimate = gasEstimates[currentChainId];
+      if (!estimate) {
+        document.getElementById('gasCostSection').style.display = 'none';
+        return;
+      }
+      
+      const totalCost = estimate.costPerTx * totalTransactions;
+      const safetyMargin = 1.5; // 50% extra
+      const recommendedAmount = totalCost * safetyMargin;
+      
+      // Update UI
+      document.getElementById('costPerClaim').textContent = estimate.costPerTx.toFixed(6);
+      document.getElementById('costCurrency').textContent = estimate.currency;
+      document.getElementById('totalTxCount').textContent = totalTransactions;
+      document.getElementById('totalGasCost').textContent = totalCost.toFixed(6);
+      document.getElementById('totalCostCurrency').textContent = estimate.currency;
+      document.getElementById('recommendedGas').textContent = recommendedAmount.toFixed(6);
+      document.getElementById('gasCurrency').textContent = estimate.currency;
+      
+      document.getElementById('gasCostSection').style.display = 'block';
     }
 
     function showToast(message, type) {
