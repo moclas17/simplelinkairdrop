@@ -167,7 +167,10 @@ export default async function handler(req, res) {
             <strong>Network:</strong> <span id="networkInfo" style="display: inline-flex; align-items: center; gap: 6px;">-</span>
           </div>
         </div>
-        <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button onclick="showNetworkSwitchOptions()" class="btn" style="background: var(--primary); color: white; border: none;">Switch Network</button>
+          <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
+        </div>
       </div>
 
       <!-- Actions -->
@@ -276,20 +279,12 @@ export default async function handler(req, res) {
       if (!networkInfoElement) return;
       
       if (currentNetwork) {
-        networkInfoElement.innerHTML = 
-          '<span style="color: ' + currentNetwork.color + ';">' + currentNetwork.icon + '</span>' +
-          '<span>' + currentNetwork.name + '</span>' +
-          '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>' +
-          '<button onclick="showNetworkSwitchOptions()" style="margin-left: 8px; padding: 2px 8px; font-size: 11px; background: ' + currentNetwork.color + '; color: white; border: none; border-radius: 4px; cursor: pointer; opacity: 0.8;">' +
-            'Switch' +
-          '</button>';
+        networkInfoElement.innerHTML = '<span style="color: ' + currentNetwork.color + ';">' + currentNetwork.icon + '</span>' +
+                                       '<span>' + currentNetwork.name + '</span>' +
+                                       '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>';
         networkInfoElement.style.color = currentNetwork.color;
       } else {
-        networkInfoElement.innerHTML = 
-          '<span style="color: var(--red);">❌ Unsupported Network</span>' +
-          '<button onclick="showNetworkSwitchOptions()" style="margin-left: 8px; padding: 2px 8px; font-size: 11px; background: var(--red); color: white; border: none; border-radius: 4px; cursor: pointer;">' +
-            'Switch Network' +
-          '</button>';
+        networkInfoElement.innerHTML = '<span style="color: var(--red);">❌ Unsupported Network</span>';
         networkInfoElement.style.color = 'var(--red)';
       }
     }
