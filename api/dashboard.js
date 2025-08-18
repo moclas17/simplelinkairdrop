@@ -530,18 +530,24 @@ export default async function handler(req, res) {
             }
             
             if (campaign.status === 'active') {
-              html += '<div class="action-buttons" style="margin: 12px 0;">';
-              
-              // Check if links are already generated
               if (campaign.links_generated) {
-                html += '<button onclick="viewExistingLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-success" style="margin-right: 8px; font-size: 12px;">📋 View Generated Links</button>';
-                html += '<button class="btn" style="margin-right: 8px; font-size: 12px; opacity: 0.5;" disabled>✅ Links Generated</button>';
+                // When links are generated - show status indicator and action buttons
+                html += '<div style="background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); border-radius: 8px; padding: 12px; margin: 12px 0;">';
+                html += '<div style="display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: var(--green); font-size: 12px; font-weight: 500;">';
+                html += '<span style="margin-right: 6px;">✅</span>Links Generated & Ready';
+                html += '</div>';
+                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">';
+                html += '<button onclick="viewExistingLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-success" style="font-size: 11px; padding: 10px;">📋 View Links</button>';
+                html += '<button onclick="viewStats(' + "'" + campaign.id + "'" + ')" class="btn" style="font-size: 11px; padding: 10px;">📊 Analytics</button>';
+                html += '</div>';
+                html += '</div>';
               } else {
-                html += '<button onclick="generateLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-primary" style="margin-right: 8px; font-size: 12px;">➕ Generate Links</button>';
+                // When links need to be generated
+                html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0;">';
+                html += '<button onclick="generateLinks(' + "'" + campaign.id + "'" + ')" class="btn btn-primary" style="font-size: 11px; padding: 10px;">🚀 Generate Links</button>';
+                html += '<button onclick="viewStats(' + "'" + campaign.id + "'" + ')" class="btn" style="font-size: 11px; padding: 10px;">📊 Analytics</button>';
+                html += '</div>';
               }
-              
-              html += '<button onclick="viewStats(' + "'" + campaign.id + "'" + ')" class="btn" style="font-size: 12px;">📊 View Stats</button>';
-              html += '</div>';
             }
             
             html += '<div style="font-size: 14px; color: var(--muted);">';
