@@ -80,6 +80,7 @@ export default async function handler(req, res) {
     .wallet-info { background: rgba(125,211,252,0.08); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; padding: 16px; margin-bottom: 24px; }
     .wallet-address { font-family: 'Monaco', 'Consolas', monospace; font-size: 14px; color: var(--acc); }
   </style>
+  <script src="../lib/networks-client.js"></script>
 </head>
 <body>
   <div class="container">
@@ -203,13 +204,8 @@ export default async function handler(req, res) {
     let currentChainId = null;
     
     // Network configuration
-    // Import network configuration
-    let networks;
-    
-    // Load network configuration
-    (async () => {
-      networks = await import('../lib/networks.js');
-    })();
+    // Network functions are loaded from networks-client.js
+    // Functions available: getNetworkInfo, getAllNetworks, getGasCostEstimate, etc.
     
     // Update wallet display
     if (walletAddress && walletAddress !== 'null') {
@@ -228,14 +224,14 @@ export default async function handler(req, res) {
           const numericChainId = parseInt(chainId, 16);
           currentChainId = numericChainId;
           
-          const networkInfo = networks ? networks.getNetworkInfo(numericChainId) : null;
+          const networkInfo = getNetworkInfo(numericChainId);
           if (networkInfo) {
             console.log('Detected network:', networkInfo.name, '(Chain ID:', numericChainId + ')');
             // Recalculate budget and gas costs when network changes
             calculateBudget();
           } else {
             console.warn('Unsupported network detected:', numericChainId);
-            const networksList = networks ? networks.getNetworkNamesList() : 'supported networks';
+            const networksList = getNetworkNamesList();
             showToast('Unsupported network detected. Please switch to ' + networksList + '.', 'error');
           }
         } catch (error) {
@@ -285,12 +281,12 @@ export default async function handler(req, res) {
     }
     
     function calculateGasCosts(totalTransactions) {
-      if (!networks || !currentChainId) {
+      if (!currentChainId) {
         document.getElementById('gasCostSection').style.display = 'none';
         return;
       }
       
-      const gasEstimate = networks.getGasCostEstimate(currentChainId, totalTransactions);
+      const gasEstimate = getGasCostEstimate(currentChainId, totalTransactions);
       if (!gasEstimate) {
         document.getElementById('gasCostSection').style.display = 'none';
         return;

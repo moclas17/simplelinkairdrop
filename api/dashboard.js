@@ -127,6 +127,7 @@ export default async function handler(req, res) {
     .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
     .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
+  <script src="../lib/networks-client.js"></script>
 </head>
 <body>
   <div class="container">
@@ -195,18 +196,8 @@ export default async function handler(req, res) {
     let currentUser = null;
     let currentNetwork = null;
     
-    // Import network configuration
-    let networks;
-    
-    // Load network configuration
-    (async () => {
-      networks = await import('../lib/networks.js');
-    })();
-    
-    function getNetworkInfo(chainId) {
-      if (!networks) return null;
-      return networks.getNetworkInfo(chainId);
-    }
+    // Network functions are loaded from networks-client.js
+    // Functions available: getNetworkInfo, getAllNetworks, isLightColor, etc.
     
     async function detectNetwork() {
       if (typeof window.ethereum !== 'undefined') {
@@ -305,9 +296,7 @@ export default async function handler(req, res) {
     }
     
     window.showNetworkSwitchOptions = function() {
-      if (!networks) return; // Wait for networks to load
-      
-      const supportedNetworks = networks.getAllNetworks();
+      const supportedNetworks = getAllNetworks();
       let networkOptions = '';
       
       // Get current network info for highlighting
@@ -317,7 +306,7 @@ export default async function handler(req, res) {
         const isCurrentNetwork = currentChainId === network.chainId;
         
         // Use centralized light color detection
-        const isLight = networks.isLightColor(network.chainId);
+        const isLight = isLightColor(network.chainId);
         const textColor = isLight ? '#000' : '#fff';
         
         const buttonStyle = isCurrentNetwork ? 
