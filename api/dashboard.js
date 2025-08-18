@@ -242,15 +242,10 @@ export default async function handler(req, res) {
     };
     
     function getNetworkInfo(chainId) {
-      console.log('getNetworkInfo called with:', chainId, typeof chainId);
       const numericChainId = typeof chainId === 'string' 
         ? parseInt(chainId, chainId.startsWith('0x') ? 16 : 10)
         : chainId;
-      console.log('Converted to numeric:', numericChainId);
-      console.log('Available networks:', Object.keys(SUPPORTED_NETWORKS));
-      const result = SUPPORTED_NETWORKS[numericChainId] || null;
-      console.log('Network lookup result:', result);
-      return result;
+      return SUPPORTED_NETWORKS[numericChainId] || null;
     }
     
     async function detectNetwork() {
@@ -263,9 +258,7 @@ export default async function handler(req, res) {
           }
           
           const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-          console.log('Detected chainId:', chainId, typeof chainId);
           const networkInfo = getNetworkInfo(chainId);
-          console.log('Network info for chainId', chainId, ':', networkInfo);
           currentNetwork = networkInfo;
           updateNetworkDisplay();
           return networkInfo;
@@ -288,9 +281,96 @@ export default async function handler(req, res) {
                                        '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>';
         networkInfoElement.style.color = currentNetwork.color;
       } else {
-        networkInfoElement.innerHTML = '<span style="color: var(--red);">❌ Unsupported Network</span>';
+        networkInfoElement.innerHTML = 
+          '<span style="color: var(--red);">❌ Unsupported Network</span>' +
+          '<button onclick="showNetworkSwitchOptions()" style="margin-left: 8px; padding: 2px 8px; font-size: 11px; background: var(--red); color: white; border: none; border-radius: 4px; cursor: pointer;">' +
+            'Switch Network' +
+          '</button>';
         networkInfoElement.style.color = 'var(--red)';
       }
+    }
+    
+    window.switchToNetwork = async function(chainIdHex) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        });
+        
+        // Close any open modal
+        const modal = document.querySelector('div[style*="z-index: 1000"]');
+        if (modal) modal.remove();
+        
+        // Re-detect network after successful switch
+        setTimeout(detectNetwork, 1000);
+        
+        return true;
+      } catch (switchError) {
+        console.error('Failed to switch network:', switchError);
+        
+        // If the network doesn't exist in wallet, try to add it
+        if (switchError.code === 4902) {
+          const numericChainId = parseInt(chainIdHex, 16);
+          const networkInfo = SUPPORTED_NETWORKS[numericChainId];
+          
+          if (networkInfo) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: chainIdHex,
+                  chainName: networkInfo.name,
+                  nativeCurrency: {
+                    name: networkInfo.currency,
+                    symbol: networkInfo.currency,
+                    decimals: 18
+                  },
+                  rpcUrls: [networkInfo.rpcUrl],
+                  blockExplorerUrls: [networkInfo.explorerUrl]
+                }]
+              });
+              
+              // Close any open modal
+              const modal = document.querySelector('div[style*="z-index: 1000"]');
+              if (modal) modal.remove();
+              
+              // Re-detect network after successful add
+              setTimeout(detectNetwork, 1000);
+              
+              return true;
+            } catch (addError) {
+              console.error('Failed to add network:', addError);
+              return false;
+            }
+          }
+        }
+        return false;
+      }
+    }
+    
+    window.showNetworkSwitchOptions = function() {
+      const supportedNetworks = Object.values(SUPPORTED_NETWORKS);
+      let networkOptions = '';
+      
+      supportedNetworks.forEach(function(network) {
+        networkOptions += '<button onclick="switchToNetwork(\'' + network.chainIdHex + '\')" ' +
+          'style="display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: none; border-radius: 4px; cursor: pointer;">' +
+          network.icon + ' Switch to ' + network.name +
+          '</button>';
+      });
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      modal.innerHTML = 
+        '<div style="background: var(--card-bg, white); padding: 20px; border-radius: 8px; max-width: 400px; width: 90%;">' +
+          '<h3 style="margin-top: 0;">Switch to Supported Network</h3>' +
+          '<p>Please switch to one of our supported networks:</p>' +
+          networkOptions +
+          '<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 12px; padding: 8px 16px; background: var(--muted, #ccc); border: none; border-radius: 4px; cursor: pointer; width: 100%;">' +
+            'Cancel' +
+          '</button>' +
+        '</div>';
+      document.body.appendChild(modal);
     }
 
     // Make connectWallet available immediately (before DOM load)
