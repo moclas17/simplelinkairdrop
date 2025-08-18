@@ -356,9 +356,15 @@ export default async function handler(req, res) {
       
       supportedNetworks.forEach(function(network) {
         const isCurrentNetwork = currentChainId === network.chainId;
+        
+        // Determine text color based on background brightness
+        // Light colors need dark text for better contrast
+        const isLightColor = network.color === '#FFEEDA' || network.color === '#96BEDC';
+        const textColor = isLightColor ? '#000' : '#fff';
+        
         const buttonStyle = isCurrentNetwork ? 
-          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
-          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: white; border: none; border-radius: 4px; cursor: pointer;';
+          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
+          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: none; border-radius: 4px; cursor: pointer;';
         
         const buttonText = isCurrentNetwork ? 
           network.icon + ' ' + network.name + ' (Current)' :
