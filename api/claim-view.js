@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   const tokenSymbol = claimData.campaigns?.token_symbol || 'TOKEN';
   const tokenAddress = claimData.campaigns?.token_address;
   const campaignTitle = claimData.campaigns?.title || 'Token Airdrop';
+  const chainId = claimData.campaigns?.chain_id;
 
   // Check if expired
   if (claimData.expires_at && new Date(claimData.expires_at).getTime() <= Date.now()) {
@@ -75,15 +76,20 @@ export default async function handler(req, res) {
     .info-box p { margin: 4px 0; font-size: 14px; }
     .amount { font-size: 24px; font-weight: 700; color: var(--green); }
     .token-address { font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 12px; word-break: break-all; }
+    .network-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; margin-left: 8px; }
   </style>
+  <script src="../lib/networks-client.js"></script>
 </head>
 <body>
   <div class="card">
     <div style="display:flex;align-items:center;gap:12px;">
       <div class="logo"></div>
       <div>
-        <h1>Claim $${tokenSymbol}</h1>
-        <p style="margin: 8px 0 16px; color: var(--muted); font-size: 14px;">${campaignTitle}</p>
+        <div style="display: flex; align-items: center; margin-bottom: 8px;">
+          <h1 style="margin: 0;">Claim $${tokenSymbol}</h1>
+          <span id="networkBadge" class="network-badge" style="display: none;"></span>
+        </div>
+        <p style="margin: 0 0 16px; color: var(--muted); font-size: 14px;">${campaignTitle}</p>
         <div style="font-size:12px;color:#9fb0c7">${isMultiClaim ? `Multi-claim link • ${remainingClaims}/${maxClaims} claims remaining` : 'One-time link'} • Secure backend transfer</div>
       </div>
     </div>
@@ -120,6 +126,22 @@ export default async function handler(req, res) {
   </div>
 
   <script>
+    // Set up network badge
+    (function(){
+      const chainId = ${chainId || 'null'};
+      if (chainId && typeof getNetworkInfo === 'function') {
+        const networkInfo = getNetworkInfo(chainId);
+        if (networkInfo) {
+          const badge = document.getElementById('networkBadge');
+          const textColor = isLightColor(chainId) ? '#000' : '#fff';
+          badge.style.backgroundColor = networkInfo.color;
+          badge.style.color = textColor;
+          badge.innerHTML = networkInfo.icon + ' ' + networkInfo.name;
+          badge.style.display = 'inline-flex';
+        }
+      }
+    })();
+
     // Fill hidden linkId from /claim/:id
     (function(){
       const parts = location.pathname.split('/');

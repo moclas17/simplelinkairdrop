@@ -505,7 +505,17 @@ export default async function handler(req, res) {
           grid.innerHTML = data.campaigns.map(function(campaign) {
             var html = '<div class="campaign-card">';
             html += '<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">';
-            html += '<h3 style="margin: 0;">' + campaign.title + '</h3>';
+            html += '<div>';
+            html += '<h3 style="margin: 0 0 4px 0;">' + campaign.title + '</h3>';
+            // Add network badge
+            var networkInfo = getNetworkInfo(campaign.chain_id);
+            if (networkInfo) {
+              var textColor = isLightColor(campaign.chain_id) ? '#000' : '#fff';
+              html += '<span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 500; background: ' + networkInfo.color + '; color: ' + textColor + ';">';
+              html += networkInfo.icon + ' ' + networkInfo.name;
+              html += '</span>';
+            }
+            html += '</div>';
             html += '<span class="status status-' + campaign.status.replace('_', '-') + '">' + campaign.status.toUpperCase().replace('_', ' ') + '</span>';
             html += '</div>';
             html += '<p>' + (campaign.description || 'No description') + '</p>';
