@@ -169,6 +169,7 @@ curl -X POST ${req.headers.host ? (req.headers['x-forwarded-proto'] || 'https') 
         <li><strong>🔷 Base:</strong> Coinbase's Layer 2 built on OP Stack</li>
         <li><strong>📜 Scroll:</strong> zkEVM-based Layer 2 solution</li>
         <li><strong>🟫 Mantle:</strong> Modular Layer 2 with native yield</li>
+        <li><strong>🟣 Monad Testnet:</strong> High-performance EVM-compatible Layer 1</li>
         <li><strong>Database:</strong> ${process.env.SUPABASE_URL ? 'Supabase Connected' : 'Not configured'}</li>
       </ul>
     </div>
