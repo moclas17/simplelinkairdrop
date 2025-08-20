@@ -140,10 +140,22 @@ export default async function handler(req, res) {
           </div>
         </div>
 
-        <div class="form-row">
+        <div class="form-group">
+          <label for="tokenType">Token Type</label>
+          <select id="tokenType" name="tokenType" onchange="toggleTokenType()" required>
+            <option value="erc20">ERC-20 Token</option>
+            <option value="native">Native Token (ETH, MNT, MON, etc.)</option>
+          </select>
+          <div class="explanation-box" style="margin-top: 8px;">
+            💰 <strong>ERC-20:</strong> Custom token contract (requires address)<br>
+            💰 <strong>Native:</strong> Chain's native currency (ETH on L2s, MNT on Mantle, etc.)
+          </div>
+        </div>
+
+        <div class="form-row" id="erc20TokenSection">
           <div class="form-group">
             <label for="tokenAddress">Token Contract Address</label>
-            <input type="text" id="tokenAddress" name="tokenAddress" placeholder="0x..." pattern="^0x[a-fA-F0-9]{40}$" required>
+            <input type="text" id="tokenAddress" name="tokenAddress" placeholder="0x..." pattern="^0x[a-fA-F0-9]{40}$">
             <div class="explanation-box" style="margin-top: 8px;">
               🔍 Enter the contract address of an ERC-20 token. The contract will be validated automatically.
             </div>
@@ -151,7 +163,28 @@ export default async function handler(req, res) {
           </div>
           <div class="form-group">
             <label for="tokenSymbol">Token Symbol <span class="label-help">(Auto-filled after validation)</span></label>
-            <input type="text" id="tokenSymbol" name="tokenSymbol" placeholder="TOKEN" required readonly style="background: rgba(255,255,255,0.05);">
+            <input type="text" id="tokenSymbol" name="tokenSymbol" placeholder="TOKEN" readonly style="background: rgba(255,255,255,0.05);">
+          </div>
+        </div>
+        
+        <div class="form-row" id="nativeTokenSection" style="display: none;">
+          <div class="form-group">
+            <label>Native Token Information</label>
+            <div id="nativeTokenInfo" class="explanation-box" style="background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.3); padding: 16px; border-radius: 10px;">
+              <div id="nativeTokenDisplay">
+                <div style="font-size: 16px; font-weight: 600; color: var(--acc); margin-bottom: 8px;">
+                  <span id="nativeNetworkIcon">🔴</span> <span id="nativeNetworkName">Optimism</span>
+                </div>
+                <div style="font-size: 14px; color: var(--text);">
+                  <strong>Token:</strong> <span id="nativeCurrencyName">ETH</span><br>
+                  <strong>Decimals:</strong> 18 (standard)<br>
+                  <strong>Contract:</strong> Native (no contract address needed)
+                </div>
+              </div>
+              <div id="nativeTokenError" style="display: none; color: var(--red);">
+                ⚠️ Please connect to a supported network to use native tokens.
+              </div>
+            </div>
           </div>
         </div>
 
@@ -227,6 +260,10 @@ export default async function handler(req, res) {
           const networkInfo = getNetworkInfo(numericChainId);
           if (networkInfo) {
             console.log('Detected network:', networkInfo.name, '(Chain ID:', numericChainId + ')');
+            // Update native token info if native token type is selected
+            if (document.getElementById('tokenType').value === 'native') {
+              updateNativeTokenInfo();
+            }
             // Recalculate budget and gas costs when network changes
             calculateBudget();
           } else {
@@ -238,6 +275,77 @@ export default async function handler(req, res) {
           console.error('Error detecting network:', error);
         }
       }
+    }
+
+    function toggleTokenType() {
+      const tokenType = document.getElementById('tokenType').value;
+      const erc20Section = document.getElementById('erc20TokenSection');
+      const nativeSection = document.getElementById('nativeTokenSection');
+      const tokenAddressInput = document.getElementById('tokenAddress');
+      
+      if (tokenType === 'native') {
+        erc20Section.style.display = 'none';
+        nativeSection.style.display = 'block';
+        tokenAddressInput.removeAttribute('required');
+        updateNativeTokenInfo();
+      } else {
+        erc20Section.style.display = 'flex';
+        nativeSection.style.display = 'none';
+        tokenAddressInput.setAttribute('required', 'required');
+        // Clear native token data
+        document.getElementById('tokenSymbol').value = '';
+        document.getElementById('tokenDecimals').value = '18';
+        validatedTokenInfo = null;
+      }
+      
+      calculateBudget();
+    }
+    
+    function updateNativeTokenInfo() {
+      const nativeDisplay = document.getElementById('nativeTokenDisplay');
+      const nativeError = document.getElementById('nativeTokenError');
+      const symbolInput = document.getElementById('tokenSymbol');
+      const decimalsInput = document.getElementById('tokenDecimals');
+      
+      if (!currentChainId) {
+        nativeDisplay.style.display = 'none';
+        nativeError.style.display = 'block';
+        symbolInput.value = '';
+        decimalsInput.value = '18';
+        validatedTokenInfo = null;
+        return;
+      }
+      
+      const networkInfo = getNetworkInfo(currentChainId);
+      if (!networkInfo) {
+        nativeDisplay.style.display = 'none';
+        nativeError.style.display = 'block';
+        symbolInput.value = '';
+        decimalsInput.value = '18';
+        validatedTokenInfo = null;
+        return;
+      }
+      
+      // Update native token display
+      document.getElementById('nativeNetworkIcon').textContent = networkInfo.icon;
+      document.getElementById('nativeNetworkName').textContent = networkInfo.name;
+      document.getElementById('nativeCurrencyName').textContent = networkInfo.currency;
+      
+      // Update form fields
+      symbolInput.value = networkInfo.currency;
+      decimalsInput.value = '18';
+      
+      // Set up validated token info for native token
+      validatedTokenInfo = {
+        name: networkInfo.name + ' Native Token',
+        symbol: networkInfo.currency,
+        decimals: 18,
+        address: 'NATIVE',
+        isNative: true
+      };
+      
+      nativeDisplay.style.display = 'block';
+      nativeError.style.display = 'none';
     }
 
     function toggleClaimType() {
@@ -398,11 +506,18 @@ export default async function handler(req, res) {
       
       // Validate that token is verified
       if (!validatedTokenInfo) {
-        showToast('Please enter a valid ERC-20 token address and wait for validation', 'error');
+        const tokenType = document.getElementById('tokenType').value;
+        if (tokenType === 'erc20') {
+          showToast('Please enter a valid ERC-20 token address and wait for validation', 'error');
+        } else {
+          showToast('Please connect to a supported network to use native tokens', 'error');
+        }
         return;
       }
       
       const formData = new FormData(e.target);
+      const tokenType = formData.get('tokenType');
+      
       const campaignData = {
         walletAddress: walletAddress,
         title: formData.get('title'),
@@ -411,11 +526,12 @@ export default async function handler(req, res) {
         amountPerClaim: Number(formData.get('amountPerClaim')),
         totalClaims: Number(formData.get('totalClaims')),
         maxClaimsPerLink: formData.get('claimType') === 'multi' ? Number(formData.get('maxClaimsPerLink')) : null,
-        tokenAddress: formData.get('tokenAddress'),
+        tokenAddress: tokenType === 'native' ? 'NATIVE' : formData.get('tokenAddress'),
         tokenSymbol: formData.get('tokenSymbol'),
         tokenDecimals: Number(formData.get('tokenDecimals')),
         expiresInHours: formData.get('expiresInHours') ? Number(formData.get('expiresInHours')) : null,
-        chainId: currentChainId
+        chainId: currentChainId,
+        tokenType: tokenType
       };
       
       try {

@@ -11,9 +11,18 @@ export default async function handler(req, res) {
   }
 
   // Extract token info from campaign
-  const tokenSymbol = claimData.campaigns?.token_symbol || 'TOKEN';
+  let tokenSymbol = claimData.campaigns?.token_symbol || 'TOKEN';
   const campaignTitle = claimData.campaigns?.title || 'Token Airdrop';
   const chainId = claimData.campaigns?.chain_id;
+  
+  // For native tokens, ensure we show the correct network symbol
+  if (claimData.campaigns?.token_address === 'NATIVE' && chainId) {
+    const { getNetworkInfo } = await import('../lib/networks.js');
+    const networkInfo = getNetworkInfo(chainId);
+    if (networkInfo) {
+      tokenSymbol = networkInfo.currency;
+    }
+  }
 
   // Check if expired
   if (claimData.expires_at && new Date(claimData.expires_at).getTime() <= Date.now()) {

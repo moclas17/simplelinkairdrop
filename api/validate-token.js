@@ -19,12 +19,12 @@ export default async function handler(req, res) {
   if (chainId && !isNetworkSupported(chainId)) {
     return res.status(400).json({
       isValid: false,
-      error: 'Unsupported network. Please switch to Optimism, Arbitrum, Base, Scroll, or Mantle.'
+      error: 'Unsupported network. Please switch to Optimism, Arbitrum, Base, Scroll, Mantle, or Monad Testnet.'
     });
   }
 
   try {
-    console.log('[API] Validating ERC-20 token:', tokenAddress);
+    console.log('[API] Validating token:', tokenAddress);
     console.log('[API] Chain ID:', chainId);
     
     // Use dynamic RPC based on chain ID, fallback to env RPC
@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     );
     
     const validation = await Promise.race([
-      db.validateERC20Contract(tokenAddress, rpcUrl),
+      db.validateTokenContract(tokenAddress, chainId, rpcUrl),
       timeoutPromise
     ]);
     

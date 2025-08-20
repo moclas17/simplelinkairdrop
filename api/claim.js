@@ -102,15 +102,18 @@ export default async function handler(req, res) {
   const provider = new ethers.JsonRpcProvider(rpcUrl);
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
-  // Validate that the token is still a valid ERC-20 using the campaign's RPC
-  const tokenValidation = await db.validateERC20Contract(campaignTokenAddress, rpcUrl);
+  // Validate that the token is still valid (native or ERC-20) using the campaign's RPC
+  const tokenValidation = await db.validateTokenContract(campaignTokenAddress, campaignChainId, rpcUrl);
   if (!tokenValidation.isValid) {
     console.error('[CLAIM] Token validation failed:', tokenValidation.error);
     return res.status(400).json({ 
       error: 'Invalid token contract',
-      details: `The token contract for this campaign is no longer valid: ${tokenValidation.error}`
+      details: `The token for this campaign is no longer valid: ${tokenValidation.error}`
     });
   }
+  
+  const isNativeToken = tokenValidation.isNative || false;
+  console.log('[CLAIM] Token type:', isNativeToken ? 'Native' : 'ERC-20');
   
   if (current.expires_at && new Date(current.expires_at).getTime() <= Date.now()) {
     console.log('[CLAIM] Link expired:', current.expires_at);
@@ -193,25 +196,40 @@ export default async function handler(req, res) {
   }
 
   const amount = reserved.amount;
-  console.log('[CLAIM] Processing transfer:', { userWallet, amount, decimals: campaignTokenDecimals });
-  
-  // Create token contract instance for this specific campaign
-  const campaignToken = new ethers.Contract(campaignTokenAddress, [
-    'function transfer(address,uint256)',
-    'function balanceOf(address) view returns (uint256)'
-  ], wallet);
+  console.log('[CLAIM] Processing transfer:', { userWallet, amount, decimals: campaignTokenDecimals, isNative: isNativeToken });
   
   // Check wallet balance before attempting transfer
   try {
-    const requiredAmount = ethers.parseUnits(amount.toString(), campaignTokenDecimals);
-    const walletBalance = await campaignToken.balanceOf(wallet.address);
+    let walletBalance, requiredAmount;
     
-    console.log('[CLAIM] Balance check:', {
-      walletAddress: wallet.address,
-      requiredAmount: requiredAmount.toString(),
-      availableBalance: walletBalance.toString(),
-      hasEnoughBalance: walletBalance >= requiredAmount
-    });
+    if (isNativeToken) {
+      // For native tokens, use provider.getBalance and parseEther
+      requiredAmount = ethers.parseEther(amount.toString());
+      walletBalance = await provider.getBalance(wallet.address);
+      
+      console.log('[CLAIM] Native token balance check:', {
+        walletAddress: wallet.address,
+        requiredAmount: requiredAmount.toString(),
+        availableBalance: walletBalance.toString(),
+        hasEnoughBalance: walletBalance >= requiredAmount
+      });
+    } else {
+      // For ERC-20 tokens, use contract methods
+      const campaignToken = new ethers.Contract(campaignTokenAddress, [
+        'function transfer(address,uint256)',
+        'function balanceOf(address) view returns (uint256)'
+      ], wallet);
+      
+      requiredAmount = ethers.parseUnits(amount.toString(), campaignTokenDecimals);
+      walletBalance = await campaignToken.balanceOf(wallet.address);
+      
+      console.log('[CLAIM] ERC-20 balance check:', {
+        walletAddress: wallet.address,
+        requiredAmount: requiredAmount.toString(),
+        availableBalance: walletBalance.toString(),
+        hasEnoughBalance: walletBalance >= requiredAmount
+      });
+    }
     
     if (walletBalance < requiredAmount) {
       console.log('[CLAIM] Insufficient balance in hot wallet');
@@ -233,8 +251,24 @@ export default async function handler(req, res) {
     }
     
     // Execute blockchain transfer
-    const tx = await campaignToken.transfer(userWallet, requiredAmount);
-    console.log('[CLAIM] Transfer successful:', tx.hash);
+    let tx;
+    if (isNativeToken) {
+      // Native token transfer
+      tx = await wallet.sendTransaction({
+        to: userWallet,
+        value: requiredAmount
+      });
+      console.log('[CLAIM] Native token transfer successful:', tx.hash);
+    } else {
+      // ERC-20 token transfer
+      const campaignToken = new ethers.Contract(campaignTokenAddress, [
+        'function transfer(address,uint256)',
+        'function balanceOf(address) view returns (uint256)'
+      ], wallet);
+      
+      tx = await campaignToken.transfer(userWallet, requiredAmount);
+      console.log('[CLAIM] ERC-20 transfer successful:', tx.hash);
+    }
     
     // Try to save to database - if this fails, we still have a successful blockchain transfer
     try {
