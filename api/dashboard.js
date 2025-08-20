@@ -122,6 +122,7 @@ export default async function handler(req, res) {
     .toast { position: fixed; bottom: 20px; right: 20px; padding: 16px 24px; border-radius: 12px; font-weight: 500; z-index: 1001; box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
     .toast-success { background: var(--green); color: white; }
     .toast-error { background: var(--red); color: white; }
+    .toast-info { background: var(--acc); color: white; }
     
     /* Empty state */
     .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
@@ -582,27 +583,47 @@ export default async function handler(req, res) {
 
     // Campaign action functions
     window.checkFunding = async function(campaignId) {
+      console.log('🔍 Check Funding clicked for campaign:', campaignId);
+      console.log('👤 Current user:', currentUser);
+      
+      if (!currentUser) {
+        showToast('Please connect your wallet first', 'error');
+        return;
+      }
+      
+      showToast('Checking funding status...', 'info');
+      
       try {
+        console.log('📡 Sending funding check request...');
+        const requestBody = { 
+          campaignId: campaignId, 
+          action: 'check_funding',
+          walletAddress: currentUser 
+        };
+        console.log('📤 Request body:', requestBody);
+        
         const response = await fetch('/api/campaigns', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            campaignId: campaignId, 
-            action: 'check_funding',
-            walletAddress: currentUser 
-          })
+          body: JSON.stringify(requestBody)
         });
         
+        console.log('📡 Response status:', response.status);
         const result = await response.json();
+        console.log('📋 Response result:', result);
+        
         if (response.ok) {
           if (result.funded) {
+            console.log('✅ Funding verified successfully');
             showToast(result.message || 'Campaign activated! You can now generate links.', 'success');
             loadCampaigns(); // Refresh to show new status
           } else {
+            console.log('❌ Funding not detected:', result);
             const errorMsg = result.details || result.error || 'Funding not detected yet. Please send the required tokens first.';
             showToast(errorMsg, 'error');
           }
         } else {
+          console.log('❌ API request failed:', response.status, result);
           const errorMsg = result.details || result.error || 'Failed to check funding';
           showToast(errorMsg, 'error');
         }
