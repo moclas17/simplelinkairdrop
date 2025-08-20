@@ -104,3 +104,4 @@ Thumbs.db
 
 # Development server (uncomment if you want to exclude)
 # server.js
+.vercel

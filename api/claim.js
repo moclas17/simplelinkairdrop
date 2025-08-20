@@ -99,7 +99,11 @@ export default async function handler(req, res) {
   }
   
   // Create provider and wallet for this specific chain
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
+  const provider = new ethers.JsonRpcProvider(rpcUrl, {
+    chainId: parseInt(campaignChainId),
+    name: `chain-${campaignChainId}`,
+    ensAddress: null // Explicitly disable ENS for custom networks
+  });
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
   // Validate that the token is still valid (native or ERC-20) using the campaign's RPC
