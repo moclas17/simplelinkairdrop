@@ -135,6 +135,9 @@ export default async function handler(req, res) {
         ⏰ Expires: ${expiryDate}<br>
         🛡️ Secure backend transfer
       </div>
+      <div style="text-align: center; color: var(--muted); margin: 16px 0; font-size: 12px;">
+        <em>en chinga</em> = extremely fast
+      </div>
     </div>
 
     <div id="toast" class="toast">Processing…</div>
