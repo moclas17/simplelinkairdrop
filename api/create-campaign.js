@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Campaign - SimpleLink Airdrop</title>
+  <title>Create Campaign - Chingadrop.xyz</title>
   <style>
     :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --green:#22c55e; --red:#ef4444; --orange:#f59e0b; }
     * { box-sizing: border-box; }

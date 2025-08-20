@@ -1,4 +1,4 @@
-# Token Link Drop (Hot Wallet + One-time URLs)
+# Chingadrop.xyz - Token Distribution Platform
 
 Distribuye tokens ERC-20 por medio de **links de un solo uso**, usando una **hot wallet** controlada por el backend (sin contrato). Listo para desplegar en **Vercel**.
 

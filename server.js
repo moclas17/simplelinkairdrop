@@ -32,7 +32,7 @@ app.get('/', (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Token Link Drop - SimpleLink Airdrop</title>
+  <title>Token Link Drop - Chingadrop.xyz</title>
   <style>
     :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --green:#22c55e; }
     * { box-sizing: border-box; }
@@ -60,7 +60,7 @@ app.get('/', (req, res) => {
     <div class="header">
       <div class="logo"></div>
       <div>
-        <h1>SimpleLink Airdrop</h1>
+        <h1>Chingadrop.xyz</h1>
         <span class="status online">🟢 Service Online</span>
       </div>
     </div>
