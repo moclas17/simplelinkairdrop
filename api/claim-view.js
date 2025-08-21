@@ -345,117 +345,67 @@ export default async function handler(req, res) {
         
         const walletPromise = new Promise(async (resolve, reject) => {
           try {
-            console.log('[Porto] Starting Porto.create() process...');
-            console.log('[Porto] Available Porto methods:', Object.getOwnPropertyNames(Porto));
-            console.log('[Porto] Porto object:', Porto);
+            console.log('[Porto] Starting Porto wallet connection...');
             
-            // Check if Porto is properly loaded
-            if (typeof Porto.create !== 'function') {
-              throw new Error('Porto.create is not a function. Porto may not be loaded correctly.');
+            emailWalletStatus.textContent = 'Creando connector de Porto...';
+            
+            // Create the Porto connector
+            const portoConnector = Porto.create();
+            console.log('[Porto] Porto connector created:', portoConnector);
+            
+            // The provider should be an EIP-1193 provider
+            const provider = portoConnector.provider;
+            console.log('[Porto] Provider object:', provider);
+            console.log('[Porto] Provider methods:', provider ? Object.getOwnPropertyNames(provider) : 'none');
+            
+            if (!provider) {
+              throw new Error('No provider found in Porto connector');
             }
             
-            emailWalletStatus.textContent = 'Iniciando Porto...';
+            emailWalletStatus.textContent = 'Conectando wallet...';
             
-            console.log('[Porto] Calling Porto.create()...');
-            const walletResult = Porto.create();
+            // Request accounts using EIP-1193 standard
+            console.log('[Porto] Requesting accounts via provider...');
+            const accounts = await provider.request({ method: 'eth_requestAccounts' });
+            console.log('[Porto] Accounts received:', accounts);
             
-            console.log('[Porto] Porto.create() immediate result:', walletResult);
-            console.log('[Porto] Result type:', typeof walletResult);
-            console.log('[Porto] Is Promise?:', walletResult instanceof Promise);
-            console.log('[Porto] Has then?:', typeof walletResult?.then === 'function');
-            
-            // Handle different return types
-            if (walletResult instanceof Promise) {
-              console.log('[Porto] Waiting for Promise to resolve...');
-              emailWalletStatus.textContent = 'Esperando respuesta de Porto...';
-              const resolvedResult = await walletResult;
-              console.log('[Porto] Promise resolved with:', resolvedResult);
-              resolve(resolvedResult);
-            } else if (walletResult && typeof walletResult === 'object') {
-              console.log('[Porto] Got object, checking for methods...');
-              console.log('[Porto] Available methods on result:', Object.getOwnPropertyNames(walletResult));
-              
-              // Check if it's a dialog that needs to be opened
-              if (typeof walletResult.open === 'function') {
-                console.log('[Porto] Found open() method, calling it...');
-                emailWalletStatus.textContent = 'Abriendo diálogo de Porto...';
-                const dialogResult = await walletResult.open();
-                console.log('[Porto] Dialog result:', dialogResult);
-                resolve(dialogResult);
-              } else if (typeof walletResult.connect === 'function') {
-                console.log('[Porto] Found connect() method, calling it...');
-                emailWalletStatus.textContent = 'Conectando con Porto...';
-                const connectResult = await walletResult.connect();
-                console.log('[Porto] Connect result:', connectResult);
-                resolve(connectResult);
-              } else {
-                console.log('[Porto] Using result as-is');
-                resolve(walletResult);
-              }
-            } else {
-              console.log('[Porto] Unexpected result type, resolving as-is');
-              resolve(walletResult);
+            if (!accounts || accounts.length === 0) {
+              throw new Error('No accounts returned from Porto');
             }
+            
+            const address = accounts[0];
+            console.log('[Porto] Selected address:', address);
+            
+            // Return both the address and the provider for future use
+            resolve({
+              address: address,
+              provider: provider,
+              connector: portoConnector
+            });
+            
           } catch (error) {
-            console.error('[Porto] Porto.create() error:', error);
-            console.error('[Porto] Error stack:', error.stack);
-            reject(error);
+            console.error('[Porto] Connection error:', error);
+            
+            // Handle specific errors
+            if (error.code === 4001) {
+              reject(new Error('Usuario canceló la conexión'));
+            } else if (error.message.includes('User rejected')) {
+              reject(new Error('Usuario rechazó la conexión'));
+            } else {
+              reject(error);
+            }
           }
         });
         
         portoWallet = await Promise.race([walletPromise, timeoutPromise]);
-        console.log('[Porto] Wallet object received:', portoWallet);
-        console.log('[Porto] Wallet keys:', portoWallet ? Object.keys(portoWallet) : 'null');
+        console.log('[Porto] Connection result:', portoWallet);
         
-        // Try different ways to get the address
-        let address = null;
-        if (portoWallet) {
-          // Try direct properties first
-          address = portoWallet.address || 
-                   portoWallet.account?.address || 
-                   portoWallet.accounts?.[0]?.address ||
-                   portoWallet.wallet?.address ||
-                   portoWallet.walletAddress ||
-                   portoWallet.publicAddress ||
-                   portoWallet.ethAddress;
-          
-          // Try methods if properties don't work
-          if (!address) {
-            try {
-              if (typeof portoWallet.getAddress === 'function') {
-                address = await portoWallet.getAddress();
-              } else if (typeof portoWallet.address === 'function') {
-                address = await portoWallet.address();
-              } else if (typeof portoWallet.getAccount === 'function') {
-                const account = await portoWallet.getAccount();
-                address = account?.address;
-              }
-            } catch (methodError) {
-              console.error('[Porto] Error calling wallet methods:', methodError);
-            }
-          }
-        }
-        
+        // Extract address from the connection result
+        const address = portoWallet.address;
         console.log('[Porto] Extracted address:', address);
 
         if (!address) {
-          console.error('[Porto] Failed to extract address from wallet object:', portoWallet);
-          console.error('[Porto] Available methods:', portoWallet ? Object.getOwnPropertyNames(portoWallet) : 'none');
-          
-          // Try to stringify the object to see its full structure
-          try {
-            console.error('[Porto] Full object structure:', JSON.stringify(portoWallet, null, 2));
-          } catch (e) {
-            console.error('[Porto] Object cannot be stringified, logging directly:', portoWallet);
-          }
-          
-          // Check if it's a class instance with methods
-          if (portoWallet && typeof portoWallet === 'object') {
-            console.error('[Porto] Constructor name:', portoWallet.constructor?.name);
-            console.error('[Porto] Prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(portoWallet)));
-          }
-          
-          throw new Error('No se pudo obtener la dirección de la wallet. Estructura de Porto inesperada. Revisa la consola para más detalles.');
+          throw new Error('No se pudo obtener la dirección de la wallet de Porto');
         }
 
         // Show success and auto-fill the wallet input
