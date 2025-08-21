@@ -331,9 +331,29 @@ export default async function handler(req, res) {
         const walletPromise = new Promise(async (resolve, reject) => {
           try {
             console.log('[Porto] Calling Porto.create()...');
+            
+            // Porto might require user interaction, so we need to handle different scenarios
+            emailWalletStatus.textContent = 'Abriendo diálogo de Porto...';
+            
             const walletResult = await Porto.create();
             console.log('[Porto] Porto.create() result:', walletResult);
-            resolve(walletResult);
+            console.log('[Porto] Result type:', typeof walletResult);
+            
+            // Check if Porto returned a dialog or requires additional steps
+            if (walletResult && typeof walletResult === 'object') {
+              // Check if it's a dialog that needs to be opened
+              if (typeof walletResult.open === 'function') {
+                console.log('[Porto] Opening Porto dialog...');
+                emailWalletStatus.textContent = 'Por favor completa el proceso en la ventana de Porto...';
+                const dialogResult = await walletResult.open();
+                console.log('[Porto] Dialog result:', dialogResult);
+                resolve(dialogResult);
+              } else {
+                resolve(walletResult);
+              }
+            } else {
+              resolve(walletResult);
+            }
           } catch (error) {
             console.error('[Porto] Porto.create() error:', error);
             reject(error);
@@ -341,10 +361,24 @@ export default async function handler(req, res) {
         });
         
         portoWallet = await Promise.race([walletPromise, timeoutPromise]);
-        const address = portoWallet.address;
+        console.log('[Porto] Wallet object received:', portoWallet);
+        console.log('[Porto] Wallet keys:', portoWallet ? Object.keys(portoWallet) : 'null');
+        
+        // Try different ways to get the address
+        let address = null;
+        if (portoWallet) {
+          address = portoWallet.address || 
+                   portoWallet.account?.address || 
+                   portoWallet.accounts?.[0]?.address ||
+                   portoWallet.wallet?.address ||
+                   (typeof portoWallet.getAddress === 'function' ? await portoWallet.getAddress() : null);
+        }
+        
+        console.log('[Porto] Extracted address:', address);
 
         if (!address) {
-          throw new Error('No se pudo obtener la dirección de la wallet');
+          console.error('[Porto] Failed to extract address from wallet object:', portoWallet);
+          throw new Error('No se pudo obtener la dirección de la wallet. Estructura de Porto inesperada.');
         }
 
         // Show success and auto-fill the wallet input
