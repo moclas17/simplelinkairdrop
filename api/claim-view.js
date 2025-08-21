@@ -338,9 +338,9 @@ export default async function handler(req, res) {
         emailWalletStatus.textContent = 'Creando wallet segura...';
         console.log('[Porto] Attempting to create wallet...');
         
-        // Simple timeout wrapper
+        // Extended timeout and user guidance
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: Porto tardó demasiado en responder (30s)')), 30000)
+          setTimeout(() => reject(new Error('Timeout: Porto tardó demasiado en responder (60s). Verifica si hay popups bloqueados.')), 60000)
         );
         
         const walletPromise = new Promise(async (resolve, reject) => {
@@ -363,9 +363,18 @@ export default async function handler(req, res) {
             }
             
             emailWalletStatus.textContent = 'Conectando wallet...';
+            emailWalletStatus.innerHTML = 'Abriendo diálogo de Porto...<br><small style="color: var(--muted);">📱 Si no aparece un popup, verifica que no esté bloqueado por el navegador</small>';
             
             // Request accounts using EIP-1193 standard
             console.log('[Porto] Requesting accounts via provider...');
+            
+            // Add visual feedback that we're waiting for user interaction
+            setTimeout(() => {
+              if (emailWalletStatus.textContent.includes('Abriendo diálogo')) {
+                emailWalletStatus.innerHTML = 'Esperando respuesta...<br><small style="color: var(--acc);">💡 Completa el proceso en la ventana de Porto que se abrió</small>';
+              }
+            }, 3000);
+            
             const accounts = await provider.request({ method: 'eth_requestAccounts' });
             console.log('[Porto] Accounts received:', accounts);
             
@@ -428,15 +437,22 @@ export default async function handler(req, res) {
         if (err.message.includes('Porto no está disponible')) {
           errorMsg = 'Porto no está disponible. Intenta más tarde o usa MetaMask.';
         } else if (err.message.includes('Timeout')) {
-          errorMsg = 'Conexión lenta. Intenta de nuevo.';
+          errorMsg = 'Timeout: Verifica si hay popups bloqueados y prueba de nuevo.';
         } else if (err.message.includes('Network')) {
           errorMsg = 'Problema de conexión. Verifica tu internet.';
+        } else if (err.message.includes('User rejected') || err.message.includes('canceló')) {
+          errorMsg = 'Conexión cancelada por el usuario.';
         } else if (err.message) {
           errorMsg = err.message;
         }
         
-        emailWalletStatus.textContent = '❌ Error: ' + errorMsg;
-        emailWalletStatus.innerHTML += '<br><small style="color: var(--muted); margin-top: 8px;">💡 Puedes usar MetaMask u otra wallet compatible</small>';
+        emailWalletStatus.innerHTML = '❌ Error: ' + errorMsg;
+        
+        if (err.message.includes('Timeout')) {
+          emailWalletStatus.innerHTML += '<br><small style="color: var(--muted); margin-top: 8px;">🔧 Para permitir popups: Haz clic en el ícono de candado/escudo en la barra de direcciones</small>';
+        }
+        
+        emailWalletStatus.innerHTML += '<br><small style="color: var(--muted); margin-top: 8px;">💡 Alternativa: Usa MetaMask u otra wallet compatible</small>';
         
         createWalletBtn.disabled = false;
         createWalletBtn.textContent = '✨ Crear wallet con email';
