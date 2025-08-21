@@ -142,6 +142,9 @@ export default async function handler(req, res) {
       <button id="createWalletBtn" class="btn" style="background: linear-gradient(135deg, var(--acc), #38bdf8); color: #0b1220; font-weight: 600;">
         ✨ Crear wallet con email
       </button>
+      <div id="portoStatus" style="margin-top: 8px; font-size: 11px; color: var(--muted);">
+        <span id="portoIndicator">⚡ Verificando Porto...</span>
+      </div>
       <div id="emailWalletStatus" style="margin-top: 12px; font-size: 12px; color: var(--muted); display: none;"></div>
     </div>
 
@@ -162,6 +165,34 @@ export default async function handler(req, res) {
   <script type="module">
     // Import Porto from ESM CDN
     import { Porto } from 'https://esm.sh/porto@0.0.76';
+    
+    // Check Porto service status on page load
+    (async function checkPortoStatus() {
+      const indicator = document.getElementById('portoIndicator');
+      const createBtn = document.getElementById('createWalletBtn');
+      
+      try {
+        // Test Porto service with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        await fetch('https://id.porto.sh', { 
+          method: 'HEAD', 
+          mode: 'no-cors',
+          signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        
+        indicator.innerHTML = '🟢 Porto disponible';
+        indicator.style.color = 'var(--green)';
+      } catch (error) {
+        indicator.innerHTML = '🔴 Porto no disponible';
+        indicator.style.color = '#ef4444';
+        createBtn.style.opacity = '0.6';
+        createBtn.style.cursor = 'not-allowed';
+        createBtn.title = 'Porto service is currently unavailable';
+      }
+    })();
     
     // Set up network badge
     (function(){
@@ -281,8 +312,32 @@ export default async function handler(req, res) {
         emailWalletStatus.style.display = 'block';
         emailWalletStatus.textContent = 'Conectando con Porto...';
 
-        // Create wallet with Porto
-        portoWallet = await Porto.create();
+        // Check Porto service availability first
+        try {
+          await fetch('https://id.porto.sh', { method: 'HEAD', mode: 'no-cors' });
+        } catch (connectErr) {
+          throw new Error('Porto no está disponible. Servicio temporalmente fuera de línea.');
+        }
+
+        // Create wallet with Porto with timeout
+        const createWalletWithTimeout = () => {
+          return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+              reject(new Error('Timeout: Porto tardó demasiado en responder (30s)'));
+            }, 30000); // 30 second timeout
+
+            Porto.create().then(wallet => {
+              clearTimeout(timeoutId);
+              resolve(wallet);
+            }).catch(error => {
+              clearTimeout(timeoutId);
+              reject(error);
+            });
+          });
+        };
+
+        emailWalletStatus.textContent = 'Creando wallet segura...';
+        portoWallet = await createWalletWithTimeout();
         const address = portoWallet.address;
 
         if (!address) {
@@ -303,7 +358,22 @@ export default async function handler(req, res) {
         
       } catch (err) {
         console.error('Porto wallet creation error:', err);
-        emailWalletStatus.textContent = '❌ Error: ' + (err.message || 'No se pudo crear la wallet');
+        
+        // More specific error messages
+        let errorMsg = 'No se pudo crear la wallet';
+        if (err.message.includes('Porto no está disponible')) {
+          errorMsg = 'Porto no está disponible. Intenta más tarde o usa MetaMask.';
+        } else if (err.message.includes('Timeout')) {
+          errorMsg = 'Conexión lenta. Intenta de nuevo.';
+        } else if (err.message.includes('Network')) {
+          errorMsg = 'Problema de conexión. Verifica tu internet.';
+        } else if (err.message) {
+          errorMsg = err.message;
+        }
+        
+        emailWalletStatus.textContent = '❌ Error: ' + errorMsg;
+        emailWalletStatus.innerHTML += '<br><small style="color: var(--muted); margin-top: 8px;">💡 Puedes usar MetaMask u otra wallet compatible</small>';
+        
         createWalletBtn.disabled = false;
         createWalletBtn.textContent = '✨ Crear wallet con email';
       }
