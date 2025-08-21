@@ -159,8 +159,10 @@ export default async function handler(req, res) {
     <div id="toast" class="toast">Processing…</div>
   </div>
 
-  <script src="https://unpkg.com/porto@latest/dist/porto.min.js"></script>
-  <script>
+  <script type="module">
+    // Import Porto from ESM CDN
+    import { Porto } from 'https://esm.sh/porto@0.0.76';
+    
     // Set up network badge
     (function(){
       const chainId = ${chainId || 'null'};
@@ -278,11 +280,6 @@ export default async function handler(req, res) {
         createWalletBtn.textContent = 'Creando wallet...';
         emailWalletStatus.style.display = 'block';
         emailWalletStatus.textContent = 'Conectando con Porto...';
-
-        // Initialize Porto
-        if (typeof Porto === 'undefined') {
-          throw new Error('Porto no está disponible');
-        }
 
         // Create wallet with Porto
         portoWallet = await Porto.create();
