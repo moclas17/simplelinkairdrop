@@ -163,8 +163,23 @@ export default async function handler(req, res) {
   </div>
 
   <script type="module">
-    // Import Porto from ESM CDN
-    import { Porto } from 'https://esm.sh/porto@0.0.76';
+    // Import Porto from ESM CDN with error handling
+    let Porto;
+    try {
+      const portoModule = await import('https://esm.sh/porto@0.0.76');
+      Porto = portoModule.Porto;
+      console.log('[Porto] Successfully imported Porto:', Porto);
+      console.log('[Porto] Porto methods:', Object.getOwnPropertyNames(Porto));
+    } catch (importError) {
+      console.error('[Porto] Failed to import Porto:', importError);
+      
+      // Show error in UI
+      document.getElementById('portoIndicator').innerHTML = '🔴 Error cargando Porto';
+      document.getElementById('portoIndicator').style.color = '#ef4444';
+      document.getElementById('createWalletBtn').disabled = true;
+      document.getElementById('createWalletBtn').style.opacity = '0.5';
+      document.getElementById('createWalletBtn').title = 'Error loading Porto library';
+    }
     
     // Check Porto service status on page load
     (async function checkPortoStatus() {
@@ -330,32 +345,60 @@ export default async function handler(req, res) {
         
         const walletPromise = new Promise(async (resolve, reject) => {
           try {
+            console.log('[Porto] Starting Porto.create() process...');
+            console.log('[Porto] Available Porto methods:', Object.getOwnPropertyNames(Porto));
+            console.log('[Porto] Porto object:', Porto);
+            
+            // Check if Porto is properly loaded
+            if (typeof Porto.create !== 'function') {
+              throw new Error('Porto.create is not a function. Porto may not be loaded correctly.');
+            }
+            
+            emailWalletStatus.textContent = 'Iniciando Porto...';
+            
             console.log('[Porto] Calling Porto.create()...');
+            const walletResult = Porto.create();
             
-            // Porto might require user interaction, so we need to handle different scenarios
-            emailWalletStatus.textContent = 'Abriendo diálogo de Porto...';
-            
-            const walletResult = await Porto.create();
-            console.log('[Porto] Porto.create() result:', walletResult);
+            console.log('[Porto] Porto.create() immediate result:', walletResult);
             console.log('[Porto] Result type:', typeof walletResult);
+            console.log('[Porto] Is Promise?:', walletResult instanceof Promise);
+            console.log('[Porto] Has then?:', typeof walletResult?.then === 'function');
             
-            // Check if Porto returned a dialog or requires additional steps
-            if (walletResult && typeof walletResult === 'object') {
+            // Handle different return types
+            if (walletResult instanceof Promise) {
+              console.log('[Porto] Waiting for Promise to resolve...');
+              emailWalletStatus.textContent = 'Esperando respuesta de Porto...';
+              const resolvedResult = await walletResult;
+              console.log('[Porto] Promise resolved with:', resolvedResult);
+              resolve(resolvedResult);
+            } else if (walletResult && typeof walletResult === 'object') {
+              console.log('[Porto] Got object, checking for methods...');
+              console.log('[Porto] Available methods on result:', Object.getOwnPropertyNames(walletResult));
+              
               // Check if it's a dialog that needs to be opened
               if (typeof walletResult.open === 'function') {
-                console.log('[Porto] Opening Porto dialog...');
-                emailWalletStatus.textContent = 'Por favor completa el proceso en la ventana de Porto...';
+                console.log('[Porto] Found open() method, calling it...');
+                emailWalletStatus.textContent = 'Abriendo diálogo de Porto...';
                 const dialogResult = await walletResult.open();
                 console.log('[Porto] Dialog result:', dialogResult);
                 resolve(dialogResult);
+              } else if (typeof walletResult.connect === 'function') {
+                console.log('[Porto] Found connect() method, calling it...');
+                emailWalletStatus.textContent = 'Conectando con Porto...';
+                const connectResult = await walletResult.connect();
+                console.log('[Porto] Connect result:', connectResult);
+                resolve(connectResult);
               } else {
+                console.log('[Porto] Using result as-is');
                 resolve(walletResult);
               }
             } else {
+              console.log('[Porto] Unexpected result type, resolving as-is');
               resolve(walletResult);
             }
           } catch (error) {
             console.error('[Porto] Porto.create() error:', error);
+            console.error('[Porto] Error stack:', error.stack);
             reject(error);
           }
         });
