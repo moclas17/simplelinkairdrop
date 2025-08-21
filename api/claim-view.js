@@ -319,25 +319,28 @@ export default async function handler(req, res) {
           throw new Error('Porto no está disponible. Servicio temporalmente fuera de línea.');
         }
 
-        // Create wallet with Porto with timeout
-        const createWalletWithTimeout = () => {
-          return new Promise((resolve, reject) => {
-            const timeoutId = setTimeout(() => {
-              reject(new Error('Timeout: Porto tardó demasiado en responder (30s)'));
-            }, 30000); // 30 second timeout
-
-            Porto.create().then(wallet => {
-              clearTimeout(timeoutId);
-              resolve(wallet);
-            }).catch(error => {
-              clearTimeout(timeoutId);
-              reject(error);
-            });
-          });
-        };
-
+        // Create wallet with Porto with timeout - simplified approach
         emailWalletStatus.textContent = 'Creando wallet segura...';
-        portoWallet = await createWalletWithTimeout();
+        console.log('[Porto] Attempting to create wallet...');
+        
+        // Simple timeout wrapper
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout: Porto tardó demasiado en responder (30s)')), 30000)
+        );
+        
+        const walletPromise = new Promise(async (resolve, reject) => {
+          try {
+            console.log('[Porto] Calling Porto.create()...');
+            const walletResult = await Porto.create();
+            console.log('[Porto] Porto.create() result:', walletResult);
+            resolve(walletResult);
+          } catch (error) {
+            console.error('[Porto] Porto.create() error:', error);
+            reject(error);
+          }
+        });
+        
+        portoWallet = await Promise.race([walletPromise, timeoutPromise]);
         const address = portoWallet.address;
 
         if (!address) {
