@@ -126,6 +126,25 @@ export default async function handler(req, res) {
       </button>
     </form>
 
+    <!-- Divider -->
+    <div style="text-align: center; margin: 32px 0; color: var(--muted); font-size: 14px; font-weight: 500;">
+      — OR —
+    </div>
+
+    <!-- Porto Email Wallet Section -->
+    <div style="background: rgba(125,211,252,0.05); border: 1px solid rgba(125,211,252,0.2); border-radius: 16px; padding: 24px; margin: 20px 0; text-align: center;">
+      <div style="font-size: 16px; font-weight: 600; color: var(--acc); margin-bottom: 8px;">
+        📧 No tienes wallet?
+      </div>
+      <div style="font-size: 14px; color: var(--muted); margin-bottom: 16px;">
+        Crea una con tu correo electrónico
+      </div>
+      <button id="createWalletBtn" class="btn" style="background: linear-gradient(135deg, var(--acc), #38bdf8); color: #0b1220; font-weight: 600;">
+        ✨ Crear wallet con email
+      </button>
+      <div id="emailWalletStatus" style="margin-top: 12px; font-size: 12px; color: var(--muted); display: none;"></div>
+    </div>
+
     <!-- Footer info -->
     <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); text-align: center;">
       <div style="font-size: 12px; color: var(--muted); line-height: 1.5;">
@@ -140,6 +159,7 @@ export default async function handler(req, res) {
     <div id="toast" class="toast">Processing…</div>
   </div>
 
+  <script src="https://unpkg.com/porto@latest/dist/porto.min.js"></script>
   <script>
     // Set up network badge
     (function(){
@@ -244,6 +264,51 @@ export default async function handler(req, res) {
         console.error(err);
         show(err.message || 'Error', 'error');
         btn.disabled = false;
+      }
+    });
+
+    // Porto.sh Email Wallet Integration
+    const createWalletBtn = document.getElementById('createWalletBtn');
+    const emailWalletStatus = document.getElementById('emailWalletStatus');
+    let portoWallet = null;
+
+    createWalletBtn.addEventListener('click', async () => {
+      try {
+        createWalletBtn.disabled = true;
+        createWalletBtn.textContent = 'Creando wallet...';
+        emailWalletStatus.style.display = 'block';
+        emailWalletStatus.textContent = 'Conectando con Porto...';
+
+        // Initialize Porto
+        if (typeof Porto === 'undefined') {
+          throw new Error('Porto no está disponible');
+        }
+
+        // Create wallet with Porto
+        portoWallet = await Porto.create();
+        const address = portoWallet.address;
+
+        if (!address) {
+          throw new Error('No se pudo obtener la dirección de la wallet');
+        }
+
+        // Show success and auto-fill the wallet input
+        emailWalletStatus.textContent = '✅ Wallet creada: ' + address.slice(0, 6) + '...' + address.slice(-4);
+        document.getElementById('wallet').value = address;
+        
+        // Enable the claim button and scroll to it
+        createWalletBtn.textContent = '✅ Wallet creada';
+        createWalletBtn.style.background = 'rgba(34,197,94,0.2)';
+        createWalletBtn.style.color = 'var(--green)';
+        
+        // Scroll to claim form
+        document.getElementById('claimForm').scrollIntoView({ behavior: 'smooth' });
+        
+      } catch (err) {
+        console.error('Porto wallet creation error:', err);
+        emailWalletStatus.textContent = '❌ Error: ' + (err.message || 'No se pudo crear la wallet');
+        createWalletBtn.disabled = false;
+        createWalletBtn.textContent = '✨ Crear wallet con email';
       }
     });
   </script>
