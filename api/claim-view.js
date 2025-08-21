@@ -367,18 +367,52 @@ export default async function handler(req, res) {
         // Try different ways to get the address
         let address = null;
         if (portoWallet) {
+          // Try direct properties first
           address = portoWallet.address || 
                    portoWallet.account?.address || 
                    portoWallet.accounts?.[0]?.address ||
                    portoWallet.wallet?.address ||
-                   (typeof portoWallet.getAddress === 'function' ? await portoWallet.getAddress() : null);
+                   portoWallet.walletAddress ||
+                   portoWallet.publicAddress ||
+                   portoWallet.ethAddress;
+          
+          // Try methods if properties don't work
+          if (!address) {
+            try {
+              if (typeof portoWallet.getAddress === 'function') {
+                address = await portoWallet.getAddress();
+              } else if (typeof portoWallet.address === 'function') {
+                address = await portoWallet.address();
+              } else if (typeof portoWallet.getAccount === 'function') {
+                const account = await portoWallet.getAccount();
+                address = account?.address;
+              }
+            } catch (methodError) {
+              console.error('[Porto] Error calling wallet methods:', methodError);
+            }
+          }
         }
         
         console.log('[Porto] Extracted address:', address);
 
         if (!address) {
           console.error('[Porto] Failed to extract address from wallet object:', portoWallet);
-          throw new Error('No se pudo obtener la dirección de la wallet. Estructura de Porto inesperada.');
+          console.error('[Porto] Available methods:', portoWallet ? Object.getOwnPropertyNames(portoWallet) : 'none');
+          
+          // Try to stringify the object to see its full structure
+          try {
+            console.error('[Porto] Full object structure:', JSON.stringify(portoWallet, null, 2));
+          } catch (e) {
+            console.error('[Porto] Object cannot be stringified, logging directly:', portoWallet);
+          }
+          
+          // Check if it's a class instance with methods
+          if (portoWallet && typeof portoWallet === 'object') {
+            console.error('[Porto] Constructor name:', portoWallet.constructor?.name);
+            console.error('[Porto] Prototype methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(portoWallet)));
+          }
+          
+          throw new Error('No se pudo obtener la dirección de la wallet. Estructura de Porto inesperada. Revisa la consola para más detalles.');
         }
 
         // Show success and auto-fill the wallet input
