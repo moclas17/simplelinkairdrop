@@ -61,6 +61,34 @@ export default async function handler(req, res) {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Claim ${tokenSymbol} - ${campaignTitle}</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="theme-color" content="#7dd3fc">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Chingadrop">
+  <meta name="description" content="Claim your ${tokenSymbol} tokens securely using one-time links">
+  
+  <!-- PWA Icons -->
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="/sw.js" as="script">
+  
+  <!-- Social Meta Tags -->
+  <meta property="og:title" content="Claim ${tokenSymbol} - ${campaignTitle}">
+  <meta property="og:description" content="Secure token distribution using one-time claim links">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/icons/icon-512x512.png">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Claim ${tokenSymbol} - ${campaignTitle}">
+  <meta name="twitter:description" content="Secure token distribution using one-time claim links">
   <style>
     :root { --bg:#0b1220; --card:#121a2a; --muted:#7e8aa0; --text:#e6eefc; --acc:#7dd3fc; --green:#22c55e; }
     * { box-sizing: border-box; }
@@ -439,6 +467,104 @@ export default async function handler(req, res) {
         createWalletBtn.textContent = '✨ Crear wallet con email';
       }
     });
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          console.log('[PWA] Registering service worker...');
+          const registration = await navigator.serviceWorker.register('/sw.js');
+          console.log('[PWA] Service worker registered successfully:', registration);
+          
+          // Check for updates
+          registration.addEventListener('updatefound', () => {
+            console.log('[PWA] Service worker update found');
+            const newWorker = registration.installing;
+            
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                // Show update notification
+                console.log('[PWA] New version available');
+                
+                // You can show a toast or prompt user to refresh
+                const updateToast = document.createElement('div');
+                updateToast.innerHTML = 
+                  '<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); ' +
+                              'background: var(--acc); color: #0b1220; padding: 12px 20px; ' +
+                              'border-radius: 12px; font-weight: 600; z-index: 1000; ' +
+                              'box-shadow: 0 4px 12px rgba(0,0,0,0.3);">' +
+                    '🔄 Nueva versión disponible' +
+                    '<button onclick="window.location.reload()" ' +
+                            'style="margin-left: 12px; background: #0b1220; color: white; ' +
+                                   'border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">' +
+                      'Actualizar' +
+                    '</button>' +
+                  '</div>';
+                document.body.appendChild(updateToast);
+              }
+            });
+          });
+          
+        } catch (error) {
+          console.error('[PWA] Service worker registration failed:', error);
+        }
+      });
+    }
+
+    // PWA Install prompt
+    let deferredPrompt;
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('[PWA] Install prompt triggered');
+      e.preventDefault();
+      deferredPrompt = e;
+      
+      // Show install button/banner
+      const installBanner = document.createElement('div');
+      installBanner.innerHTML = 
+        '<div id="installBanner" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); ' +
+                    'background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.3); ' +
+                    'color: var(--text); padding: 12px 20px; border-radius: 12px; ' +
+                    'font-size: 14px; z-index: 1000; backdrop-filter: blur(8px);">' +
+          '📱 Instalar Chingadrop como aplicación' +
+          '<button onclick="installPWA()" ' +
+                  'style="margin-left: 12px; background: var(--acc); color: #0b1220; ' +
+                         'border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">' +
+            'Instalar' +
+          '</button>' +
+          '<button onclick="document.getElementById(\'installBanner\').remove()" ' +
+                  'style="margin-left: 8px; background: transparent; color: var(--muted); ' +
+                         'border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px; cursor: pointer;">' +
+            '✕' +
+          '</button>' +
+        '</div>';
+      document.body.appendChild(installBanner);
+    });
+
+    // Install PWA function
+    window.installPWA = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('[PWA] Install prompt outcome:', outcome);
+        
+        if (outcome === 'accepted') {
+          console.log('[PWA] PWA installed successfully');
+        }
+        
+        deferredPrompt = null;
+        const banner = document.getElementById('installBanner');
+        if (banner) banner.remove();
+      }
+    };
+
+    // Handle app installed event
+    window.addEventListener('appinstalled', (evt) => {
+      console.log('[PWA] App was installed successfully');
+      const banner = document.getElementById('installBanner');
+      if (banner) banner.remove();
+    });
+    
   </script>
 </body>
 </html>`);

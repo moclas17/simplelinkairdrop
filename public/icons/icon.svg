@@ -1,0 +1,58 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
+  <defs>
+    <radialGradient id="bgGradient" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#7dd3fc"/>
+      <stop offset="45%" style="stop-color:#38bdf8"/>
+      <stop offset="65%" style="stop-color:#0ea5e9"/>
+      <stop offset="100%" style="stop-color:#0369a1"/>
+    </radialGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <circle cx="256" cy="256" r="240" fill="url(#bgGradient)" filter="url(#glow)"/>
+  
+  <!-- Main token/coin symbol -->
+  <circle cx="256" cy="200" r="80" fill="white" opacity="0.9"/>
+  <circle cx="256" cy="200" r="60" fill="none" stroke="#0b1220" stroke-width="8"/>
+  
+  <!-- Dollar/token symbol -->
+  <text x="256" y="220" font-family="Arial Black" font-size="60" font-weight="900" 
+        text-anchor="middle" fill="#0b1220">₿</text>
+  
+  <!-- Link chain elements -->
+  <g opacity="0.8">
+    <!-- Link 1 -->
+    <ellipse cx="180" cy="320" rx="25" ry="15" fill="none" stroke="white" stroke-width="6"/>
+    <!-- Link 2 -->
+    <ellipse cx="220" cy="340" rx="25" ry="15" fill="none" stroke="white" stroke-width="6"/>
+    <!-- Link 3 -->
+    <ellipse cx="260" cy="340" rx="25" ry="15" fill="none" stroke="white" stroke-width="6"/>
+    <!-- Link 4 -->
+    <ellipse cx="300" cy="340" rx="25" ry="15" fill="none" stroke="white" stroke-width="6"/>
+    <!-- Link 5 -->
+    <ellipse cx="340" cy="320" rx="25" ry="15" fill="none" stroke="white" stroke-width="6"/>
+  </g>
+  
+  <!-- Sparkle effects -->
+  <g opacity="0.7">
+    <circle cx="150" cy="150" r="4" fill="white"/>
+    <circle cx="380" cy="180" r="3" fill="white"/>
+    <circle cx="120" cy="250" r="2" fill="white"/>
+    <circle cx="400" cy="280" r="3" fill="white"/>
+    <circle cx="160" cy="380" r="2" fill="white"/>
+    <circle cx="360" cy="400" r="4" fill="white"/>
+  </g>
+  
+  <!-- Drop/airdrop symbol -->
+  <path d="M256 350 L240 380 Q240 390 250 390 L262 390 Q272 390 272 380 L256 350 Z" 
+        fill="white" opacity="0.9"/>
+  
+</svg>

@@ -9,6 +9,23 @@ const __dirname = path.dirname(__filename);
 const app = express();
 app.use(express.json());
 
+// Serve PWA static files with proper headers
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res, path) => {
+    // Set proper MIME types for PWA files
+    if (path.endsWith('.json')) {
+      res.set('Content-Type', 'application/json');
+    }
+    if (path.endsWith('.js') && path.includes('sw.js')) {
+      res.set('Content-Type', 'application/javascript');
+      res.set('Service-Worker-Allowed', '/');
+    }
+    if (path.endsWith('.png') || path.endsWith('.jpg') || path.endsWith('.jpeg')) {
+      res.set('Cache-Control', 'public, max-age=31536000'); // 1 year cache for images
+    }
+  }
+}));
+
 // Import API handlers
 import generateHandler from './api/generate.js';
 import claimHandler from './api/claim.js';
