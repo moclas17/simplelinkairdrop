@@ -1,0 +1,14 @@
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg" style="background: linear-gradient(135deg, #7dd3fc, #0369a1);">
+  <rect width="512" height="512" fill="url(#grad)" rx="32"/>
+  <defs>
+    <radialGradient id="grad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" style="stop-color:#7dd3fc"/>
+      <stop offset="100%" style="stop-color:#0369a1"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#grad)" rx="32"/>
+  <circle cx="256" cy="204.8" r="85.33333333333333" fill="rgba(255,255,255,0.9)"/>
+  <text x="256" y="298.6666666666667" font-family="system-ui, Arial" font-size="51.2" font-weight="bold" text-anchor="middle" fill="white">💎</text>
+  <ellipse cx="179.2" cy="409.6" rx="25.6" ry="20.48" fill="none" stroke="white" stroke-width="6.4"/>
+  <ellipse cx="332.8" cy="409.6" rx="25.6" ry="20.48" fill="none" stroke="white" stroke-width="6.4"/>
+</svg>

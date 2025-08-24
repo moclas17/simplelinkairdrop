@@ -7,8 +7,8 @@ const DYNAMIC_CACHE = 'chingadrop-dynamic-v1';
 const STATIC_FILES = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/icons/icon-192x192.svg',
+  '/icons/icon-512x512.svg',
   // Add other static assets as needed
 ];
 
@@ -187,8 +187,8 @@ self.addEventListener('push', event => {
   
   const options = {
     body: data.body || 'New notification from Chingadrop',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: '/icons/icon-192x192.svg',
+    badge: '/icons/icon-72x72.svg',
     data: data.url || '/',
     actions: [
       {
