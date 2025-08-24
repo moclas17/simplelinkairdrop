@@ -476,107 +476,42 @@ export default async function handler(req, res) {
       }
     });
 
-    // Enhanced PWA Debug Information
-    console.log('[PWA] Browser check:', {
-      userAgent: navigator.userAgent,
-      isAndroid: /Android/i.test(navigator.userAgent),
-      isChrome: /Chrome/i.test(navigator.userAgent),
-      hasServiceWorker: 'serviceWorker' in navigator,
-      hasBeforeInstallPrompt: 'BeforeInstallPromptEvent' in window,
-      isStandalone: window.matchMedia('(display-mode: standalone)').matches,
-      isInWebApk: 'matchMedia' in window && window.matchMedia('(display-mode: standalone)').matches
-    });
-
-    // Register Service Worker for PWA
+    // Simple PWA Setup for Android
+    console.log('[PWA] Initializing PWA for mobile...');
+    
+    // Register Service Worker
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', async () => {
-        try {
-          console.log('[PWA] Registering service worker...');
-          const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
-          console.log('[PWA] Service worker registered successfully:', registration);
-          
-          // Wait for SW to be ready
-          await navigator.serviceWorker.ready;
-          console.log('[PWA] Service worker is ready');
-          
-          // Check for updates
-          registration.addEventListener('updatefound', () => {
-            console.log('[PWA] Service worker update found');
-            const newWorker = registration.installing;
-            
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                // Show update notification
-                console.log('[PWA] New version available');
-                
-                // You can show a toast or prompt user to refresh
-                const updateToast = document.createElement('div');
-                updateToast.innerHTML = 
-                  '<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); ' +
-                              'background: var(--acc); color: #0b1220; padding: 12px 20px; ' +
-                              'border-radius: 12px; font-weight: 600; z-index: 1000; ' +
-                              'box-shadow: 0 4px 12px rgba(0,0,0,0.3);">' +
-                    '🔄 Nueva versión disponible' +
-                    '<button onclick="window.location.reload()" ' +
-                            'style="margin-left: 12px; background: #0b1220; color: white; ' +
-                                   'border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer;">' +
-                      'Actualizar' +
-                    '</button>' +
-                  '</div>';
-                document.body.appendChild(updateToast);
-              }
-            });
-          });
-          
-        } catch (error) {
-          console.error('[PWA] Service worker registration failed:', error);
-        }
-      });
-    }
+      navigator.serviceWorker.register('/sw.js')
+        .then(registration => {
+          console.log('[PWA] Service Worker registered:', registration.scope);
+        })
+        .catch(error => {
+          console.log('[PWA] Service Worker registration failed:', error);
+        });
 
     // PWA Install prompt
     let deferredPrompt;
     
     window.addEventListener('beforeinstallprompt', (e) => {
-      console.log('[PWA] Install prompt triggered');
+      console.log('[PWA] Install prompt available');
       e.preventDefault();
       deferredPrompt = e;
       
-      // Show install button/banner
-      const installBanner = document.createElement('div');
-      installBanner.innerHTML = 
-        '<div id="installBanner" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); ' +
-                    'background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.3); ' +
-                    'color: var(--text); padding: 12px 20px; border-radius: 12px; ' +
-                    'font-size: 14px; z-index: 1000; backdrop-filter: blur(8px);">' +
-          '📱 Instalar Chingadrop como aplicación' +
-          '<button onclick="installPWA()" ' +
-                  'style="margin-left: 12px; background: var(--acc); color: #0b1220; ' +
-                         'border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 600;">' +
-            'Instalar' +
-          '</button>' +
-          '<button onclick="document.getElementById(\'installBanner\').remove()" ' +
-                  'style="margin-left: 8px; background: transparent; color: var(--muted); ' +
-                         'border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 6px; cursor: pointer;">' +
-            '✕' +
-          '</button>' +
-        '</div>';
-      document.body.appendChild(installBanner);
+      // Show simple install banner
+      const banner = document.createElement('div');
+      banner.id = 'pwa-banner';
+      banner.innerHTML = '<div style="position:fixed;top:10px;left:50%;transform:translateX(-50%);background:#7dd3fc;color:#0b1220;padding:10px 15px;border-radius:8px;z-index:9999;font-size:14px;font-weight:600;">📱 Instalar App <button onclick="installPWA()" style="margin-left:8px;background:#0b1220;color:white;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;">Instalar</button> <button onclick="this.parentElement.remove()" style="margin-left:4px;background:transparent;color:#0b1220;border:none;padding:4px 8px;cursor:pointer;">✕</button></div>';
+      document.body.appendChild(banner);
     });
 
     // Install PWA function
     window.installPWA = async () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log('[PWA] Install prompt outcome:', outcome);
-        
-        if (outcome === 'accepted') {
-          console.log('[PWA] PWA installed successfully');
-        }
-        
+        const result = await deferredPrompt.userChoice;
+        console.log('[PWA] Install result:', result.outcome);
         deferredPrompt = null;
-        const banner = document.getElementById('installBanner');
+        const banner = document.getElementById('pwa-banner');
         if (banner) banner.remove();
       }
     };
@@ -644,6 +579,23 @@ export default async function handler(req, res) {
     // Setup Android PWA detection
     setupAndroidPWA();
     checkPWACriteria();
+
+    // Show manual install instructions for Android after delay
+    setTimeout(() => {
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isAndroid && !deferredPrompt) {
+        const manualBanner = document.createElement('div');
+        manualBanner.innerHTML = '<div style="position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(125,211,252,0.1);border:1px solid rgba(125,211,252,0.3);color:white;padding:12px 16px;border-radius:10px;z-index:9999;font-size:13px;max-width:90%;text-align:center;backdrop-filter:blur(8px);">📱 Para instalar: Chrome menu (⋮) → "Agregar a pantalla de inicio" <button onclick="this.parentElement.remove()" style="margin-left:8px;background:#7dd3fc;color:#0b1220;border:none;padding:4px 8px;border-radius:4px;cursor:pointer;font-size:11px;">OK</button></div>';
+        document.body.appendChild(manualBanner);
+        
+        // Remove after 10 seconds
+        setTimeout(() => {
+          if (manualBanner.parentElement) {
+            manualBanner.remove();
+          }
+        }, 10000);
+      }
+    }, 3000);
     
   </script>
 </body>

@@ -1,15 +1,14 @@
-// Chingadrop PWA Service Worker
-const CACHE_NAME = 'chingadrop-v1';
-const STATIC_CACHE = 'chingadrop-static-v1';
-const DYNAMIC_CACHE = 'chingadrop-dynamic-v1';
+// Chingadrop PWA Service Worker - Optimized for Android
+const CACHE_NAME = 'chingadrop-v2';
+const STATIC_CACHE = 'chingadrop-static-v2';
+const DYNAMIC_CACHE = 'chingadrop-dynamic-v2';
 
-// Files to cache for offline functionality
+// Minimal files to cache for offline functionality
 const STATIC_FILES = [
   '/',
   '/manifest.json',
-  '/icons/icon-192x192.svg',
-  '/icons/icon-512x512.svg',
-  // Add other static assets as needed
+  '/icons/icon-192x192.png.svg',
+  '/icons/icon-512x512.png.svg'
 ];
 
 // Install event - cache static files

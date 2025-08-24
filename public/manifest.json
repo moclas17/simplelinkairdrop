@@ -1,107 +1,36 @@
 {
-  "name": "Chingadrop - Token Distribution",
+  "name": "Chingadrop",
   "short_name": "Chingadrop",
-  "description": "Secure token distribution system using one-time claim links",
+  "description": "Token distribution system",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0b1220",
   "theme_color": "#7dd3fc",
-  "orientation": "portrait-primary",
   "scope": "/",
-  "lang": "es",
-  "dir": "ltr",
-  "categories": ["finance", "utilities"],
-  "shortcuts": [
-    {
-      "name": "Claim Tokens",
-      "short_name": "Claim",
-      "description": "Access token claim page",
-      "url": "/claim",
-      "icons": [
-        {
-          "src": "/icons/shortcut-claim.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Chingadrop Home Screen"
-    },
-    {
-      "src": "/screenshots/mobile-claim.png",
-      "sizes": "540x720",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Token Claim Page"
-    }
-  ],
   "icons": [
     {
-      "src": "/icons/icon-48x48.png.svg",
-      "sizes": "48x48",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-72x72.svg",
-      "sizes": "72x72",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-96x96.svg",
-      "sizes": "96x96",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-128x128.svg",
-      "sizes": "128x128",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-144x144.svg",
-      "sizes": "144x144",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-152x152.svg",
-      "sizes": "152x152",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-192x192.svg",
+      "src": "/icons/icon-192x192.png.svg",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
-    },
-    {
-      "src": "/icons/icon-256x256.png.svg",
-      "sizes": "256x256",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-384x384.svg",
-      "sizes": "384x384",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "src": "/icons/icon-512x512.png.svg",
+      "sizes": "512x512", 
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "/icons/icon-512x512.svg",
+      "src": "/icons/icon-192x192.png.svg",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png.svg",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "maskable any"
+      "type": "image/png", 
+      "purpose": "maskable"
     }
   ]
 }
