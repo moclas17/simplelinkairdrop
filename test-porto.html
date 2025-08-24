@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Porto Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #0b1220;
+            color: #e6eefc;
+        }
+        .test-section {
+            background: #121a2a;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        button {
+            background: #7dd3fc;
+            color: #0b1220;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin: 5px;
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #0f1729;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+        .info { color: #7dd3fc; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Porto Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>1. Import Test</h2>
+        <button id="testImport">Test Import Porto</button>
+        <div id="importResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Create Test</h2>
+        <button id="testCreate">Test Porto.create()</button>
+        <div id="createResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Provider Test</h2>
+        <button id="testProvider">Test Provider Methods</button>
+        <div id="providerResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Request Accounts Test</h2>
+        <button id="testAccounts">Test eth_requestAccounts</button>
+        <div id="accountsResult" class="log"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. Full Flow Test</h2>
+        <button id="testFullFlow">Test Complete Flow</button>
+        <div id="fullFlowResult" class="log"></div>
+    </div>
+
+    <script type="module">
+        let Porto = null;
+        let portoConnector = null;
+
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            element.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            element.scrollTop = element.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        // Test 1: Import
+        document.getElementById('testImport').addEventListener('click', async () => {
+            clearLog('importResult');
+            try {
+                log('importResult', 'Starting import test...', 'info');
+                
+                const portoModule = await import('https://esm.sh/porto@0.0.76');
+                Porto = portoModule.Porto;
+                
+                log('importResult', `Porto imported successfully: ${!!Porto}`, 'success');
+                log('importResult', `Porto methods: ${Object.getOwnPropertyNames(Porto)}`, 'info');
+                log('importResult', `Porto type: ${typeof Porto}`, 'info');
+                
+            } catch (error) {
+                log('importResult', `Import failed: ${error.message}`, 'error');
+                log('importResult', `Error details: ${error.stack}`, 'error');
+            }
+        });
+
+        // Test 2: Create
+        document.getElementById('testCreate').addEventListener('click', async () => {
+            clearLog('createResult');
+            if (!Porto) {
+                log('createResult', 'Porto not imported yet. Run import test first.', 'error');
+                return;
+            }
+
+            try {
+                log('createResult', 'Testing Porto.create()...', 'info');
+                
+                const startTime = Date.now();
+                portoConnector = Porto.create();
+                const endTime = Date.now();
+                
+                log('createResult', `Porto.create() completed in ${endTime - startTime}ms`, 'success');
+                log('createResult', `Result type: ${typeof portoConnector}`, 'info');
+                log('createResult', `Result keys: ${Object.keys(portoConnector)}`, 'info');
+                log('createResult', `Has provider: ${!!portoConnector.provider}`, 'info');
+                
+            } catch (error) {
+                log('createResult', `Create failed: ${error.message}`, 'error');
+                log('createResult', `Error details: ${error.stack}`, 'error');
+            }
+        });
+
+        // Test 3: Provider
+        document.getElementById('testProvider').addEventListener('click', async () => {
+            clearLog('providerResult');
+            if (!portoConnector) {
+                log('providerResult', 'Porto connector not created yet. Run create test first.', 'error');
+                return;
+            }
+
+            try {
+                log('providerResult', 'Testing provider...', 'info');
+                
+                const provider = portoConnector.provider;
+                log('providerResult', `Provider exists: ${!!provider}`, 'info');
+                
+                if (provider) {
+                    log('providerResult', `Provider type: ${typeof provider}`, 'info');
+                    log('providerResult', `Provider keys: ${Object.keys(provider)}`, 'info');
+                    log('providerResult', `Provider methods: ${Object.getOwnPropertyNames(provider)}`, 'info');
+                    log('providerResult', `Has request method: ${typeof provider.request === 'function'}`, 'info');
+                }
+                
+            } catch (error) {
+                log('providerResult', `Provider test failed: ${error.message}`, 'error');
+                log('providerResult', `Error details: ${error.stack}`, 'error');
+            }
+        });
+
+        // Test 4: Request Accounts
+        document.getElementById('testAccounts').addEventListener('click', async () => {
+            clearLog('accountsResult');
+            if (!portoConnector?.provider) {
+                log('accountsResult', 'Provider not available. Run previous tests first.', 'error');
+                return;
+            }
+
+            try {
+                log('accountsResult', 'Testing eth_requestAccounts...', 'info');
+                log('accountsResult', 'This should open a Porto popup/dialog...', 'info');
+                
+                const startTime = Date.now();
+                
+                // Add timeout
+                const accountsPromise = portoConnector.provider.request({ method: 'eth_requestAccounts' });
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Timeout after 30 seconds')), 30000)
+                );
+                
+                const accounts = await Promise.race([accountsPromise, timeoutPromise]);
+                const endTime = Date.now();
+                
+                log('accountsResult', `Accounts received in ${endTime - startTime}ms: ${JSON.stringify(accounts)}`, 'success');
+                log('accountsResult', `Number of accounts: ${accounts?.length || 0}`, 'info');
+                
+                if (accounts && accounts.length > 0) {
+                    log('accountsResult', `First address: ${accounts[0]}`, 'success');
+                }
+                
+            } catch (error) {
+                log('accountsResult', `Request accounts failed: ${error.message}`, 'error');
+                log('accountsResult', `Error code: ${error.code}`, 'error');
+                log('accountsResult', `Error details: ${error.stack}`, 'error');
+            }
+        });
+
+        // Test 5: Full Flow
+        document.getElementById('testFullFlow').addEventListener('click', async () => {
+            clearLog('fullFlowResult');
+            
+            try {
+                log('fullFlowResult', '=== FULL PORTO FLOW TEST ===', 'info');
+                
+                // Step 1: Import
+                log('fullFlowResult', 'Step 1: Importing Porto...', 'info');
+                if (!Porto) {
+                    const portoModule = await import('https://esm.sh/porto@0.0.76');
+                    Porto = portoModule.Porto;
+                    log('fullFlowResult', '✓ Porto imported', 'success');
+                }
+                
+                // Step 2: Create
+                log('fullFlowResult', 'Step 2: Creating connector...', 'info');
+                const connector = Porto.create();
+                log('fullFlowResult', '✓ Connector created', 'success');
+                
+                // Step 3: Get Provider
+                log('fullFlowResult', 'Step 3: Getting provider...', 'info');
+                const provider = connector.provider;
+                if (!provider) throw new Error('No provider found');
+                log('fullFlowResult', '✓ Provider obtained', 'success');
+                
+                // Step 4: Request Accounts (with visual warning)
+                log('fullFlowResult', 'Step 4: Requesting accounts...', 'info');
+                log('fullFlowResult', '⚠️  POPUP SHOULD APPEAR NOW - Check for popup blockers!', 'info');
+                
+                const accounts = await provider.request({ method: 'eth_requestAccounts' });
+                
+                log('fullFlowResult', '✓ FULL FLOW SUCCESSFUL!', 'success');
+                log('fullFlowResult', `Address: ${accounts[0]}`, 'success');
+                
+            } catch (error) {
+                log('fullFlowResult', `❌ FULL FLOW FAILED: ${error.message}`, 'error');
+                log('fullFlowResult', `Error code: ${error.code}`, 'error');
+                
+                if (error.message.includes('Timeout')) {
+                    log('fullFlowResult', '💡 LIKELY CAUSE: Popup blocked or user didn\'t complete Porto dialog', 'error');
+                }
+            }
+        });
+
+        // Auto-run import test on page load
+        window.addEventListener('load', () => {
+            document.getElementById('testImport').click();
+        });
+    </script>
+</body>
+</html>

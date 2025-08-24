@@ -142,8 +142,8 @@ export default async function handler(req, res) {
       <button id="createWalletBtn" class="btn" style="background: linear-gradient(135deg, var(--acc), #38bdf8); color: #0b1220; font-weight: 600;">
         ✨ Crear wallet con email
       </button>
-      <div id="portoStatus" style="margin-top: 8px; font-size: 11px; color: var(--muted);">
-        <span id="portoIndicator">⚡ Verificando Porto...</span>
+      <div id="reownStatus" style="margin-top: 8px; font-size: 11px; color: var(--muted);">
+        <span id="reownIndicator">⚡ Cargando Reown...</span>
       </div>
       <div id="emailWalletStatus" style="margin-top: 12px; font-size: 12px; color: var(--muted); display: none;"></div>
     </div>
@@ -163,51 +163,60 @@ export default async function handler(req, res) {
   </div>
 
   <script type="module">
-    // Import Porto from ESM CDN with error handling
-    let Porto;
+    // Import Reown AppKit (Web3Modal v4) for email wallet creation
+    let reownKit = null;
+    
     try {
-      const portoModule = await import('https://esm.sh/porto@0.0.76');
-      Porto = portoModule.Porto;
-      console.log('[Porto] Successfully imported Porto:', Porto);
-      console.log('[Porto] Porto methods:', Object.getOwnPropertyNames(Porto));
+      // Import Reown AppKit
+      const { createAppKit } = await import('https://esm.sh/@reown/appkit@1.0.0');
+      const { WagmiAdapter } = await import('https://esm.sh/@reown/appkit-adapter-wagmi@1.0.0');
+      const { mainnet, optimism, base, arbitrum } = await import('https://esm.sh/viem/chains');
+      
+      console.log('[Reown] Successfully imported Reown AppKit');
+      
+      // Configure Reown - Get your Project ID from https://cloud.reown.com/
+      const projectId = 'c6c9bacd0e950b8b8a6244a2c4e9a20e'; // Demo Project ID
+      
+      // Create wagmi adapter
+      const wagmiAdapter = new WagmiAdapter({
+        networks: [mainnet, optimism, base, arbitrum],
+        projectId
+      });
+      
+      // Create the AppKit instance
+      reownKit = createAppKit({
+        adapters: [wagmiAdapter],
+        networks: [mainnet, optimism, base, arbitrum],
+        projectId,
+        metadata: {
+          name: 'Chingadrop',
+          description: 'Token Distribution Platform',
+          url: window.location.origin,
+          icons: ['https://chingadrop.xyz/logo.svg']
+        },
+        features: {
+          email: true, // Enable email wallet
+          socials: ['google', 'github', 'apple', 'discord'],
+          emailShowWallets: true
+        }
+      });
+      
+      console.log('[Reown] AppKit initialized successfully');
+      
+      // Show success status
+      document.getElementById('reownIndicator').innerHTML = '🟢 Reown disponible';
+      document.getElementById('reownIndicator').style.color = 'var(--green)';
+      
     } catch (importError) {
-      console.error('[Porto] Failed to import Porto:', importError);
+      console.error('[Reown] Failed to import Reown:', importError);
       
       // Show error in UI
-      document.getElementById('portoIndicator').innerHTML = '🔴 Error cargando Porto';
-      document.getElementById('portoIndicator').style.color = '#ef4444';
+      document.getElementById('reownIndicator').innerHTML = '🔴 Error cargando Reown';
+      document.getElementById('reownIndicator').style.color = '#ef4444';
       document.getElementById('createWalletBtn').disabled = true;
       document.getElementById('createWalletBtn').style.opacity = '0.5';
-      document.getElementById('createWalletBtn').title = 'Error loading Porto library';
+      document.getElementById('createWalletBtn').title = 'Error loading Reown library';
     }
-    
-    // Check Porto service status on page load
-    (async function checkPortoStatus() {
-      const indicator = document.getElementById('portoIndicator');
-      const createBtn = document.getElementById('createWalletBtn');
-      
-      try {
-        // Test Porto service with timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        await fetch('https://id.porto.sh', { 
-          method: 'HEAD', 
-          mode: 'no-cors',
-          signal: controller.signal 
-        });
-        clearTimeout(timeoutId);
-        
-        indicator.innerHTML = '🟢 Porto disponible';
-        indicator.style.color = 'var(--green)';
-      } catch (error) {
-        indicator.innerHTML = '🔴 Porto no disponible';
-        indicator.style.color = '#ef4444';
-        createBtn.style.opacity = '0.6';
-        createBtn.style.cursor = 'not-allowed';
-        createBtn.title = 'Porto service is currently unavailable';
-      }
-    })();
     
     // Set up network badge
     (function(){
@@ -315,114 +324,69 @@ export default async function handler(req, res) {
       }
     });
 
-    // Porto.sh Email Wallet Integration
+    // Reown Email Wallet Integration
     const createWalletBtn = document.getElementById('createWalletBtn');
     const emailWalletStatus = document.getElementById('emailWalletStatus');
-    let portoWallet = null;
 
     createWalletBtn.addEventListener('click', async () => {
       try {
+        if (!reownKit) {
+          throw new Error('Reown no está disponible. Intenta recargar la página.');
+        }
+
         createWalletBtn.disabled = true;
-        createWalletBtn.textContent = 'Creando wallet...';
+        createWalletBtn.textContent = 'Abriendo Reown...';
         emailWalletStatus.style.display = 'block';
-        emailWalletStatus.textContent = 'Conectando con Porto...';
+        emailWalletStatus.innerHTML = 'Abriendo diálogo de conexión...<br><small style="color: var(--muted);">💡 Puedes usar email, redes sociales o wallets tradicionales</small>';
 
-        // Check Porto service availability first
-        try {
-          await fetch('https://id.porto.sh', { method: 'HEAD', mode: 'no-cors' });
-        } catch (connectErr) {
-          throw new Error('Porto no está disponible. Servicio temporalmente fuera de línea.');
-        }
+        console.log('[Reown] Opening connection modal...');
+        
+        // Open the Reown modal
+        await reownKit.open();
+        
+        // Wait for connection
+        emailWalletStatus.innerHTML = 'Esperando conexión...<br><small style="color: var(--acc);">📧 Si usas email, revisa tu bandeja de entrada</small>';
+        
+        // Listen for account connection
+        const checkConnection = () => {
+          return new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              reject(new Error('Timeout: No se conectó ninguna wallet en 60 segundos'));
+            }, 60000);
 
-        // Create wallet with Porto with timeout - simplified approach
-        emailWalletStatus.textContent = 'Creando wallet segura...';
-        console.log('[Porto] Attempting to create wallet...');
-        
-        // Extended timeout and user guidance
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout: Porto tardó demasiado en responder (60s). Verifica si hay popups bloqueados.')), 60000)
-        );
-        
-        const walletPromise = new Promise(async (resolve, reject) => {
-          try {
-            console.log('[Porto] Starting Porto wallet connection...');
-            
-            emailWalletStatus.textContent = 'Creando connector de Porto...';
-            
-            // Create the Porto connector
-            const portoConnector = Porto.create();
-            console.log('[Porto] Porto connector created:', portoConnector);
-            
-            // The provider should be an EIP-1193 provider
-            const provider = portoConnector.provider;
-            console.log('[Porto] Provider object:', provider);
-            console.log('[Porto] Provider methods:', provider ? Object.getOwnPropertyNames(provider) : 'none');
-            
-            if (!provider) {
-              throw new Error('No provider found in Porto connector');
-            }
-            
-            emailWalletStatus.textContent = 'Conectando wallet...';
-            emailWalletStatus.innerHTML = 'Abriendo diálogo de Porto...<br><small style="color: var(--muted);">📱 Si no aparece un popup, verifica que no esté bloqueado por el navegador</small>';
-            
-            // Request accounts using EIP-1193 standard
-            console.log('[Porto] Requesting accounts via provider...');
-            
-            // Add visual feedback that we're waiting for user interaction
-            setTimeout(() => {
-              if (emailWalletStatus.textContent.includes('Abriendo diálogo')) {
-                emailWalletStatus.innerHTML = 'Esperando respuesta...<br><small style="color: var(--acc);">💡 Completa el proceso en la ventana de Porto que se abrió</small>';
+            const checkAccount = async () => {
+              try {
+                const isConnected = reownKit.getIsConnected();
+                const account = reownKit.getAddress();
+                
+                console.log('[Reown] Connection status:', { isConnected, account });
+                
+                if (isConnected && account) {
+                  clearTimeout(timeout);
+                  resolve(account);
+                } else {
+                  // Check again in 1 second
+                  setTimeout(checkAccount, 1000);
+                }
+              } catch (error) {
+                console.error('[Reown] Error checking connection:', error);
+                setTimeout(checkAccount, 1000);
               }
-            }, 3000);
+            };
             
-            const accounts = await provider.request({ method: 'eth_requestAccounts' });
-            console.log('[Porto] Accounts received:', accounts);
-            
-            if (!accounts || accounts.length === 0) {
-              throw new Error('No accounts returned from Porto');
-            }
-            
-            const address = accounts[0];
-            console.log('[Porto] Selected address:', address);
-            
-            // Return both the address and the provider for future use
-            resolve({
-              address: address,
-              provider: provider,
-              connector: portoConnector
-            });
-            
-          } catch (error) {
-            console.error('[Porto] Connection error:', error);
-            
-            // Handle specific errors
-            if (error.code === 4001) {
-              reject(new Error('Usuario canceló la conexión'));
-            } else if (error.message.includes('User rejected')) {
-              reject(new Error('Usuario rechazó la conexión'));
-            } else {
-              reject(error);
-            }
-          }
-        });
-        
-        portoWallet = await Promise.race([walletPromise, timeoutPromise]);
-        console.log('[Porto] Connection result:', portoWallet);
-        
-        // Extract address from the connection result
-        const address = portoWallet.address;
-        console.log('[Porto] Extracted address:', address);
+            checkAccount();
+          });
+        };
 
-        if (!address) {
-          throw new Error('No se pudo obtener la dirección de la wallet de Porto');
-        }
+        const address = await checkConnection();
+        console.log('[Reown] Connected address:', address);
 
         // Show success and auto-fill the wallet input
-        emailWalletStatus.textContent = '✅ Wallet creada: ' + address.slice(0, 6) + '...' + address.slice(-4);
+        emailWalletStatus.innerHTML = '✅ Wallet conectada: ' + address.slice(0, 6) + '...' + address.slice(-4) + '<br><small style="color: var(--green);">🎉 ¡Listo para reclamar tokens!</small>';
         document.getElementById('wallet').value = address;
         
         // Enable the claim button and scroll to it
-        createWalletBtn.textContent = '✅ Wallet creada';
+        createWalletBtn.textContent = '✅ Wallet conectada';
         createWalletBtn.style.background = 'rgba(34,197,94,0.2)';
         createWalletBtn.style.color = 'var(--green)';
         
@@ -430,29 +394,21 @@ export default async function handler(req, res) {
         document.getElementById('claimForm').scrollIntoView({ behavior: 'smooth' });
         
       } catch (err) {
-        console.error('Porto wallet creation error:', err);
+        console.error('[Reown] Wallet connection error:', err);
         
         // More specific error messages
-        let errorMsg = 'No se pudo crear la wallet';
-        if (err.message.includes('Porto no está disponible')) {
-          errorMsg = 'Porto no está disponible. Intenta más tarde o usa MetaMask.';
-        } else if (err.message.includes('Timeout')) {
-          errorMsg = 'Timeout: Verifica si hay popups bloqueados y prueba de nuevo.';
-        } else if (err.message.includes('Network')) {
-          errorMsg = 'Problema de conexión. Verifica tu internet.';
-        } else if (err.message.includes('User rejected') || err.message.includes('canceló')) {
+        let errorMsg = 'No se pudo conectar la wallet';
+        if (err.message.includes('User rejected')) {
           errorMsg = 'Conexión cancelada por el usuario.';
+        } else if (err.message.includes('Timeout')) {
+          errorMsg = 'Timeout: La conexión tardó demasiado.';
+        } else if (err.message.includes('Reown no está disponible')) {
+          errorMsg = 'Reown no está disponible. Recarga la página.';
         } else if (err.message) {
           errorMsg = err.message;
         }
         
-        emailWalletStatus.innerHTML = '❌ Error: ' + errorMsg;
-        
-        if (err.message.includes('Timeout')) {
-          emailWalletStatus.innerHTML += '<br><small style="color: var(--muted); margin-top: 8px;">🔧 Para permitir popups: Haz clic en el ícono de candado/escudo en la barra de direcciones</small>';
-        }
-        
-        emailWalletStatus.innerHTML += '<br><small style="color: var(--muted); margin-top: 8px;">💡 Alternativa: Usa MetaMask u otra wallet compatible</small>';
+        emailWalletStatus.innerHTML = '❌ Error: ' + errorMsg + '<br><small style="color: var(--muted); margin-top: 8px;">💡 Alternativa: Usa MetaMask u otra wallet compatible</small>';
         
         createWalletBtn.disabled = false;
         createWalletBtn.textContent = '✨ Crear wallet con email';
