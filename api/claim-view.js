@@ -162,28 +162,25 @@ export default async function handler(req, res) {
     <div id="toast" class="toast">Processing…</div>
   </div>
 
+  <!-- Load Web3Modal directly via CDN -->
+  <script src="https://unpkg.com/@web3modal/cdn@4.1.11/dist/index.js"></script>
+  
   <script type="module">
-    // Import Reown AppKit (Web3Modal v4) for email wallet creation
-    let reownKit = null;
+    // Simple Web3Modal integration for email wallets
+    let web3Modal = null;
     
     try {
-      // Import Web3Modal (Reown AppKit) - using stable CDN versions
-      const { createWeb3Modal } = await import('https://unpkg.com/@web3modal/wagmi@4.1.11/dist/index.js');
-      const { defaultWagmiConfig } = await import('https://unpkg.com/@web3modal/wagmi@4.1.11/dist/index.js');
-      const { mainnet, optimism, base, arbitrum } = await import('https://unpkg.com/viem@2.9.31/chains/index.js');
-      
-      console.log('[Reown] Successfully imported Web3Modal');
+      console.log('[Web3Modal] Initializing...');
       
       // Configure Web3Modal - Get your Project ID from https://cloud.reown.com/
       const projectId = 'c6c9bacd0e950b8b8a6244a2c4e9a20e'; // Demo Project ID
       
-      // Define the chains
-      const chains = [mainnet, optimism, base, arbitrum];
-      
-      // Create wagmi config
-      const wagmiConfig = defaultWagmiConfig({
-        chains,
+      // Create Web3Modal instance using CDN global
+      web3Modal = new W3mModal({
         projectId,
+        chains: [1, 10, 8453, 42161], // Ethereum, Optimism, Base, Arbitrum
+        enableEmail: true,
+        enableSocials: ['google', 'github', 'apple', 'discord'],
         metadata: {
           name: 'Chingadrop',
           description: 'Token Distribution Platform',
@@ -192,37 +189,21 @@ export default async function handler(req, res) {
         }
       });
       
-      // Create the Web3Modal instance
-      reownKit = createWeb3Modal({
-        wagmiConfig,
-        projectId,
-        chains,
-        featuredWalletIds: [
-          'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
-          'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa', // Coinbase
-        ],
-        includeWalletIds: [
-          'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
-          'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa', // Coinbase
-          '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369', // Rainbow
-        ]
-      });
-      
-      console.log('[Reown] AppKit initialized successfully');
+      console.log('[Web3Modal] Initialized successfully');
       
       // Show success status
-      document.getElementById('reownIndicator').innerHTML = '🟢 Reown disponible';
+      document.getElementById('reownIndicator').innerHTML = '🟢 Web3Modal listo';
       document.getElementById('reownIndicator').style.color = 'var(--green)';
       
-    } catch (importError) {
-      console.error('[Reown] Failed to import Reown:', importError);
+    } catch (initError) {
+      console.error('[Web3Modal] Initialization failed:', initError);
       
       // Show error in UI
-      document.getElementById('reownIndicator').innerHTML = '🔴 Error cargando Reown';
+      document.getElementById('reownIndicator').innerHTML = '🔴 Error cargando Web3Modal';
       document.getElementById('reownIndicator').style.color = '#ef4444';
       document.getElementById('createWalletBtn').disabled = true;
       document.getElementById('createWalletBtn').style.opacity = '0.5';
-      document.getElementById('createWalletBtn').title = 'Error loading Reown library';
+      document.getElementById('createWalletBtn').title = 'Error loading Web3Modal';
     }
     
     // Set up network badge
@@ -331,76 +312,71 @@ export default async function handler(req, res) {
       }
     });
 
-    // Reown Email Wallet Integration
+    // Web3Modal Email Wallet Integration
     const createWalletBtn = document.getElementById('createWalletBtn');
     const emailWalletStatus = document.getElementById('emailWalletStatus');
 
     createWalletBtn.addEventListener('click', async () => {
       try {
-        if (!reownKit) {
-          throw new Error('Reown no está disponible. Intenta recargar la página.');
+        if (!web3Modal) {
+          throw new Error('Web3Modal no está disponible. Intenta recargar la página.');
         }
 
         createWalletBtn.disabled = true;
-        createWalletBtn.textContent = 'Abriendo Reown...';
+        createWalletBtn.textContent = 'Abriendo Web3Modal...';
         emailWalletStatus.style.display = 'block';
-        emailWalletStatus.innerHTML = 'Abriendo diálogo de conexión...<br><small style="color: var(--muted);">💡 Puedes usar email, redes sociales o wallets tradicionales</small>';
+        emailWalletStatus.innerHTML = 'Abriendo diálogo de conexión...<br><small style="color: var(--muted);">💡 Puedes usar email, redes sociales o wallets</small>';
 
-        console.log('[Reown] Opening Web3Modal...');
+        console.log('[Web3Modal] Opening modal...');
         
         // Open the Web3Modal
-        reownKit.open();
+        await web3Modal.open();
         
         // Wait for connection
-        emailWalletStatus.innerHTML = 'Esperando conexión...<br><small style="color: var(--acc);">💡 Elige tu método preferido de conexión</small>';
+        emailWalletStatus.innerHTML = 'Esperando conexión...<br><small style="color: var(--acc);">💡 Completa el proceso en el modal</small>';
         
-        // Listen for account connection using Web3Modal events
-        const checkConnection = () => {
+        // Simple connection detection
+        const waitForConnection = () => {
           return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
-              reject(new Error('Timeout: No se conectó ninguna wallet en 60 segundos'));
-            }, 60000);
+              reject(new Error('Timeout: No se conectó ninguna wallet en 45 segundos'));
+            }, 45000);
 
-            // Listen for connection event
-            const handleConnect = (event) => {
-              console.log('[Reown] Connection event:', event);
-              if (event.detail && event.detail.address) {
-                clearTimeout(timeout);
-                window.removeEventListener('w3m-connect', handleConnect);
-                resolve(event.detail.address);
-              }
-            };
-
-            // Listen for Web3Modal connect event
-            window.addEventListener('w3m-connect', handleConnect);
-            
-            // Also poll for connection status as fallback
-            const checkAccount = async () => {
+            const checkConnection = async () => {
               try {
-                // Check if we have an account via wagmi or the modal state
-                const accounts = await window.ethereum?.request({ method: 'eth_accounts' }) || [];
-                
-                if (accounts.length > 0) {
-                  clearTimeout(timeout);
-                  window.removeEventListener('w3m-connect', handleConnect);
-                  resolve(accounts[0]);
-                } else {
-                  // Check again in 1 second
-                  setTimeout(checkAccount, 1000);
+                // Check if ethereum provider is available and has accounts
+                if (window.ethereum) {
+                  const accounts = await window.ethereum.request({ 
+                    method: 'eth_accounts' 
+                  });
+                  
+                  console.log('[Web3Modal] Current accounts:', accounts);
+                  
+                  if (accounts && accounts.length > 0) {
+                    clearTimeout(timeout);
+                    resolve(accounts[0]);
+                    return;
+                  }
                 }
+                
+                // Check again in 1 second
+                setTimeout(checkConnection, 1000);
               } catch (error) {
-                console.error('[Reown] Error checking connection:', error);
-                setTimeout(checkAccount, 1000);
+                console.error('[Web3Modal] Error checking connection:', error);
+                setTimeout(checkConnection, 1000);
               }
             };
             
-            // Start polling after a short delay
-            setTimeout(checkAccount, 2000);
+            // Start checking after a short delay
+            setTimeout(checkConnection, 2000);
           });
         };
 
-        const address = await checkConnection();
-        console.log('[Reown] Connected address:', address);
+        const address = await waitForConnection();
+        console.log('[Web3Modal] Connected address:', address);
+
+        // Close the modal
+        web3Modal.close();
 
         // Show success and auto-fill the wallet input
         emailWalletStatus.innerHTML = '✅ Wallet conectada: ' + address.slice(0, 6) + '...' + address.slice(-4) + '<br><small style="color: var(--green);">🎉 ¡Listo para reclamar tokens!</small>';
@@ -415,16 +391,16 @@ export default async function handler(req, res) {
         document.getElementById('claimForm').scrollIntoView({ behavior: 'smooth' });
         
       } catch (err) {
-        console.error('[Reown] Wallet connection error:', err);
+        console.error('[Web3Modal] Wallet connection error:', err);
         
         // More specific error messages
         let errorMsg = 'No se pudo conectar la wallet';
         if (err.message.includes('User rejected')) {
           errorMsg = 'Conexión cancelada por el usuario.';
         } else if (err.message.includes('Timeout')) {
-          errorMsg = 'Timeout: La conexión tardó demasiado.';
-        } else if (err.message.includes('Reown no está disponible')) {
-          errorMsg = 'Reown no está disponible. Recarga la página.';
+          errorMsg = 'Timeout: La conexión tardó demasiado. Intenta de nuevo.';
+        } else if (err.message.includes('Web3Modal no está disponible')) {
+          errorMsg = 'Web3Modal no está disponible. Recarga la página.';
         } else if (err.message) {
           errorMsg = err.message;
         }
@@ -433,6 +409,11 @@ export default async function handler(req, res) {
         
         createWalletBtn.disabled = false;
         createWalletBtn.textContent = '✨ Crear wallet con email';
+        
+        // Close modal on error
+        if (web3Modal) {
+          web3Modal.close();
+        }
       }
     });
   </script>
