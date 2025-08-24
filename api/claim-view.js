@@ -167,38 +167,45 @@ export default async function handler(req, res) {
     let reownKit = null;
     
     try {
-      // Import Reown AppKit
-      const { createAppKit } = await import('https://esm.sh/@reown/appkit@1.0.0');
-      const { WagmiAdapter } = await import('https://esm.sh/@reown/appkit-adapter-wagmi@1.0.0');
-      const { mainnet, optimism, base, arbitrum } = await import('https://esm.sh/viem/chains');
+      // Import Web3Modal (Reown AppKit) - using stable CDN versions
+      const { createWeb3Modal } = await import('https://unpkg.com/@web3modal/wagmi@4.1.11/dist/index.js');
+      const { defaultWagmiConfig } = await import('https://unpkg.com/@web3modal/wagmi@4.1.11/dist/index.js');
+      const { mainnet, optimism, base, arbitrum } = await import('https://unpkg.com/viem@2.9.31/chains/index.js');
       
-      console.log('[Reown] Successfully imported Reown AppKit');
+      console.log('[Reown] Successfully imported Web3Modal');
       
-      // Configure Reown - Get your Project ID from https://cloud.reown.com/
+      // Configure Web3Modal - Get your Project ID from https://cloud.reown.com/
       const projectId = 'c6c9bacd0e950b8b8a6244a2c4e9a20e'; // Demo Project ID
       
-      // Create wagmi adapter
-      const wagmiAdapter = new WagmiAdapter({
-        networks: [mainnet, optimism, base, arbitrum],
-        projectId
-      });
+      // Define the chains
+      const chains = [mainnet, optimism, base, arbitrum];
       
-      // Create the AppKit instance
-      reownKit = createAppKit({
-        adapters: [wagmiAdapter],
-        networks: [mainnet, optimism, base, arbitrum],
+      // Create wagmi config
+      const wagmiConfig = defaultWagmiConfig({
+        chains,
         projectId,
         metadata: {
           name: 'Chingadrop',
           description: 'Token Distribution Platform',
           url: window.location.origin,
           icons: ['https://chingadrop.xyz/logo.svg']
-        },
-        features: {
-          email: true, // Enable email wallet
-          socials: ['google', 'github', 'apple', 'discord'],
-          emailShowWallets: true
         }
+      });
+      
+      // Create the Web3Modal instance
+      reownKit = createWeb3Modal({
+        wagmiConfig,
+        projectId,
+        chains,
+        featuredWalletIds: [
+          'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+          'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa', // Coinbase
+        ],
+        includeWalletIds: [
+          'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+          'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa', // Coinbase
+          '1ae92b26df02f0abca6304df07debccd18262fdf5fe82daa81593582dac9a369', // Rainbow
+        ]
       });
       
       console.log('[Reown] AppKit initialized successfully');
@@ -339,31 +346,44 @@ export default async function handler(req, res) {
         emailWalletStatus.style.display = 'block';
         emailWalletStatus.innerHTML = 'Abriendo diálogo de conexión...<br><small style="color: var(--muted);">💡 Puedes usar email, redes sociales o wallets tradicionales</small>';
 
-        console.log('[Reown] Opening connection modal...');
+        console.log('[Reown] Opening Web3Modal...');
         
-        // Open the Reown modal
-        await reownKit.open();
+        // Open the Web3Modal
+        reownKit.open();
         
         // Wait for connection
-        emailWalletStatus.innerHTML = 'Esperando conexión...<br><small style="color: var(--acc);">📧 Si usas email, revisa tu bandeja de entrada</small>';
+        emailWalletStatus.innerHTML = 'Esperando conexión...<br><small style="color: var(--acc);">💡 Elige tu método preferido de conexión</small>';
         
-        // Listen for account connection
+        // Listen for account connection using Web3Modal events
         const checkConnection = () => {
           return new Promise((resolve, reject) => {
             const timeout = setTimeout(() => {
               reject(new Error('Timeout: No se conectó ninguna wallet en 60 segundos'));
             }, 60000);
 
+            // Listen for connection event
+            const handleConnect = (event) => {
+              console.log('[Reown] Connection event:', event);
+              if (event.detail && event.detail.address) {
+                clearTimeout(timeout);
+                window.removeEventListener('w3m-connect', handleConnect);
+                resolve(event.detail.address);
+              }
+            };
+
+            // Listen for Web3Modal connect event
+            window.addEventListener('w3m-connect', handleConnect);
+            
+            // Also poll for connection status as fallback
             const checkAccount = async () => {
               try {
-                const isConnected = reownKit.getIsConnected();
-                const account = reownKit.getAddress();
+                // Check if we have an account via wagmi or the modal state
+                const accounts = await window.ethereum?.request({ method: 'eth_accounts' }) || [];
                 
-                console.log('[Reown] Connection status:', { isConnected, account });
-                
-                if (isConnected && account) {
+                if (accounts.length > 0) {
                   clearTimeout(timeout);
-                  resolve(account);
+                  window.removeEventListener('w3m-connect', handleConnect);
+                  resolve(accounts[0]);
                 } else {
                   // Check again in 1 second
                   setTimeout(checkAccount, 1000);
@@ -374,7 +394,8 @@ export default async function handler(req, res) {
               }
             };
             
-            checkAccount();
+            // Start polling after a short delay
+            setTimeout(checkAccount, 2000);
           });
         };
 
