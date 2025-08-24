@@ -476,13 +476,28 @@ export default async function handler(req, res) {
       }
     });
 
+    // Enhanced PWA Debug Information
+    console.log('[PWA] Browser check:', {
+      userAgent: navigator.userAgent,
+      isAndroid: /Android/i.test(navigator.userAgent),
+      isChrome: /Chrome/i.test(navigator.userAgent),
+      hasServiceWorker: 'serviceWorker' in navigator,
+      hasBeforeInstallPrompt: 'BeforeInstallPromptEvent' in window,
+      isStandalone: window.matchMedia('(display-mode: standalone)').matches,
+      isInWebApk: 'matchMedia' in window && window.matchMedia('(display-mode: standalone)').matches
+    });
+
     // Register Service Worker for PWA
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
           console.log('[PWA] Registering service worker...');
-          const registration = await navigator.serviceWorker.register('/sw.js');
+          const registration = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
           console.log('[PWA] Service worker registered successfully:', registration);
+          
+          // Wait for SW to be ready
+          await navigator.serviceWorker.ready;
+          console.log('[PWA] Service worker is ready');
           
           // Check for updates
           registration.addEventListener('updatefound', () => {
@@ -572,6 +587,63 @@ export default async function handler(req, res) {
       const banner = document.getElementById('installBanner');
       if (banner) banner.remove();
     });
+
+    // Android PWA Detection and Manual Install
+    function setupAndroidPWA() {
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const isChrome = /Chrome/i.test(navigator.userAgent);
+      
+      if (isAndroid) {
+        console.log('[PWA] Android detected, setting up manual install option');
+        
+        // Add manual install instructions
+        const manualInstallDiv = document.createElement('div');
+        manualInstallDiv.innerHTML = 
+          '<div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); ' +
+                      'background: rgba(125,211,252,0.1); border: 1px solid rgba(125,211,252,0.3); ' +
+                      'color: var(--text); padding: 16px; border-radius: 12px; ' +
+                      'font-size: 13px; z-index: 1000; backdrop-filter: blur(8px); ' +
+                      'max-width: 90%; text-align: center;">' +
+            '<div style="font-weight: 600; margin-bottom: 8px;">📱 Instalar como App</div>' +
+            '<div style="font-size: 12px; margin-bottom: 12px;">Toca el menú de Chrome (⋮) → "Agregar a pantalla de inicio"</div>' +
+            '<button onclick="this.parentElement.remove()" ' +
+                    'style="background: var(--acc); color: #0b1220; border: none; ' +
+                           'padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;">' +
+              'Entendido' +
+            '</button>' +
+          '</div>';
+        
+        // Show after 3 seconds if no beforeinstallprompt
+        setTimeout(() => {
+          if (!deferredPrompt) {
+            document.body.appendChild(manualInstallDiv);
+          }
+        }, 3000);
+      }
+    }
+
+    // PWA Criteria Check for debugging
+    async function checkPWACriteria() {
+      const checks = {
+        hasManifest: !!document.querySelector('link[rel="manifest"]'),
+        hasServiceWorker: 'serviceWorker' in navigator,
+        isSecure: location.protocol === 'https:' || location.hostname === 'localhost',
+        hasIcons: true, // We know we have icons
+        isStandalone: window.matchMedia('(display-mode: standalone)').matches
+      };
+      
+      console.log('[PWA] Criteria check:', checks);
+      
+      const manifestResponse = await fetch('/manifest.json');
+      const manifest = await manifestResponse.json();
+      console.log('[PWA] Manifest loaded:', manifest);
+      
+      return checks;
+    }
+
+    // Setup Android PWA detection
+    setupAndroidPWA();
+    checkPWACriteria();
     
   </script>
 </body>
