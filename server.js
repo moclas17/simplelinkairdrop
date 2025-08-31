@@ -30,6 +30,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
 import generateHandler from './api/generate.js';
 import claimHandler from './api/claim.js';
 import claimViewHandler from './api/claim-view.js';
+import dashboardHandler from './api/dashboard.js';
 
 // Wrap Vercel handlers for Express
 const wrapHandler = (handler) => async (req, res) => {
@@ -158,6 +159,7 @@ curl -X POST ${req.get('host') ? (req.protocol + '://' + req.get('host')) : 'htt
 app.use('/api/generate', wrapHandler(generateHandler));
 app.use('/api/claim', wrapHandler(claimHandler));
 app.use('/api/claim-view', wrapHandler(claimViewHandler));
+app.use('/api/dashboard', wrapHandler(dashboardHandler));
 app.get('/claim/:id', (req, res) => {
   // Create a new request object with query parameter
   const modifiedReq = {

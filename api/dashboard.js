@@ -161,338 +161,162 @@ export default async function handler(req, res) {
     .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
   <script src="../lib/networks-client.js"></script>
-  <script type="module">
-    // Import Reown AppKit with proper ES modules
-    import { createAppKit } from 'https://unpkg.com/@reown/appkit@1.8.1/dist/index.js';
-    import { EthersAdapter } from 'https://unpkg.com/@reown/appkit-adapter-ethers@1.8.1/dist/index.js';
-    
-    // Mobile-friendly Reown AppKit initialization
-    let reownAppKit = null;
-    
-    async function initializeReown() {
-      try {
-        // Use the imported modules directly
-        console.log('Initializing Reown AppKit with imported modules...');
-        
-        const projectId = '${reownProjectId}';
-        const adapter = new EthersAdapter();
-        
-        // Complete networks configuration including testnets
-        const networks = [
-          // Mainnets
-          {
-            id: 10,
-            name: 'Optimism',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } },
-            blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://optimistic.etherscan.io' } }
-          },
-          {
-            id: 42161,
-            name: 'Arbitrum One',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
-            blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
-          },
-          {
-            id: 8453,
-            name: 'Base',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
-            blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
-          },
-          {
-            id: 534352,
-            name: 'Scroll',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://rpc.scroll.io'] } },
-            blockExplorers: { default: { name: 'Scrollscan', url: 'https://scrollscan.com' } }
-          },
-          {
-            id: 5000,
-            name: 'Mantle',
-            nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
-            rpcUrls: { default: { http: ['https://rpc.mantle.xyz'] } },
-            blockExplorers: { default: { name: 'Mantlescan', url: 'https://mantlescan.xyz' } }
-          },
-          // Testnets
-          {
-            id: 11155420,
-            name: 'Optimism Sepolia',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://sepolia.optimism.io'] } },
-            blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://sepolia-optimism.etherscan.io' } }
-          },
-          {
-            id: 421614,
-            name: 'Arbitrum Sepolia',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] } },
-            blockExplorers: { default: { name: 'Arbiscan', url: 'https://sepolia.arbiscan.io' } }
-          },
-          {
-            id: 84532,
-            name: 'Base Sepolia',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
-            blockExplorers: { default: { name: 'Basescan', url: 'https://sepolia.basescan.org' } }
-          },
-          {
-            id: 534351,
-            name: 'Scroll Sepolia',
-            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-            rpcUrls: { default: { http: ['https://sepolia-rpc.scroll.io'] } },
-            blockExplorers: { default: { name: 'Scrollscan', url: 'https://sepolia.scrollscan.com' } }
-          },
-          {
-            id: 5003,
-            name: 'Mantle Sepolia',
-            nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
-            rpcUrls: { default: { http: ['https://rpc.sepolia.mantle.xyz'] } },
-            blockExplorers: { default: { name: 'Mantlescan', url: 'https://sepolia.mantlescan.xyz' } }
-          },
-          {
-            id: 10143,
-            name: 'Monad Testnet',
-            nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-            rpcUrls: { default: { http: ['https://testnet-rpc.monad.xyz'] } },
-            blockExplorers: { default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' } }
-          }
-        ];
-        
-        reownAppKit = createAppKit({
-          adapters: [adapter],
-          networks,
-          projectId,
-          metadata: {
-            name: 'Chingadrop.xyz',
-            description: 'Token Distribution Platform',
-            url: window.location.origin,
-            icons: [window.location.origin + '/icons/icon-192x192.png']
-          },
-          features: {
-            analytics: false,
-            onramp: false,
-            swaps: false,
-            email: true,
-            socials: ['google', 'x', 'github', 'discord', 'apple'],
-            emailShowWallets: true
-          },
-          themeMode: 'dark',
-          themeVariables: {
-            '--w3m-accent': '#7dd3fc',
-            '--w3m-color-mix': '#0b1220',
-            '--w3m-color-mix-strength': 20,
-            '--w3m-border-radius-master': '12px',
-            '--w3m-font-size-master': '14px'
-          },
-          enableWalletConnect: true,
-          enableInjected: true,
-          enableEIP6963: true,
-          enableCoinbase: true
-        });
-        
-        window.appKit = reownAppKit;
-        console.log('Reown AppKit initialized successfully with', networks.length, 'networks');
-        
-        // Force component registration
-        setTimeout(() => {
-          console.log('Reown AppKit components should now be available');
-          // Check if components are defined
-          const button = document.querySelector('w3m-button');
-          if (button) {
-            console.log('w3m-button found in DOM');
-          } else {
-            console.warn('w3m-button not found in DOM');
-          }
-        }, 2000);
-        
-        return true;
-      } catch (error) {
-        console.error('Failed to initialize Reown AppKit:', error);
-        return false;
-      }
-    }
-    
-    // Setup Reown event listeners
-    function setupReownEventListeners() {
-      console.log('Setting up Reown event listeners');
-      
-      // Listen for account changes
-      appKit.subscribeAccount((account) => {
-        console.log('Reown account changed:', account);
-        if (account.address && account.address !== currentUser) {
-          currentUser = account.address;
-          console.log('Updated current user to:', currentUser);
-          
-          // Update UI if user is on dashboard
-          if (!document.getElementById('dashboardSection').classList.contains('hidden')) {
-            showDashboard(); // Refresh dashboard display
-            loadCampaigns(); // Reload campaigns for new account
-          }
-        } else if (!account.address && currentUser) {
-          // User disconnected
-          console.log('User disconnected via Reown');
-          currentUser = null;
-          showWalletSection();
-        }
-      });
-      
-      // Listen for network changes  
-      appKit.subscribeChainId((chainId) => {
-        console.log('Reown network changed:', chainId);
-        const networkInfo = getNetworkInfo(chainId);
-        if (networkInfo) {
-          currentNetwork = networkInfo;
-          updateNetworkDisplay();
-        }
-      });
-      
-      // Listen for modal state changes to handle connection completion
-      appKit.subscribeModal((modal) => {
-        console.log('Reown modal state changed:', modal);
-        if (!modal.open) {
-          // Modal closed, check if we have a connection
-          const state = appKit.getState();
-          if (state.address && !currentUser) {
-            // New connection established
-            console.log('New connection established via Reown:', state.address);
-            currentUser = state.address;
-            
-            // Update network info
-            if (state.selectedNetworkId) {
-              const networkInfo = getNetworkInfo(state.selectedNetworkId);
-              currentNetwork = networkInfo;
-              updateNetworkDisplay();
-            }
-            
-            // Show dashboard
-            showDashboard();
-            loadCampaigns();
-            showToast('Wallet connected successfully!', 'success');
-          }
-        }
-      });
-    }
-    
-    // Initialize Reown AppKit immediately when DOM is ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initializeReownAppKit);
-    } else {
-      initializeReownAppKit();
-    }
-
-    async function initializeReownAppKit() {
-      console.log('DOM ready, initializing Reown AppKit...');
-      
-      try {
-        await initializeReown();
-        
-        if (window.appKit) {
-          console.log('Setting up Reown event listeners...');
-          setupReownEventListeners();
-          
-          // Check connection state periodically
-          setInterval(() => {
-            const state = window.appKit.getState();
-            if (state.address && !currentUser) {
-              console.log('User connected via Reown:', state.address);
-              currentUser = state.address;
-              
-              if (state.selectedNetworkId) {
-                const networkInfo = getNetworkInfo(state.selectedNetworkId);
-                currentNetwork = networkInfo;
-                updateNetworkDisplay();
-              }
-              
-              showDashboard();
-              loadCampaigns();
-            } else if (!state.address && currentUser) {
-              console.log('User disconnected');
-              currentUser = null;
-              showWalletSection();
-            }
-          }, 1000);
-        }
-        
-      } catch (error) {
-        console.error('Failed to initialize Reown AppKit:', error);
-      }
-    }
-  </script>
-</head>
-<body>
-  <div class="container">
-    <!-- Wallet Connection Section -->
-    <div id="walletSection" class="card wallet-section">
-      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
-        <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDwhLS0gR3JhZGllbnRlcyBwYXJhIGVsIHBhcmFjYcOtZGFzIC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJwYXJhY2h1dGVHcmFkaWVudCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3ZGQzZmMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMzOGJkZjgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMGVhNWU5Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgCiAgICA8IS0tIEdyYWRpZW50ZSBwYXJhIGxhIGNhamEgLS0+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImJveEdyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2ZiYmYyNCIvPgogICAgICA8c3RvcCBvZmZmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZjU5ZTBiIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgCiAgICA8IS0tIFNvbWJyYSBkZWwgcGFyYWNhw61kYXMgLS0+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1jb2xvcj0iIzBlYTVlOSIgZmxvb2Qtb3BhY2l0eT0iMC4zIi8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgCiAgPCEtLSBQYXJhY2HDrWRhcyBwcmluY2lwYWwgLS0+CiAgPHBhdGggZD0iTTIwIDM1IFE1MCAxNSA4MCAzNSBRNzUgNDUgNzAgNTAgTDY1IDQ1IFE1MCAyNSAzNSA0NSBMM0AgNTAgUTI1IDQ1IDIwIDM1IFoiIAogICAgICAgIGZpbGw9InVybCgjcGFyYWNodXRlR3JhZGllbnQpIiAKICAgICAgICBmaWx0ZXI9InVybCgjc2hhZG93KSIvPgogIAogIDwhLS0gTMOtbmVhcyBkZWwgcGFyYWNhw61kYXMgLS0+CiAgPHBhdGggZD0iTTI1IDQwIFE1MCAyMCA3NSA0MCIgc3Ryb2tlPSIjMDM2OWExIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjAuNiIvPgogIDxwYXRoIGQ9Ik0zMCA0NSBRNTAgMjUgNzAgNDUiIHN0cm9rZT0iIzAzNjlhMSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBvcGFjaXR5PSIwLjQiLz4KICA8IS0tIEN1ZXJkYXMgZGVsIHBhcmFjYcOtZGFzIC0tPgogIDxsaW5lIHgxPSIyNSIgeTE9IjQ4IiB4Mj0iNDIiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxsaW5lIHgxPSIzOCIgeTE9IjQ4IiB4Mj0iNDYiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxsaW5lIHgxPSI2MiIgeTE9IjQ4IiB4Mj0iNTQiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxsaW5lIHgxPSI3NSIgeTE9IjQ4IiB4Mj0iNTgiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIAogIDwhLS0gQ2FqYS9wYXF1ZXRlIC0tPgogIDxyZWN0IHg9IjQyIiB5PSI3MCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjEyIiByeD0iMiIgCiAgICAgICAgZmlsbD0idXJsKCNib3hHcmFkaWVudCkiIAogICAgICAgIHN0cm9rZT0iI2Q5NzcwNiIgCiAgICAgICAgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgCiAgPCEtLSBEZXRhbGxlcyBkZSBsYSBjYWphIC0tPgogIDxsaW5lIHgxPSI0MiIgeTE9Ijc2IiB4Mj0iNTgiIHkyPSI3NiIgc3Ryb2tlPSIjZDk3NzA2IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8bGluZSB4MT0iNTAiIHkxPSI3MCIgeDI9IjUwIiB5Mj0iODIiIHN0cm9rZT0iI2Q5NzcwNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgCiAgPCEtLSBQdW50b3MgZGUgYnJpbGxvIGVuIGVsIHBhcmFjYcOtZGFzIC0tPgogIDxjaXJjbGUgY3g9IjM1IiBjeT0iMzIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuNiIvPgogIDxjaXJjbGUgY3g9IjY1IiBjeT0iMzUiIHI9IjEuNSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC40Ii8+Cjwvc3ZnPg==" alt="Chingadrop.xyz" style="width:48px; height:48px; margin-right:16px;">
-        <h1 style="margin: 0;">🎯 Campaign Dashboard</h1>
-      </div>
-      <p style="margin-bottom: 24px;">Connect your wallet to create and manage token distribution campaigns</p>
-      
-      <div id="walletStatus" style="margin-bottom: 20px;">
-        <div id="noWalletMessage" class="explanation-box" style="margin-bottom: 16px; display: block;">
-          🔗 Click "Connect Wallet" to access your Web3 wallet. Works with MetaMask, Coinbase Wallet, WalletConnect and more.
-        </div>
-        <div id="walletDetectedMessage" class="explanation-box" style="margin-bottom: 16px; background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); display: none;">
-          ✅ Web3 wallet ready! Click the button below to connect.
-        </div>
-      </div>
-      
-      <!-- Reown AppKit Connect Button -->
-      <div style="display: flex; justify-content: center; width: 100%;">
-        <w3m-button size="md" label="Connect Wallet"></w3m-button>
-      </div>
-    </div>
-
-    <!-- Dashboard Section (hidden initially) -->
-    <div id="dashboardSection" class="hidden">
-      <!-- User Info -->
-      <div class="user-info">
-        <div class="wallet-info">
-          <div style="margin-bottom: 8px;">
-            <strong>Connected Wallet:</strong> <span id="userWallet" class="wallet-address">-</span>
-          </div>
-          <div style="margin-bottom: 16px;">
-            <strong>Network:</strong> <span id="networkInfo" style="display: inline-flex; align-items: center; gap: 6px;">-</span>
-          </div>
-        </div>
-        <div class="button-group" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-          <w3m-network-button size="sm"></w3m-network-button>
-          <w3m-account-button size="sm"></w3m-account-button>
-        </div>
-      </div>
-
-      <!-- Actions -->
-      <div class="card">
-        <h2>📊 Your Campaigns</h2>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-          <p>Create and manage your token distribution campaigns</p>
-          <a href="#" id="createCampaignBtn" class="btn btn-primary">
-            ➕ Create Campaign
-          </a>
-        </div>
-        
-        <div id="campaignsGrid" class="campaigns-grid">
-          <!-- Campaigns will be loaded here -->
-        </div>
-      </div>
-    </div>
-
-  </div>
-
   <script>
     let currentUser = null;
     let currentNetwork = null;
     
-    // Network functions are loaded from networks-client.js
-    // Functions available: getNetworkInfo, getAllNetworks, isLightColor, etc.
+    // Check wallet availability
+    function checkWalletAvailability() {
+      console.log('Checking wallet availability...');
+      
+      // Check for injected wallets
+      const walletStatus = document.getElementById('walletStatus');
+      const noWalletMessage = document.getElementById('noWalletMessage');
+      const walletDetectedMessage = document.getElementById('walletDetectedMessage');
+      
+      if (typeof window.ethereum !== 'undefined') {
+        console.log('Web3 wallet detected');
+        noWalletMessage.style.display = 'none';
+        walletDetectedMessage.style.display = 'block';
+        
+        // Set up basic event listeners
+        setupBasicWalletListeners();
+        
+        // Check if already connected
+        checkExistingConnection();
+      } else {
+        console.log('No Web3 wallet detected');
+        noWalletMessage.style.display = 'block';
+        walletDetectedMessage.style.display = 'none';
+      }
+    }
     
+    // Check if wallet is already connected
+    async function checkExistingConnection() {
+      try {
+        if (typeof window.ethereum !== 'undefined' && window.ethereum.request) {
+          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+          if (accounts && accounts.length > 0) {
+            console.log('Found existing connection:', accounts[0]);
+            currentUser = accounts[0];
+            await detectNetwork();
+            showDashboard();
+            loadCampaigns();
+            showToast('Already connected to wallet', 'success');
+          }
+        }
+      } catch (error) {
+        console.log('No existing connection found:', error);
+      }
+    }
+    
+    // Basic wallet event listeners
+    function setupBasicWalletListeners() {
+      if (typeof window.ethereum !== 'undefined' && window.ethereum.on) {
+        try {
+          window.ethereum.on('accountsChanged', (accounts) => {
+            console.log('Accounts changed:', accounts);
+            if (accounts.length === 0) {
+              currentUser = null;
+              showWalletSection();
+              showToast('Wallet disconnected', 'info');
+            } else if (accounts[0] !== currentUser) {
+              currentUser = accounts[0];
+              detectNetwork();
+              if (!document.getElementById('dashboardSection').classList.contains('hidden')) {
+                showDashboard();
+                loadCampaigns();
+              }
+            }
+          });
+          
+          window.ethereum.on('chainChanged', (chainId) => {
+            console.log('Chain changed:', chainId);
+            detectNetwork();
+          });
+          
+          console.log('Basic wallet listeners set up');
+        } catch (error) {
+          console.warn('Failed to set up wallet listeners:', error);
+        }
+      }
+    }
+    
+    // Connect wallet function
+    async function connectWallet() {
+      console.log('Connect wallet clicked');
+      try {
+        if (typeof window.ethereum !== 'undefined') {
+          console.log('Web3 wallet detected, requesting accounts...');
+          
+          const accounts = await window.ethereum.request({ 
+            method: 'eth_requestAccounts' 
+          });
+          
+          console.log('Accounts received:', accounts);
+          if (accounts && accounts.length > 0) {
+            currentUser = accounts[0];
+            console.log('Current user set to:', currentUser);
+            
+            // Detect network after successful connection
+            await detectNetwork();
+            showDashboard();
+            loadCampaigns();
+            showToast('Wallet connected successfully!', 'success');
+          } else {
+            throw new Error('No accounts returned from wallet');
+          }
+        } else {
+          console.log('No Web3 wallet detected');
+          showToast('Please install MetaMask or another Web3 wallet', 'error');
+        }
+      } catch (error) {
+        console.error('Wallet connection failed:', error);
+        
+        if (error.code === 4001) {
+          showToast('Connection request was rejected', 'error');
+        } else if (error.code === -32002) {
+          showToast('Connection request is already pending. Please check your wallet.', 'error');
+        } else {
+          showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
+        }
+      }
+    }
+    
+    // Disconnect wallet function
+    function disconnectWallet() {
+      currentUser = null;
+      currentNetwork = null;
+      showWalletSection();
+      showToast('Wallet disconnected', 'info');
+    }
+    
+    // Initialize page
+    window.addEventListener('load', () => {
+      console.log('Page loaded, checking wallet availability...');
+      checkWalletAvailability();
+      
+      // Set up button event listeners
+      const connectBtn = document.getElementById('connectWalletBtn');
+      if (connectBtn) {
+        connectBtn.addEventListener('click', connectWallet);
+      }
+      
+      const disconnectBtn = document.getElementById('disconnectBtn');
+      if (disconnectBtn) {
+        disconnectBtn.addEventListener('click', disconnectWallet);
+      }
+      
+      const switchNetworkBtn = document.getElementById('switchNetworkBtn');
+      if (switchNetworkBtn) {
+        switchNetworkBtn.addEventListener('click', showNetworkSwitchOptions);
+      }
+    });
+    
+    // Network detection and display functions
     async function detectNetwork() {
       if (typeof window.ethereum !== 'undefined') {
         try {
-          // Check if request method is available
           if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
             console.warn('Wallet does not support eth_chainId request');
             return null;
@@ -505,7 +329,6 @@ export default async function handler(req, res) {
           return networkInfo;
         } catch (error) {
           console.error('Error detecting network:', error);
-          // Don't show error to user for network detection, just log it
           return null;
         }
       }
@@ -527,6 +350,29 @@ export default async function handler(req, res) {
       }
     }
     
+    // UI functions
+    function showWalletSection() {
+      document.getElementById('walletSection').classList.remove('hidden');
+      document.getElementById('dashboardSection').classList.add('hidden');
+    }
+    
+    function showDashboard() {
+      console.log('Showing dashboard...');
+      document.getElementById('walletSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.remove('hidden');
+      
+      // Truncate wallet address for better mobile display
+      const walletElement = document.getElementById('userWallet');
+      if (currentUser && currentUser.length > 20) {
+        const truncated = currentUser.substring(0, 6) + '...' + currentUser.substring(currentUser.length - 4);
+        walletElement.textContent = truncated;
+        walletElement.title = currentUser; // Show full address on hover
+      } else {
+        walletElement.textContent = currentUser;
+      }
+    }
+    
+    // Network switching functionality
     window.switchToNetwork = async function(chainIdHex) {
       try {
         await window.ethereum.request({
@@ -548,7 +394,7 @@ export default async function handler(req, res) {
         // If the network doesn't exist in wallet, try to add it
         if (switchError.code === 4902) {
           const numericChainId = parseInt(chainIdHex, 16);
-          const networkInfo = SUPPORTED_NETWORKS[numericChainId];
+          const networkInfo = getNetworkInfo(numericChainId);
           
           if (networkInfo) {
             try {
@@ -661,156 +507,70 @@ export default async function handler(req, res) {
         '</div>';
       document.body.appendChild(modal);
     }
-    
-    // Test function to verify basic wallet connectivity
-    window.testWalletConnection = async function() {
-      console.log('Testing wallet connection...');
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-          console.log('Test successful - accounts:', accounts);
-          return accounts;
-        } catch (error) {
-          console.error('Test failed:', error);
-          return null;
-        }
-      } else {
-        console.log('No wallet detected');
-        return null;
-      }
-    }
-
-    // Reown AppKit handles connection automatically through w3m-button component
-    
-    // Fallback MetaMask connection
-    async function connectWithMetaMask() {
-      console.log('Using MetaMask fallback connection');
-      try {
-        if (typeof window.ethereum !== 'undefined') {
-          console.log('Web3 wallet detected, requesting accounts...');
-          
-          const accounts = await window.ethereum.request({ 
-            method: 'eth_requestAccounts' 
-          });
-          
-          console.log('Accounts received:', accounts);
-          if (accounts && accounts.length > 0) {
-            currentUser = accounts[0];
-            console.log('Current user set to:', currentUser);
-            
-            // Detect network after successful connection
-            try {
-              await detectNetwork();
-            } catch (networkError) {
-              console.warn('Network detection failed, but connection succeeded:', networkError);
-            }
-            
-            try {
-              showDashboard();
-            } catch (dashboardError) {
-              console.error('Error showing dashboard:', dashboardError);
-            }
-            
-            try {
-              loadCampaigns();
-            } catch (campaignsError) {
-              console.error('Error loading campaigns:', campaignsError);
-            }
-            
-            // Set up event listeners after successful connection (non-critical)
-            try {
-              setupWalletEventListeners();
-            } catch (eventListenerError) {
-              console.warn('Non-critical: Failed to set up event listeners:', eventListenerError);
-            }
-            
-            showToast('Wallet connected successfully!', 'success');
-          } else {
-            throw new Error('No accounts returned from wallet');
-          }
-        } else {
-          console.log('No Web3 wallet detected');
-          showToast('Please install MetaMask or another Web3 wallet', 'error');
-        }
-      } catch (error) {
-        console.error('MetaMask connection failed:', error);
-        
-        // Handle specific error cases
-        if (error.code === 4001) {
-          showToast('Connection request was rejected', 'error');
-        } else if (error.code === -32002) {
-          showToast('Connection request is already pending. Please check your wallet.', 'error');
-        } else if (error.message && (error.message.includes('addListener') || error.message.includes('addEventListener'))) {
-          console.warn('Event listener setup issue (non-critical):', error.message);
-          // Don't show error toast for event listener issues as they're not critical for basic wallet connection
-        } else {
-          showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
-        }
-      }
-    };
-
-    function disconnectWallet() {
-      currentUser = null;
-      showWalletSection();
-    }
-    
-    function setupWalletEventListeners() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          // Only set up if not already set up (prevent duplicates)
-          if (!window.ethereum._listenersSetUp) {
-            if (window.ethereum.on && typeof window.ethereum.on === 'function') {
-              window.ethereum.on('chainChanged', async (chainId) => {
-                console.log('Network changed to:', chainId);
-                try {
-                  await detectNetwork();
-                } catch (error) {
-                  console.warn('Failed to detect network after change:', error);
-                }
-              });
-              
-              window.ethereum.on('accountsChanged', async (accounts) => {
-                console.log('Accounts changed:', accounts);
-                if (accounts.length === 0) {
-                  disconnectWallet();
-                } else if (currentUser && accounts[0] !== currentUser) {
-                  currentUser = accounts[0];
-                  console.log('Switched to account:', currentUser);
-                  loadCampaigns();
-                }
-              });
-              
-              // Mark as set up to prevent duplicates
-              window.ethereum._listenersSetUp = true;
-              console.log('Wallet event listeners set up successfully');
-            }
-          }
-        } catch (error) {
-          console.warn('Non-critical: Failed to set up wallet event listeners:', error);
-        }
-      }
-    }
-
-    function showWalletSection() {
-      document.getElementById('walletSection').classList.remove('hidden');
-      document.getElementById('dashboardSection').classList.add('hidden');
-    }
-
-    function showDashboard() {
-      console.log('Showing dashboard...');
-      document.getElementById('walletSection').classList.add('hidden');
-      document.getElementById('dashboardSection').classList.remove('hidden');
+  </script>
+</head>
+<body>
+  <div class="container">
+    <!-- Wallet Connection Section -->
+    <div id="walletSection" class="card wallet-section">
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+        <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAwIDEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDwhLS0gR3JhZGllbnRlcyBwYXJhIGVsIHBhcmFjYcOtZGFzIC0tPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJwYXJhY2h1dGVHcmFkaWVudCIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0eWxlPSJzdG9wLWNvbG9yOiM3ZGQzZmMiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSI1MCUiIHN0eWxlPSJzdG9wLWNvbG9yOiMzOGJkZjgiLz4KICAgICAgPHN0b3Agb2Zmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMGVhNWU5Ii8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgCiAgICA8IS0tIEdyYWRpZW50ZSBwYXJhIGxhIGNhamEgLS0+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImJveEdyYWRpZW50IiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KICAgICAgPHN0b3Agb2Zmc2V0PSIwJSIgc3R5bGU9InN0b3AtY29sb3I6I2ZiYmYyNCIvPgogICAgICA8c3RvcCBvZmZmc2V0PSIxMDAlIiBzdHlsZT0ic3RvcC1jb2xvcjojZjU5ZTBiIi8+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgCiAgICA8IS0tIFNvbWJyYSBkZWwgcGFyYWNhw61kYXMgLS0+CiAgICA8ZmlsdGVyIGlkPSJzaGFkb3ciIHg9Ii01MCUiIHk9Ii01MCUiIHdpZHRoPSIyMDAlIiBoZWlnaHQ9IjIwMCUiPgogICAgICA8ZmVEcm9wU2hhZG93IGR4PSIwIiBkeT0iMiIgc3RkRGV2aWF0aW9uPSIzIiBmbG9vZC1jb2xvcj0iIzBlYTVlOSIgZmxvb2Qtb3BhY2l0eT0iMC4zIi8+CiAgICA8L2ZpbHRlcj4KICA8L2RlZnM+CiAgCiAgPCEtLSBQYXJhY2HDrWRhcyBwcmluY2lwYWwgLS0+CiAgPHBhdGggZD0iTTIwIDM1IFE1MCAxNSA4MCAzNSBRNzUgNDUgNzAgNTAgTDY1IDQ1IFE1MCAyNSAzNSA0NSBMM0AgNTAgUTI1IDQ1IDIwIDM1IFoiIAogICAgICAgIGZpbGw9InVybCgjcGFyYWNodXRlR3JhZGllbnQpIiAKICAgICAgICBmaWx0ZXI9InVybCgjc2hhZG93KSIvPgogIAogIDwhLS0gTMOtbmVhcyBkZWwgcGFyYWNhw61kYXMgLS0+CiAgPHBhdGggZD0iTTI1IDQwIFE1MCAyMCA3NSA0MCIgc3Ryb2tlPSIjMDM2OWExIiBzdHJva2Utd2lkdGg9IjEiIGZpbGw9Im5vbmUiIG9wYWNpdHk9IjAuNiIvPgogIDxwYXRoIGQ9Ik0zMCA0NSBRNTAgMjUgNzAgNDUiIHN0cm9rZT0iIzAzNjlhMSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBvcGFjaXR5PSIwLjQiLz4KICA8IS0tIEN1ZXJkYXMgZGVsIHBhcmFjYcOtZGFzIC0tPgogIDxsaW5lIHgxPSIyNSIgeTE9IjQ4IiB4Mj0iNDIiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxsaW5lIHgxPSIzOCIgeTE9IjQ4IiB4Mj0iNDYiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxsaW5lIHgxPSI2MiIgeTE9IjQ4IiB4Mj0iNTQiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIDxsaW5lIHgxPSI3NSIgeTE9IjQ4IiB4Mj0iNTgiIHkyPSI3MCIgc3Ryb2tlPSIjNjQ3NDhiIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIAogIDwhLS0gQ2FqYS9wYXF1ZXRlIC0tPgogIDxyZWN0IHg9IjQyIiB5PSI3MCIgd2lkdGg9IjE2IiBoZWlnaHQ9IjEyIiByeD0iMiIgCiAgICAgICAgZmlsbD0idXJsKCNib3hHcmFkaWVudCkiIAogICAgICAgIHN0cm9rZT0iI2Q5NzcwNiIgCiAgICAgICAgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgCiAgPCEtLSBEZXRhbGxlcyBkZSBsYSBjYWphIC0tPgogIDxsaW5lIHgxPSI0MiIgeTE9Ijc2IiB4Mj0iNTgiIHkyPSI3NiIgc3Ryb2tlPSIjZDk3NzA2IiBzdHJva2Utd2lkdGg9IjEiLz4KICA8bGluZSB4MT0iNTAiIHkxPSI3MCIgeDI9IjUwIiB5Mj0iODIiIHN0cm9rZT0iI2Q5NzcwNiIgc3Ryb2tlLXdpZHRoPSIxIi8+CiAgCiAgPCEtLSBQdW50b3MgZGUgYnJpbGxvIGVuIGVsIHBhcmFjYcOtZGFzIC0tPgogIDxjaXJjbGUgY3g9IjM1IiBjeT0iMzIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiIG9wYWNpdHk9IjAuNiIvPgogIDxjaXJjbGUgY3g9IjY1IiBjeT0iMzUiIHI9IjEuNSIgZmlsbD0iI2ZmZmZmZiIgb3BhY2l0eT0iMC40Ii8+Cjwvc3ZnPg==" alt="Chingadrop.xyz" style="width:48px; height:48px; margin-right:16px;">
+        <h1 style="margin: 0;">🎯 Campaign Dashboard</h1>
+      </div>
+      <p style="margin-bottom: 24px;">Connect your wallet to create and manage token distribution campaigns</p>
       
-      // Truncate wallet address for better mobile display
-      const walletElement = document.getElementById('userWallet');
-      if (currentUser && currentUser.length > 20) {
-        const truncated = currentUser.substring(0, 6) + '...' + currentUser.substring(currentUser.length - 4);
-        walletElement.textContent = truncated;
-        walletElement.title = currentUser; // Show full address on hover
-      } else {
-        walletElement.textContent = currentUser;
-      }
-    }
+      <div id="walletStatus" style="margin-bottom: 20px;">
+        <div id="noWalletMessage" class="explanation-box" style="margin-bottom: 16px; display: block;">
+          🔗 Click "Connect Wallet" to access your Web3 wallet. Works with MetaMask, Coinbase Wallet, WalletConnect and more.
+        </div>
+        <div id="walletDetectedMessage" class="explanation-box" style="margin-bottom: 16px; background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); display: none;">
+          ✅ Web3 wallet ready! Click the button below to connect.
+        </div>
+      </div>
+      
+      <!-- Connect Wallet Button -->
+      <button id="connectWalletBtn" class="btn btn-primary wallet-btn">
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjEyIiBoZWlnaHQ9IjE4OSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwb2x5Z29uIGZpbGw9IiNDREJEQjIiIHBvaW50cz0iMTYuMjE4IDAgNDA4IDAgNDA4IDE4OSAxNi4yMTggMTg5Ii8+PHBhdGggZD0iTTIxMS43ODYgNzMuNzM0SDEuMjE4djkxLjI2NmgxNzBjMjEuNzk1IDAgMzguNTY4LTE5LjAxNSA0MC41NjgtNDAuODc2aDAtLjAwN1Y3My43MzR6IiBmaWxsPSIjNzZEMkY1Ii8+PHBhdGggZD0iTTgxLjU5IDE3M2wyLjAzNC0xNy44MzJoLS4xNmMtLjAyMSAwLS4wNDItLjAwNS0uMDY0LS4wMDUtLjM5MS0uNTg2LS43ODktMS4xNzUtMS4xOTMtMS43NjgtMS4wNTEtMS41NDQtMi4xNTItMy4xMTItMy4zMDItNC43MDdoLS4wMDFjLjM2IDIuOTE3LjI4NiA1LjY2OS0xLjMzIDcuNDQ0LTEuNDM3IDEuNTc4LTMuODYyIDEuNzItNS4wNDQtLjgxMi0uNzcyLTEuNjUtLjQ3OC0zLjcxOS43NDItNS4zNTh2LS4wMDJsNS40ODEtOS4wNDQtMy4zOC0xLjM3OC02LjM0MiA0LjcyMmwtMS44ODQtLjc2OGMtLjQ0MS0uMTQ3LS45MDUtLjI5MS0xLjM5LS40MzItMi44NzUtLjgzNy02LjI4Ni0xLjU3NC0xMC4xNDUtMS41NzQtOC44NDYgMC0xNi4wMzggMy4xNDUtMjAuMzkyIDguMTk1LTMuNDg0IDQuMDQtMy40NDcgOC44MDEuMTk1IDEyLjU5N2wtLjAwOS4wMTFjMS44MTQgMS42MzUgNC4yMyAyLjc1MSA3LjAwNiAzLjIwNCAyLjA2Mi40NjQgNC4xNjkuNDY3IDYuMTYyLjAwMS4wOTEgMCAuMTgzIDAgLjI3NC0uMDA0LTUuNzE3IDEuNDQyLTEwLjIgMy4zMDktMTMuMjE4IDUuMzk2LTQuNDY3IDMuMDk0LTYuNTM3IDYuODUxLTQuMDg0IDEwLjgzNSIgZmlsbD0iI0Y2ODExNyIvPjwvZz48L3N2Zz4=" alt="MetaMask" class="metamask-icon">
+        Connect Wallet
+      </button>
+    </div>
+
+    <!-- Dashboard Section (hidden initially) -->
+    <div id="dashboardSection" class="hidden">
+      <!-- User Info -->
+      <div class="user-info">
+        <div class="wallet-info">
+          <div style="margin-bottom: 8px;">
+            <strong>Connected Wallet:</strong> <span id="userWallet" class="wallet-address">-</span>
+          </div>
+          <div style="margin-bottom: 16px;">
+            <strong>Network:</strong> <span id="networkInfo" style="display: inline-flex; align-items: center; gap: 6px;">-</span>
+          </div>
+        </div>
+        <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
+          <button id="switchNetworkBtn" class="btn">Switch Network</button>
+          <button id="disconnectBtn" class="btn btn-danger">Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <h2>📊 Your Campaigns</h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <p>Create and manage your token distribution campaigns</p>
+          <a href="#" id="createCampaignBtn" class="btn btn-primary">
+            ➕ Create Campaign
+          </a>
+        </div>
+        
+        <div id="campaignsGrid" class="campaigns-grid">
+          <!-- Campaigns will be loaded here -->
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 
     // Campaign management
     function goToCreateCampaign() {
