@@ -10,6 +10,8 @@
     "vercel-dev": "vercel dev"
   },
   "dependencies": {
+    "@reown/appkit": "^1.8.1",
+    "@reown/appkit-adapter-ethers": "^1.8.1",
     "@supabase/supabase-js": "^2.45.4",
     "ethers": "^6.13.2",
     "porto": "^0.0.76"

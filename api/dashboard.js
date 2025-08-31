@@ -159,6 +159,160 @@ export default async function handler(req, res) {
     .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
   <script src="../lib/networks-client.js"></script>
+  <script type="module">
+    // Import Reown AppKit
+    import { createAppKit } from 'https://unpkg.com/@reown/appkit@1.8.1/dist/index.js';
+    import { EthersAdapter } from 'https://unpkg.com/@reown/appkit-adapter-ethers@1.8.1/dist/index.js';
+    
+    // Initialize Reown AppKit
+    const projectId = 'c0d6a88c5088f3b1de2a59932b6b5b2f'; // Reown Cloud project ID
+    
+    const adapter = new EthersAdapter();
+    
+    // Networks configuration for Reown
+    const networks = [
+      {
+        id: 10,
+        name: 'Optimism',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } },
+        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://optimistic.etherscan.io' } }
+      },
+      {
+        id: 11155420,
+        name: 'Optimism Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia.optimism.io'] } },
+        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://sepolia-optimism.etherscan.io' } }
+      },
+      {
+        id: 42161,
+        name: 'Arbitrum One',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
+        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
+      },
+      {
+        id: 421614,
+        name: 'Arbitrum Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] } },
+        blockExplorers: { default: { name: 'Arbiscan', url: 'https://sepolia.arbiscan.io' } }
+      },
+      {
+        id: 8453,
+        name: 'Base',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
+        blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
+      },
+      {
+        id: 84532,
+        name: 'Base Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
+        blockExplorers: { default: { name: 'Basescan', url: 'https://sepolia.basescan.org' } }
+      }
+    ];
+    
+    const appKit = createAppKit({
+      adapters: [adapter],
+      networks,
+      projectId,
+      features: {
+        analytics: true
+      }
+    });
+    
+    // Make appKit available globally
+    window.appKit = appKit;
+    
+    // Setup Reown event listeners
+    function setupReownEventListeners() {
+      console.log('Setting up Reown event listeners');
+      
+      // Listen for account changes
+      appKit.subscribeAccount((account) => {
+        console.log('Reown account changed:', account);
+        if (account.address && account.address !== currentUser) {
+          currentUser = account.address;
+          console.log('Updated current user to:', currentUser);
+          
+          // Update UI if user is on dashboard
+          if (!document.getElementById('dashboardSection').classList.contains('hidden')) {
+            showDashboard(); // Refresh dashboard display
+            loadCampaigns(); // Reload campaigns for new account
+          }
+        } else if (!account.address && currentUser) {
+          // User disconnected
+          console.log('User disconnected via Reown');
+          currentUser = null;
+          showWalletSection();
+        }
+      });
+      
+      // Listen for network changes  
+      appKit.subscribeChainId((chainId) => {
+        console.log('Reown network changed:', chainId);
+        const networkInfo = getNetworkInfo(chainId);
+        if (networkInfo) {
+          currentNetwork = networkInfo;
+          updateNetworkDisplay();
+        }
+      });
+      
+      // Listen for modal state changes to handle connection completion
+      appKit.subscribeModal((modal) => {
+        console.log('Reown modal state changed:', modal);
+        if (!modal.open) {
+          // Modal closed, check if we have a connection
+          const state = appKit.getState();
+          if (state.address && !currentUser) {
+            // New connection established
+            console.log('New connection established via Reown:', state.address);
+            currentUser = state.address;
+            
+            // Update network info
+            if (state.selectedNetworkId) {
+              const networkInfo = getNetworkInfo(state.selectedNetworkId);
+              currentNetwork = networkInfo;
+              updateNetworkDisplay();
+            }
+            
+            // Show dashboard
+            showDashboard();
+            loadCampaigns();
+            showToast('Wallet connected successfully!', 'success');
+          }
+        }
+      });
+    }
+    
+    // Initialize Reown listeners when page loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (window.appKit) {
+          setupReownEventListeners();
+          
+          // Check if user is already connected
+          const state = window.appKit.getState();
+          if (state.address) {
+            console.log('User already connected via Reown:', state.address);
+            currentUser = state.address;
+            
+            if (state.selectedNetworkId) {
+              const networkInfo = getNetworkInfo(state.selectedNetworkId);
+              currentNetwork = networkInfo;
+              updateNetworkDisplay();
+            }
+            
+            showDashboard();
+            loadCampaigns();
+          }
+        }
+      }, 1000); // Small delay to ensure appKit is fully initialized
+    });
+  </script>
 </head>
 <body>
   <div class="container">
@@ -181,7 +335,7 @@ export default async function handler(req, res) {
       
       <button id="connectWallet" class="btn btn-primary wallet-btn">
         <svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M22.05 8.5l-1.2-4.1c-.4-1.3-1.8-2.2-3.2-1.9L12 3.8 6.35 2.5c-1.4-.3-2.8.6-3.2 1.9L2 8.5c-.4 1.3.5 2.7 1.9 2.9l3.1.5v6.6c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-6.6l3.1-.5c1.4-.2 2.3-1.6 1.9-2.9z"/>
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
         </svg>
         Connect Wallet
       </button>
@@ -377,14 +531,14 @@ export default async function handler(req, res) {
       
       if (mainnets.length > 0) {
         networkOptions += '<div style="margin-bottom: 16px;">' +
-          '<h4 style="margin: 0 0 8px; font-size: 14px; color: var(--text); opacity: 0.8;">🌐 Mainnet Networks</h4>' +
+          '<h4 style="margin: 0 0 8px; font-size: 14px; color: #334155; font-weight: 600;">🌐 Mainnet Networks</h4>' +
           generateNetworkButtons(mainnets) +
           '</div>';
       }
       
       if (testnets.length > 0) {
         networkOptions += '<div>' +
-          '<h4 style="margin: 0 0 8px; font-size: 14px; color: var(--text); opacity: 0.8;">🧪 Testnet Networks</h4>' +
+          '<h4 style="margin: 0 0 8px; font-size: 14px; color: #334155; font-weight: 600;">🧪 Testnet Networks</h4>' +
           generateNetworkButtons(testnets) +
           '</div>';
       }
@@ -421,18 +575,35 @@ export default async function handler(req, res) {
       }
     }
 
-    // Make connectWallet available immediately (before DOM load)
+    // Make connectWallet available immediately (before DOM load) - now using Reown
     window.connectWallet = async function() {
-      console.log('connectWallet function called');
+      console.log('connectWallet function called - using Reown AppKit');
       try {
-        console.log('window.ethereum exists:', typeof window.ethereum !== 'undefined');
+        if (window.appKit) {
+          console.log('Reown AppKit detected, opening connect modal...');
+          
+          // Open the Reown connect modal
+          await window.appKit.open();
+          
+          // The connection will be handled by Reown event listeners
+          // We'll set up listeners to handle the connection state
+        } else {
+          // Fallback to MetaMask if Reown is not available
+          console.log('Reown AppKit not available, falling back to MetaMask...');
+          await connectWithMetaMask();
+        }
+      } catch (error) {
+        console.error('Wallet connection failed:', error);
+        showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
+      }
+    };
+    
+    // Fallback MetaMask connection
+    async function connectWithMetaMask() {
+      console.log('Using MetaMask fallback connection');
+      try {
         if (typeof window.ethereum !== 'undefined') {
           console.log('Web3 wallet detected, requesting accounts...');
-          
-          // Check if ethereum object has the request method
-          if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
-            throw new Error('Wallet does not support the standard request method');
-          }
           
           const accounts = await window.ethereum.request({ 
             method: 'eth_requestAccounts' 
@@ -468,6 +639,8 @@ export default async function handler(req, res) {
             } catch (eventListenerError) {
               console.warn('Non-critical: Failed to set up event listeners:', eventListenerError);
             }
+            
+            showToast('Wallet connected successfully!', 'success');
           } else {
             throw new Error('No accounts returned from wallet');
           }
@@ -476,7 +649,7 @@ export default async function handler(req, res) {
           showToast('Please install MetaMask or another Web3 wallet', 'error');
         }
       } catch (error) {
-        console.error('Wallet connection failed:', error);
+        console.error('MetaMask connection failed:', error);
         
         // Handle specific error cases
         if (error.code === 4001) {
