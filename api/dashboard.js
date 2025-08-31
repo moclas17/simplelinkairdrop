@@ -39,6 +39,36 @@ export default async function handler(req, res) {
     .user-info { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: rgba(125,211,252,0.08); border: 1px solid rgba(125,211,252,0.2); border-radius: 12px; margin-bottom: 24px; }
     .wallet-address { font-family: 'Monaco', 'Consolas', monospace; font-size: 14px; color: var(--acc); }
     
+    /* Mobile responsive for user info */
+    @media (max-width: 768px) {
+      .user-info { 
+        flex-direction: column; 
+        gap: 16px; 
+        padding: 16px; 
+        text-align: center; 
+      }
+      .user-info .wallet-info { 
+        width: 100%; 
+      }
+      .user-info .button-group { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px; 
+        width: 100%; 
+      }
+      .user-info .button-group .btn { 
+        width: 100%; 
+        justify-content: center; 
+        font-size: 14px; 
+        padding: 12px 16px; 
+      }
+      .wallet-address { 
+        font-size: 12px; 
+        word-break: break-all; 
+        line-height: 1.4; 
+      }
+    }
+    
     /* Campaigns */
     .campaigns-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
     .campaign-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 24px; transition: transform 0.2s ease; }
@@ -161,15 +191,15 @@ export default async function handler(req, res) {
     <div id="dashboardSection" class="hidden">
       <!-- User Info -->
       <div class="user-info">
-        <div>
+        <div class="wallet-info">
           <div style="margin-bottom: 8px;">
-            <strong>Connected Wallet:</strong> <span id="userWallet">-</span>
+            <strong>Connected Wallet:</strong> <span id="userWallet" class="wallet-address">-</span>
           </div>
           <div style="margin-bottom: 16px;">
             <strong>Network:</strong> <span id="networkInfo" style="display: inline-flex; align-items: center; gap: 6px;">-</span>
           </div>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
+        <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
           <button onclick="showNetworkSwitchOptions()" class="btn" style="background: var(--primary); color: white; border: none;">Switch Network</button>
           <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
         </div>
@@ -298,41 +328,75 @@ export default async function handler(req, res) {
     
     window.showNetworkSwitchOptions = function() {
       const supportedNetworks = getAllNetworks();
-      let networkOptions = '';
+      
+      // Separate mainnet and testnet networks
+      const mainnetChainIds = [10, 42161, 8453, 534352, 5000]; // Known mainnet chain IDs
+      const mainnets = [];
+      const testnets = [];
+      
+      supportedNetworks.forEach(function(network) {
+        if (mainnetChainIds.includes(network.chainId)) {
+          mainnets.push(network);
+        } else {
+          testnets.push(network);
+        }
+      });
       
       // Get current network info for highlighting
       const currentChainId = currentNetwork ? currentNetwork.chainId : null;
       
-      supportedNetworks.forEach(function(network) {
-        const isCurrentNetwork = currentChainId === network.chainId;
-        
-        // Use centralized light color detection
-        const isLight = isLightColor(network.chainId);
-        const textColor = isLight ? '#000' : '#fff';
-        
-        const buttonStyle = isCurrentNetwork ? 
-          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
-          'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: none; border-radius: 4px; cursor: pointer;';
-        
-        const buttonText = isCurrentNetwork ? 
-          network.icon + ' ' + network.name + ' (Current)' :
-          network.icon + ' Switch to ' + network.name;
+      // Function to generate network buttons
+      function generateNetworkButtons(networks) {
+        let options = '';
+        networks.forEach(function(network) {
+          const isCurrentNetwork = currentChainId === network.chainId;
           
-        networkOptions += '<button onclick="switchToNetwork(&quot;' + network.chainIdHex + '&quot;)" ' +
-          'style="' + buttonStyle + '"' +
-          (isCurrentNetwork ? ' disabled' : '') + '>' +
-          buttonText +
-          '</button>';
-      });
+          // Use centralized light color detection
+          const isLight = isLightColor(network.chainId);
+          const textColor = isLight ? '#000' : '#fff';
+          
+          const buttonStyle = isCurrentNetwork ? 
+            'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
+            'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: none; border-radius: 4px; cursor: pointer;';
+          
+          const buttonText = isCurrentNetwork ? 
+            network.icon + ' ' + network.name + ' (Current)' :
+            network.icon + ' Switch to ' + network.name;
+            
+          options += '<button onclick="switchToNetwork(&quot;' + network.chainIdHex + '&quot;)" ' +
+            'style="' + buttonStyle + '"' +
+            (isCurrentNetwork ? ' disabled' : '') + '>' +
+            buttonText +
+            '</button>';
+        });
+        return options;
+      }
+      
+      // Generate sections
+      let networkOptions = '';
+      
+      if (mainnets.length > 0) {
+        networkOptions += '<div style="margin-bottom: 16px;">' +
+          '<h4 style="margin: 0 0 8px; font-size: 14px; color: var(--text); opacity: 0.8;">🌐 Mainnet Networks</h4>' +
+          generateNetworkButtons(mainnets) +
+          '</div>';
+      }
+      
+      if (testnets.length > 0) {
+        networkOptions += '<div>' +
+          '<h4 style="margin: 0 0 8px; font-size: 14px; color: var(--text); opacity: 0.8;">🧪 Testnet Networks</h4>' +
+          generateNetworkButtons(testnets) +
+          '</div>';
+      }
       
       const modal = document.createElement('div');
       modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
       modal.innerHTML = 
-        '<div style="background: var(--card-bg, white); padding: 20px; border-radius: 8px; max-width: 400px; width: 90%;">' +
+        '<div style="background: var(--card-bg, white); padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;">' +
           '<h3 style="margin-top: 0;">Select Network</h3>' +
           '<p style="font-size: 14px; color: var(--muted);">Choose a network to switch to:</p>' +
           networkOptions +
-          '<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 12px; padding: 8px 16px; background: var(--muted, #ccc); border: none; border-radius: 4px; cursor: pointer; width: 100%;">' +
+          '<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 16px; padding: 8px 16px; background: var(--muted, #ccc); border: none; border-radius: 4px; cursor: pointer; width: 100%;">' +
             'Cancel' +
           '</button>' +
         '</div>';
@@ -479,7 +543,16 @@ export default async function handler(req, res) {
       console.log('Showing dashboard...');
       document.getElementById('walletSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
-      document.getElementById('userWallet').textContent = currentUser;
+      
+      // Truncate wallet address for better mobile display
+      const walletElement = document.getElementById('userWallet');
+      if (currentUser && currentUser.length > 20) {
+        const truncated = currentUser.substring(0, 6) + '...' + currentUser.substring(currentUser.length - 4);
+        walletElement.textContent = truncated;
+        walletElement.title = currentUser; // Show full address on hover
+      } else {
+        walletElement.textContent = currentUser;
+      }
     }
 
     // Campaign management
