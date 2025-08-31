@@ -3,6 +3,8 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const reownProjectId = process.env.REOWN_PROJECT_ID || 'c0d6a88c5088f3b1de2a59932b6b5b2f';
+
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.status(200).send(`<!DOCTYPE html>
 <html lang="en">
@@ -172,7 +174,7 @@ export default async function handler(req, res) {
         // Use the imported modules directly
         console.log('Initializing Reown AppKit with imported modules...');
         
-        const projectId = 'c0d6a88c5088f3b1de2a59932b6b5b2f';
+        const projectId = '${reownProjectId}';
         const adapter = new EthersAdapter();
         
         // Complete networks configuration including testnets
