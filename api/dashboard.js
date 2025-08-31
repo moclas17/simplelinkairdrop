@@ -291,23 +291,7 @@ export default async function handler(req, res) {
         window.appKit = reownAppKit;
         console.log('Reown AppKit initialized successfully with', networks.length, 'networks');
         
-        // Show Reown components and hide custom button after successful initialization
-        setTimeout(() => {
-          const customButton = document.getElementById('connectWallet');
-          const reownComponents = document.getElementById('reownComponents');
-          const dashboardReownComponents = document.getElementById('dashboardReownComponents');
-          
-          if (customButton && reownComponents) {
-            customButton.style.display = 'none';
-            reownComponents.style.display = 'block';
-            console.log('Switched to Reown components');
-          }
-          
-          if (dashboardReownComponents) {
-            dashboardReownComponents.style.display = 'flex';
-            console.log('Enabled dashboard Reown components');
-          }
-        }, 1000);
+        console.log('Reown AppKit components are ready');
         
         return true;
       } catch (error) {
@@ -438,18 +422,8 @@ export default async function handler(req, res) {
         </div>
       </div>
       
-      <!-- Connect Wallet Button -->
-      <button id="connectWallet" class="btn btn-primary wallet-btn">
-        <svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 20px; height: 20px;">
-          <path d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm-1 6v3H8v2h3v3h2v-3h3v-2h-3V8h-2z"/>
-        </svg>
-        <span id="connectWalletText">Connect Wallet</span>
-      </button>
-      
-      <!-- Reown AppKit components will be injected here -->
-      <div id="reownComponents" style="display: none;">
-        <w3m-button></w3m-button>
-      </div>
+      <!-- Reown AppKit Connect Button -->
+      <w3m-button></w3m-button>
     </div>
 
     <!-- Dashboard Section (hidden initially) -->
@@ -465,13 +439,8 @@ export default async function handler(req, res) {
           </div>
         </div>
         <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
-          <button onclick="showNetworkSwitchOptions()" class="btn" style="background: var(--acc); color: #0b1220; border: none;">Switch Network</button>
-          <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
-          <!-- Reown components will be injected here when available -->
-          <div id="dashboardReownComponents" style="display: none;">
-            <w3m-network-button></w3m-network-button>
-            <w3m-account-button></w3m-account-button>
-          </div>
+          <w3m-network-button></w3m-network-button>
+          <w3m-account-button></w3m-account-button>
         </div>
       </div>
 
@@ -691,31 +660,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Simplified wallet connection using Reown components
-    window.connectWallet = async function() {
-      console.log('connectWallet function called - using Reown components');
-      
-      try {
-        if (!window.appKit) {
-          console.log('AppKit not initialized, attempting to initialize...');
-          const initialized = await initializeReown();
-          if (!initialized) {
-            throw new Error('Failed to initialize Reown AppKit');
-          }
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-        
-        if (window.appKit) {
-          console.log('Opening Reown AppKit modal...');
-          await window.appKit.open();
-        } else {
-          throw new Error('AppKit initialization failed');
-        }
-      } catch (error) {
-        console.error('Reown connection failed, falling back to MetaMask:', error);
-        await connectWithMetaMask();
-      }
-    };
+    // Reown AppKit handles connection automatically through w3m-button component
     
     // Fallback MetaMask connection
     async function connectWithMetaMask() {
@@ -1326,24 +1271,7 @@ export default async function handler(req, res) {
       showToast('Links downloaded as CSV!', 'success');
     };
 
-    // Check wallet availability and connection on page load
-    window.addEventListener('load', async () => {
-      console.log('Page loaded, setting up event listeners...');
-      
-      // Set up all event listeners after DOM is ready
-      console.log('Setting up connect wallet button...');
-      const connectBtn = document.getElementById('connectWallet');
-      if (connectBtn) {
-        connectBtn.addEventListener('click', window.connectWallet);
-        console.log('Connect wallet event listener attached');
-      } else {
-        console.error('Connect wallet button not found!');
-      }
-      
-      const disconnectBtn = document.getElementById('disconnectWallet');
-      if (disconnectBtn) {
-        disconnectBtn.addEventListener('click', disconnectWallet);
-      }
+    // Reown AppKit components handle all interactions automatically
       
       const createBtn = document.getElementById('createCampaignBtn');
       if (createBtn) {
