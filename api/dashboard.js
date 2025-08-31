@@ -172,8 +172,9 @@ export default async function handler(req, res) {
         const projectId = 'c0d6a88c5088f3b1de2a59932b6b5b2f';
         const adapter = new EthersAdapter();
         
-        // Simplified networks for mobile
+        // Complete networks configuration including testnets
         const networks = [
+          // Mainnets
           {
             id: 10,
             name: 'Optimism',
@@ -194,6 +195,63 @@ export default async function handler(req, res) {
             nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
             rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
             blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
+          },
+          {
+            id: 534352,
+            name: 'Scroll',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://rpc.scroll.io'] } },
+            blockExplorers: { default: { name: 'Scrollscan', url: 'https://scrollscan.com' } }
+          },
+          {
+            id: 5000,
+            name: 'Mantle',
+            nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
+            rpcUrls: { default: { http: ['https://rpc.mantle.xyz'] } },
+            blockExplorers: { default: { name: 'Mantlescan', url: 'https://mantlescan.xyz' } }
+          },
+          // Testnets
+          {
+            id: 11155420,
+            name: 'Optimism Sepolia',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://sepolia.optimism.io'] } },
+            blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://sepolia-optimism.etherscan.io' } }
+          },
+          {
+            id: 421614,
+            name: 'Arbitrum Sepolia',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] } },
+            blockExplorers: { default: { name: 'Arbiscan', url: 'https://sepolia.arbiscan.io' } }
+          },
+          {
+            id: 84532,
+            name: 'Base Sepolia',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
+            blockExplorers: { default: { name: 'Basescan', url: 'https://sepolia.basescan.org' } }
+          },
+          {
+            id: 534351,
+            name: 'Scroll Sepolia',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://sepolia-rpc.scroll.io'] } },
+            blockExplorers: { default: { name: 'Scrollscan', url: 'https://sepolia.scrollscan.com' } }
+          },
+          {
+            id: 5003,
+            name: 'Mantle Sepolia',
+            nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
+            rpcUrls: { default: { http: ['https://rpc.sepolia.mantle.xyz'] } },
+            blockExplorers: { default: { name: 'Mantlescan', url: 'https://sepolia.mantlescan.xyz' } }
+          },
+          {
+            id: 10143,
+            name: 'Monad Testnet',
+            nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+            rpcUrls: { default: { http: ['https://testnet-rpc.monad.xyz'] } },
+            blockExplorers: { default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' } }
           }
         ];
         
@@ -201,19 +259,32 @@ export default async function handler(req, res) {
           adapters: [adapter],
           networks,
           projectId,
+          metadata: {
+            name: 'Chingadrop.xyz',
+            description: 'Token Distribution Platform',
+            url: 'https://chingadrop.xyz',
+            icons: ['https://chingadrop.xyz/icons/icon-192x192.png']
+          },
           features: {
-            analytics: false, // Disable analytics for better mobile performance
+            analytics: false,
             onramp: false,
-            swaps: false
+            swaps: false,
+            email: true,
+            socials: ['google', 'x', 'github', 'discord', 'apple'],
+            emailShowWallets: true
           },
           themeMode: 'dark',
           themeVariables: {
-            '--w3m-accent': '#7dd3fc'
+            '--w3m-accent': '#7dd3fc',
+            '--w3m-color-mix': '#0b1220',
+            '--w3m-color-mix-strength': 20,
+            '--w3m-border-radius-master': '12px',
+            '--w3m-font-size-master': '14px'
           }
         });
         
         window.appKit = reownAppKit;
-        console.log('Reown AppKit initialized successfully');
+        console.log('Reown AppKit initialized successfully with', networks.length, 'networks');
         return true;
       } catch (error) {
         console.error('Failed to initialize Reown AppKit:', error);
@@ -286,16 +357,20 @@ export default async function handler(req, res) {
     window.addEventListener('load', async () => {
       console.log('Page loaded, initializing...');
       
-      // Initialize Reown AppKit lazily
+      // Initialize Reown AppKit immediately
       try {
         await initializeReown();
         
-        setTimeout(() => {
-          if (window.appKit) {
-            setupReownEventListeners();
-            
-            // Check if user is already connected
+        // Set up event listeners after initialization
+        if (window.appKit) {
+          console.log('Setting up Reown event listeners...');
+          setupReownEventListeners();
+          
+          // Check if user is already connected
+          setTimeout(() => {
             const state = window.appKit.getState();
+            console.log('Current Reown state:', state);
+            
             if (state.address) {
               console.log('User already connected via Reown:', state.address);
               currentUser = state.address;
@@ -309,12 +384,13 @@ export default async function handler(req, res) {
               showDashboard();
               loadCampaigns();
             }
-          }
-        }, 1500); // Longer delay for mobile devices
+          }, 2000); // Wait for full initialization
+        }
         
       } catch (error) {
         console.warn('Reown initialization failed on load:', error);
-        // Continue with MetaMask fallback detection
+        // Continue with MetaMask fallback detection if needed
+        checkWalletAvailability();
       }
     });
   </script>
@@ -338,12 +414,8 @@ export default async function handler(req, res) {
         </div>
       </div>
       
-      <button id="connectWallet" class="btn btn-primary wallet-btn">
-        <svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-        </svg>
-        Connect Wallet
-      </button>
+      <!-- Reown AppKit Connect Button -->
+      <w3m-button id="connectWallet" class="wallet-btn"></w3m-button>
     </div>
 
     <!-- Dashboard Section (hidden initially) -->
@@ -359,8 +431,8 @@ export default async function handler(req, res) {
           </div>
         </div>
         <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
-          <button onclick="showNetworkSwitchOptions()" class="btn" style="background: var(--primary); color: white; border: none;">Switch Network</button>
-          <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
+          <w3m-network-button></w3m-network-button>
+          <w3m-account-button></w3m-account-button>
         </div>
       </div>
 
@@ -580,56 +652,29 @@ export default async function handler(req, res) {
       }
     }
 
-    // Enhanced mobile-friendly wallet connection
+    // Simplified wallet connection using Reown components
     window.connectWallet = async function() {
-      console.log('connectWallet function called');
-      
-      // Show loading state
-      const connectBtn = document.getElementById('connectWallet');
-      const originalText = connectBtn.innerHTML;
-      connectBtn.innerHTML = '<span>Connecting...</span>';
-      connectBtn.disabled = true;
+      console.log('connectWallet function called - using Reown components');
       
       try {
-        // Try Reown first, with mobile detection
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
         if (!window.appKit) {
           console.log('AppKit not initialized, attempting to initialize...');
           const initialized = await initializeReown();
           if (!initialized) {
             throw new Error('Failed to initialize Reown AppKit');
           }
-          // Small delay for mobile compatibility
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         
         if (window.appKit) {
           console.log('Opening Reown AppKit modal...');
-          
-          if (isMobile) {
-            // Mobile-specific approach
-            try {
-              await window.appKit.open({ view: 'Connect' });
-            } catch (modalError) {
-              console.warn('Modal open failed, trying alternative approach:', modalError);
-              // Alternative: try direct wallet connection
-              await connectWithMetaMask();
-            }
-          } else {
-            // Desktop approach
-            await window.appKit.open();
-          }
+          await window.appKit.open();
         } else {
           throw new Error('AppKit initialization failed');
         }
       } catch (error) {
         console.error('Reown connection failed, falling back to MetaMask:', error);
         await connectWithMetaMask();
-      } finally {
-        // Restore button state
-        connectBtn.innerHTML = originalText;
-        connectBtn.disabled = false;
       }
     };
     
