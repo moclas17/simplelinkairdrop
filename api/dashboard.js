@@ -571,7 +571,7 @@ export default async function handler(req, res) {
 
   </div>
 
-
+  <script>
     // Campaign management
     function goToCreateCampaign() {
       console.log('goToCreateCampaign called, currentUser:', currentUser);
