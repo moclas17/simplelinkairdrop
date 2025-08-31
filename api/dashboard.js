@@ -267,8 +267,8 @@ export default async function handler(req, res) {
           metadata: {
             name: 'Chingadrop.xyz',
             description: 'Token Distribution Platform',
-            url: 'https://chingadrop.xyz',
-            icons: ['https://chingadrop.xyz/icons/icon-192x192.png']
+            url: window.location.origin,
+            icons: [window.location.origin + '/icons/icon-192x192.png']
           },
           features: {
             analytics: false,
@@ -285,7 +285,11 @@ export default async function handler(req, res) {
             '--w3m-color-mix-strength': 20,
             '--w3m-border-radius-master': '12px',
             '--w3m-font-size-master': '14px'
-          }
+          },
+          enableWalletConnect: true,
+          enableInjected: true,
+          enableEIP6963: true,
+          enableCoinbase: true
         });
         
         window.appKit = reownAppKit;
@@ -1271,8 +1275,8 @@ export default async function handler(req, res) {
       showToast('Links downloaded as CSV!', 'success');
     };
 
-    // Reown AppKit components handle all interactions automatically
-      
+    // Setup minimal event listeners
+    window.addEventListener('load', () => {
       const createBtn = document.getElementById('createCampaignBtn');
       if (createBtn) {
         createBtn.addEventListener('click', function(e) {
@@ -1280,96 +1284,9 @@ export default async function handler(req, res) {
           goToCreateCampaign();
         });
       }
-      
-      // Event listeners are now set up after successful wallet connection
-      // This prevents compatibility issues during initial page load
-      
-      // Wait a moment for ethereum to be injected, then check wallet
-      setTimeout(() => {
-        checkWalletAvailability();
-        checkExistingConnection();
-      }, 100);
     });
     
-    async function checkExistingConnection() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          // Check if request method is available
-          if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
-            console.warn('Wallet does not support account checking');
-            return;
-          }
-          
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            currentUser = accounts[0];
-            
-            // Detect network after getting accounts
-            try {
-              await detectNetwork();
-            } catch (networkError) {
-              console.warn('Network detection failed during existing connection check:', networkError);
-            }
-            
-            showDashboard();
-            loadCampaigns();
-          }
-        } catch (error) {
-          console.error('Error checking wallet connection:', error);
-          // Don't show error to user for connection checking
-        }
-      }
-    }
-    
-    function checkWalletAvailability() {
-      console.log('Checking wallet availability...');
-      console.log('window.ethereum exists:', typeof window.ethereum !== 'undefined');
-      console.log('window.ethereum object:', window.ethereum);
-      
-      const noWalletMsg = document.getElementById('noWalletMessage');
-      const walletDetectedMsg = document.getElementById('walletDetectedMessage');
-      const connectBtn = document.getElementById('connectWallet');
-      
-      console.log('DOM elements found:', {
-        noWalletMsg: !!noWalletMsg,
-        walletDetectedMsg: !!walletDetectedMsg,
-        connectBtn: !!connectBtn
-      });
-      
-      // Check multiple wallet providers
-      const hasMetaMask = typeof window.ethereum !== 'undefined' && window.ethereum.isMetaMask;
-      const hasAnyWallet = typeof window.ethereum !== 'undefined';
-      
-      console.log('Wallet detection:', { hasMetaMask, hasAnyWallet });
-      
-      if (hasAnyWallet) {
-        console.log('Web3 wallet detected, updating UI');
-        if (noWalletMsg) noWalletMsg.style.display = 'none';
-        if (walletDetectedMsg) {
-          walletDetectedMsg.style.display = 'block';
-          walletDetectedMsg.innerHTML = hasMetaMask 
-            ? '✅ MetaMask detected! Click the button below to connect your wallet.'
-            : '✅ Web3 wallet detected! Click the button below to connect your wallet.';
-        }
-        if (connectBtn) {
-          connectBtn.style.opacity = '1';
-          connectBtn.disabled = false;
-          connectBtn.style.display = 'inline-flex';
-        }
-      } else {
-        console.log('No wallet detected, updating UI');
-        if (noWalletMsg) {
-          noWalletMsg.style.display = 'block';
-          noWalletMsg.innerHTML = '⚠️ No Web3 wallet detected. Please install MetaMask, Coinbase Wallet, or another Web3 wallet to continue.';
-        }
-        if (walletDetectedMsg) walletDetectedMsg.style.display = 'none';
-        if (connectBtn) {
-          connectBtn.style.opacity = '0.5';
-          connectBtn.disabled = true;
-          connectBtn.innerHTML = '<svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M22.05 8.5l-1.2-4.1c-.4-1.3-1.8-2.2-3.2-1.9L12 3.8 6.35 2.5c-1.4-.3-2.8.6-3.2 1.9L2 8.5c-.4 1.3.5 2.7 1.9 2.9l3.1.5v6.6c0 1.1.9 2 2 2h6c1.1 0 2-.9 2-2v-6.6l3.1-.5c1.4-.2 2.3-1.6 1.9-2.9z"/></svg>Install Wallet First';
-        }
-      }
-    }
+    // Reown AppKit handles all wallet interactions automatically
   </script>
 </body>
 </html>`);
