@@ -295,7 +295,17 @@ export default async function handler(req, res) {
         window.appKit = reownAppKit;
         console.log('Reown AppKit initialized successfully with', networks.length, 'networks');
         
-        console.log('Reown AppKit components are ready');
+        // Force component registration
+        setTimeout(() => {
+          console.log('Reown AppKit components should now be available');
+          // Check if components are defined
+          const button = document.querySelector('w3m-button');
+          if (button) {
+            console.log('w3m-button found in DOM');
+          } else {
+            console.warn('w3m-button not found in DOM');
+          }
+        }, 2000);
         
         return true;
       } catch (error) {
@@ -365,26 +375,28 @@ export default async function handler(req, res) {
       });
     }
     
-    // Enhanced initialization for mobile compatibility
-    window.addEventListener('load', async () => {
-      console.log('Page loaded, initializing...');
+    // Initialize Reown AppKit immediately when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeReownAppKit);
+    } else {
+      initializeReownAppKit();
+    }
+
+    async function initializeReownAppKit() {
+      console.log('DOM ready, initializing Reown AppKit...');
       
-      // Initialize Reown AppKit immediately
       try {
         await initializeReown();
         
-        // Set up event listeners after initialization
         if (window.appKit) {
           console.log('Setting up Reown event listeners...');
           setupReownEventListeners();
           
-          // Check if user is already connected
-          setTimeout(() => {
+          // Check connection state periodically
+          setInterval(() => {
             const state = window.appKit.getState();
-            console.log('Current Reown state:', state);
-            
-            if (state.address) {
-              console.log('User already connected via Reown:', state.address);
+            if (state.address && !currentUser) {
+              console.log('User connected via Reown:', state.address);
               currentUser = state.address;
               
               if (state.selectedNetworkId) {
@@ -395,16 +407,18 @@ export default async function handler(req, res) {
               
               showDashboard();
               loadCampaigns();
+            } else if (!state.address && currentUser) {
+              console.log('User disconnected');
+              currentUser = null;
+              showWalletSection();
             }
-          }, 2000); // Wait for full initialization
+          }, 1000);
         }
         
       } catch (error) {
-        console.warn('Reown initialization failed on load:', error);
-        // Continue with MetaMask fallback detection if needed
-        checkWalletAvailability();
+        console.error('Failed to initialize Reown AppKit:', error);
       }
-    });
+    }
   </script>
 </head>
 <body>
@@ -427,7 +441,9 @@ export default async function handler(req, res) {
       </div>
       
       <!-- Reown AppKit Connect Button -->
-      <w3m-button></w3m-button>
+      <div style="display: flex; justify-content: center; width: 100%;">
+        <w3m-button size="md" label="Connect Wallet"></w3m-button>
+      </div>
     </div>
 
     <!-- Dashboard Section (hidden initially) -->
@@ -442,9 +458,9 @@ export default async function handler(req, res) {
             <strong>Network:</strong> <span id="networkInfo" style="display: inline-flex; align-items: center; gap: 6px;">-</span>
           </div>
         </div>
-        <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
-          <w3m-network-button></w3m-network-button>
-          <w3m-account-button></w3m-account-button>
+        <div class="button-group" style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+          <w3m-network-button size="sm"></w3m-network-button>
+          <w3m-account-button size="sm"></w3m-account-button>
         </div>
       </div>
 
