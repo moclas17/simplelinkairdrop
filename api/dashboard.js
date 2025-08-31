@@ -159,73 +159,67 @@ export default async function handler(req, res) {
     .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
   <script src="../lib/networks-client.js"></script>
-  <script type="module">
-    // Import Reown AppKit
-    import { createAppKit } from 'https://unpkg.com/@reown/appkit@1.8.1/dist/index.js';
-    import { EthersAdapter } from 'https://unpkg.com/@reown/appkit-adapter-ethers@1.8.1/dist/index.js';
+  <script>
+    // Mobile-friendly Reown AppKit initialization
+    let reownAppKit = null;
     
-    // Initialize Reown AppKit
-    const projectId = 'c0d6a88c5088f3b1de2a59932b6b5b2f'; // Reown Cloud project ID
-    
-    const adapter = new EthersAdapter();
-    
-    // Networks configuration for Reown
-    const networks = [
-      {
-        id: 10,
-        name: 'Optimism',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } },
-        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://optimistic.etherscan.io' } }
-      },
-      {
-        id: 11155420,
-        name: 'Optimism Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia.optimism.io'] } },
-        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://sepolia-optimism.etherscan.io' } }
-      },
-      {
-        id: 42161,
-        name: 'Arbitrum One',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
-        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
-      },
-      {
-        id: 421614,
-        name: 'Arbitrum Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] } },
-        blockExplorers: { default: { name: 'Arbiscan', url: 'https://sepolia.arbiscan.io' } }
-      },
-      {
-        id: 8453,
-        name: 'Base',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
-        blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
-      },
-      {
-        id: 84532,
-        name: 'Base Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
-        blockExplorers: { default: { name: 'Basescan', url: 'https://sepolia.basescan.org' } }
+    async function initializeReown() {
+      try {
+        // Dynamic import for better mobile compatibility
+        const { createAppKit } = await import('https://unpkg.com/@reown/appkit@1.8.1/dist/index.js');
+        const { EthersAdapter } = await import('https://unpkg.com/@reown/appkit-adapter-ethers@1.8.1/dist/index.js');
+        
+        const projectId = 'c0d6a88c5088f3b1de2a59932b6b5b2f';
+        const adapter = new EthersAdapter();
+        
+        // Simplified networks for mobile
+        const networks = [
+          {
+            id: 10,
+            name: 'Optimism',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } },
+            blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://optimistic.etherscan.io' } }
+          },
+          {
+            id: 42161,
+            name: 'Arbitrum One',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
+            blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
+          },
+          {
+            id: 8453,
+            name: 'Base',
+            nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+            rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
+            blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
+          }
+        ];
+        
+        reownAppKit = createAppKit({
+          adapters: [adapter],
+          networks,
+          projectId,
+          features: {
+            analytics: false, // Disable analytics for better mobile performance
+            onramp: false,
+            swaps: false
+          },
+          themeMode: 'dark',
+          themeVariables: {
+            '--w3m-accent': '#7dd3fc'
+          }
+        });
+        
+        window.appKit = reownAppKit;
+        console.log('Reown AppKit initialized successfully');
+        return true;
+      } catch (error) {
+        console.error('Failed to initialize Reown AppKit:', error);
+        return false;
       }
-    ];
-    
-    const appKit = createAppKit({
-      adapters: [adapter],
-      networks,
-      projectId,
-      features: {
-        analytics: true
-      }
-    });
-    
-    // Make appKit available globally
-    window.appKit = appKit;
+    }
     
     // Setup Reown event listeners
     function setupReownEventListeners() {
@@ -288,29 +282,40 @@ export default async function handler(req, res) {
       });
     }
     
-    // Initialize Reown listeners when page loads
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        if (window.appKit) {
-          setupReownEventListeners();
-          
-          // Check if user is already connected
-          const state = window.appKit.getState();
-          if (state.address) {
-            console.log('User already connected via Reown:', state.address);
-            currentUser = state.address;
+    // Enhanced initialization for mobile compatibility
+    window.addEventListener('load', async () => {
+      console.log('Page loaded, initializing...');
+      
+      // Initialize Reown AppKit lazily
+      try {
+        await initializeReown();
+        
+        setTimeout(() => {
+          if (window.appKit) {
+            setupReownEventListeners();
             
-            if (state.selectedNetworkId) {
-              const networkInfo = getNetworkInfo(state.selectedNetworkId);
-              currentNetwork = networkInfo;
-              updateNetworkDisplay();
+            // Check if user is already connected
+            const state = window.appKit.getState();
+            if (state.address) {
+              console.log('User already connected via Reown:', state.address);
+              currentUser = state.address;
+              
+              if (state.selectedNetworkId) {
+                const networkInfo = getNetworkInfo(state.selectedNetworkId);
+                currentNetwork = networkInfo;
+                updateNetworkDisplay();
+              }
+              
+              showDashboard();
+              loadCampaigns();
             }
-            
-            showDashboard();
-            loadCampaigns();
           }
-        }
-      }, 1000); // Small delay to ensure appKit is fully initialized
+        }, 1500); // Longer delay for mobile devices
+        
+      } catch (error) {
+        console.warn('Reown initialization failed on load:', error);
+        // Continue with MetaMask fallback detection
+      }
     });
   </script>
 </head>
@@ -325,11 +330,11 @@ export default async function handler(req, res) {
       <p style="margin-bottom: 24px;">Connect your wallet to create and manage token distribution campaigns</p>
       
       <div id="walletStatus" style="margin-bottom: 20px;">
-        <div id="noWalletMessage" class="explanation-box" style="margin-bottom: 16px; display: none;">
-          ⚠️ MetaMask not detected. Please install MetaMask or another Web3 wallet to continue.
+        <div id="noWalletMessage" class="explanation-box" style="margin-bottom: 16px; display: block;">
+          🔗 Click "Connect Wallet" to access your Web3 wallet. Works with MetaMask, Coinbase Wallet, WalletConnect and more.
         </div>
         <div id="walletDetectedMessage" class="explanation-box" style="margin-bottom: 16px; background: rgba(34,197,94,0.1); border-color: rgba(34,197,94,0.3); display: none;">
-          ✅ MetaMask detected! Click the button below to connect your wallet.
+          ✅ Web3 wallet ready! Click the button below to connect.
         </div>
       </div>
       
@@ -575,26 +580,56 @@ export default async function handler(req, res) {
       }
     }
 
-    // Make connectWallet available immediately (before DOM load) - now using Reown
+    // Enhanced mobile-friendly wallet connection
     window.connectWallet = async function() {
-      console.log('connectWallet function called - using Reown AppKit');
+      console.log('connectWallet function called');
+      
+      // Show loading state
+      const connectBtn = document.getElementById('connectWallet');
+      const originalText = connectBtn.innerHTML;
+      connectBtn.innerHTML = '<span>Connecting...</span>';
+      connectBtn.disabled = true;
+      
       try {
+        // Try Reown first, with mobile detection
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (!window.appKit) {
+          console.log('AppKit not initialized, attempting to initialize...');
+          const initialized = await initializeReown();
+          if (!initialized) {
+            throw new Error('Failed to initialize Reown AppKit');
+          }
+          // Small delay for mobile compatibility
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
         if (window.appKit) {
-          console.log('Reown AppKit detected, opening connect modal...');
+          console.log('Opening Reown AppKit modal...');
           
-          // Open the Reown connect modal
-          await window.appKit.open();
-          
-          // The connection will be handled by Reown event listeners
-          // We'll set up listeners to handle the connection state
+          if (isMobile) {
+            // Mobile-specific approach
+            try {
+              await window.appKit.open({ view: 'Connect' });
+            } catch (modalError) {
+              console.warn('Modal open failed, trying alternative approach:', modalError);
+              // Alternative: try direct wallet connection
+              await connectWithMetaMask();
+            }
+          } else {
+            // Desktop approach
+            await window.appKit.open();
+          }
         } else {
-          // Fallback to MetaMask if Reown is not available
-          console.log('Reown AppKit not available, falling back to MetaMask...');
-          await connectWithMetaMask();
+          throw new Error('AppKit initialization failed');
         }
       } catch (error) {
-        console.error('Wallet connection failed:', error);
-        showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
+        console.error('Reown connection failed, falling back to MetaMask:', error);
+        await connectWithMetaMask();
+      } finally {
+        // Restore button state
+        connectBtn.innerHTML = originalText;
+        connectBtn.disabled = false;
       }
     };
     
