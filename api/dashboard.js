@@ -159,15 +159,18 @@ export default async function handler(req, res) {
     .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
   <script src="../lib/networks-client.js"></script>
-  <script>
+  <script type="module">
+    // Import Reown AppKit with proper ES modules
+    import { createAppKit } from 'https://unpkg.com/@reown/appkit@1.8.1/dist/index.js';
+    import { EthersAdapter } from 'https://unpkg.com/@reown/appkit-adapter-ethers@1.8.1/dist/index.js';
+    
     // Mobile-friendly Reown AppKit initialization
     let reownAppKit = null;
     
     async function initializeReown() {
       try {
-        // Dynamic import for better mobile compatibility
-        const { createAppKit } = await import('https://unpkg.com/@reown/appkit@1.8.1/dist/index.js');
-        const { EthersAdapter } = await import('https://unpkg.com/@reown/appkit-adapter-ethers@1.8.1/dist/index.js');
+        // Use the imported modules directly
+        console.log('Initializing Reown AppKit with imported modules...');
         
         const projectId = 'c0d6a88c5088f3b1de2a59932b6b5b2f';
         const adapter = new EthersAdapter();
@@ -285,6 +288,25 @@ export default async function handler(req, res) {
         
         window.appKit = reownAppKit;
         console.log('Reown AppKit initialized successfully with', networks.length, 'networks');
+        
+        // Show Reown components and hide custom button after successful initialization
+        setTimeout(() => {
+          const customButton = document.getElementById('connectWallet');
+          const reownComponents = document.getElementById('reownComponents');
+          const dashboardReownComponents = document.getElementById('dashboardReownComponents');
+          
+          if (customButton && reownComponents) {
+            customButton.style.display = 'none';
+            reownComponents.style.display = 'block';
+            console.log('Switched to Reown components');
+          }
+          
+          if (dashboardReownComponents) {
+            dashboardReownComponents.style.display = 'flex';
+            console.log('Enabled dashboard Reown components');
+          }
+        }, 1000);
+        
         return true;
       } catch (error) {
         console.error('Failed to initialize Reown AppKit:', error);
@@ -414,8 +436,18 @@ export default async function handler(req, res) {
         </div>
       </div>
       
-      <!-- Reown AppKit Connect Button -->
-      <w3m-button id="connectWallet" class="wallet-btn"></w3m-button>
+      <!-- Connect Wallet Button -->
+      <button id="connectWallet" class="btn btn-primary wallet-btn">
+        <svg class="metamask-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 20px; height: 20px;">
+          <path d="M12 0C5.374 0 0 5.374 0 12s5.374 12 12 12 12-5.374 12-12S18.626 0 12 0zm0 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zm-1 6v3H8v2h3v3h2v-3h3v-2h-3V8h-2z"/>
+        </svg>
+        <span id="connectWalletText">Connect Wallet</span>
+      </button>
+      
+      <!-- Reown AppKit components will be injected here -->
+      <div id="reownComponents" style="display: none;">
+        <w3m-button></w3m-button>
+      </div>
     </div>
 
     <!-- Dashboard Section (hidden initially) -->
@@ -431,8 +463,13 @@ export default async function handler(req, res) {
           </div>
         </div>
         <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
-          <w3m-network-button></w3m-network-button>
-          <w3m-account-button></w3m-account-button>
+          <button onclick="showNetworkSwitchOptions()" class="btn" style="background: var(--acc); color: #0b1220; border: none;">Switch Network</button>
+          <button id="disconnectWallet" class="btn btn-danger">Disconnect</button>
+          <!-- Reown components will be injected here when available -->
+          <div id="dashboardReownComponents" style="display: none;">
+            <w3m-network-button></w3m-network-button>
+            <w3m-account-button></w3m-account-button>
+          </div>
         </div>
       </div>
 
