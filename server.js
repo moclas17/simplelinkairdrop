@@ -31,6 +31,7 @@ import generateHandler from './api/generate.js';
 import claimHandler from './api/claim.js';
 import claimViewHandler from './api/claim-view.js';
 import dashboardHandler from './api/dashboard.js';
+import loginHandler from './api/login.js';
 
 // Wrap Vercel handlers for Express
 const wrapHandler = (handler) => async (req, res) => {
@@ -86,6 +87,12 @@ app.get('/', (req, res) => {
     <div class="card">
       <h2>📋 About</h2>
       <p>A secure token distribution system using <strong>one-time claim links</strong>. Built for ERC-20 tokens with hot wallet backend integration and Supabase database management.</p>
+      
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="/login" style="display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; background: linear-gradient(180deg, var(--acc), #0ea5e9); color: #0b1220; font-weight: 600; text-decoration: none; transition: all 0.2s ease;">
+          🔗 Conectar con Reown
+        </a>
+      </div>
       
       <div class="features">
         <div class="feature">
@@ -160,6 +167,7 @@ app.use('/api/generate', wrapHandler(generateHandler));
 app.use('/api/claim', wrapHandler(claimHandler));
 app.use('/api/claim-view', wrapHandler(claimViewHandler));
 app.use('/api/dashboard', wrapHandler(dashboardHandler));
+app.use('/api/login', wrapHandler(loginHandler));
 app.get('/claim/:id', (req, res) => {
   // Create a new request object with query parameter
   const modifiedReq = {

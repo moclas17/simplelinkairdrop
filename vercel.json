@@ -16,6 +16,10 @@
       "destination": "/api/create-campaign"
     },
     {
+      "source": "/login",
+      "destination": "/api/login"
+    },
+    {
       "source": "/claim/(.*)",
       "destination": "/api/claim-view?id=$1"
     }
