@@ -161,189 +161,187 @@ export default async function handler(req, res) {
     .empty-state h3 { color: var(--muted); margin-bottom: 8px; }
   </style>
   <script src="../lib/networks-client.js"></script>
-  <script>
-    let currentUser = null;
-    let currentNetwork = null;
+  
+  <!-- Reown AppKit for vanilla JavaScript -->
+  <script type="module">
+    import { createAppKit } from 'https://esm.sh/@reown/appkit@1.8.1'
+    import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers@1.8.1'
     
-    // Check wallet availability
-    function checkWalletAvailability() {
-      console.log('Checking wallet availability...');
-      
-      // Check for injected wallets
-      const walletStatus = document.getElementById('walletStatus');
-      const noWalletMessage = document.getElementById('noWalletMessage');
-      const walletDetectedMessage = document.getElementById('walletDetectedMessage');
-      
-      if (typeof window.ethereum !== 'undefined') {
-        console.log('Web3 wallet detected');
-        noWalletMessage.style.display = 'none';
-        walletDetectedMessage.style.display = 'block';
-        
-        // Set up basic event listeners
-        setupBasicWalletListeners();
-        
-        // Check if already connected
-        checkExistingConnection();
-      } else {
-        console.log('No Web3 wallet detected');
-        noWalletMessage.style.display = 'block';
-        walletDetectedMessage.style.display = 'none';
-      }
-    }
+    // Initialize Reown AppKit
+    const projectId = '${reownProjectId}';
     
-    // Check if wallet is already connected
-    async function checkExistingConnection() {
-      try {
-        if (typeof window.ethereum !== 'undefined' && window.ethereum.request) {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            console.log('Found existing connection:', accounts[0]);
-            currentUser = accounts[0];
-            await detectNetwork();
-            showDashboard();
-            loadCampaigns();
-            showToast('Already connected to wallet', 'success');
-          }
-        }
-      } catch (error) {
-        console.log('No existing connection found:', error);
+    // Networks configuration
+    const networks = [
+      // Mainnets
+      {
+        id: 10,
+        name: 'Optimism',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } },
+        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://optimistic.etherscan.io' } }
+      },
+      {
+        id: 42161,
+        name: 'Arbitrum One',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
+        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
+      },
+      {
+        id: 8453,
+        name: 'Base',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
+        blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
+      },
+      {
+        id: 534352,
+        name: 'Scroll',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://rpc.scroll.io'] } },
+        blockExplorers: { default: { name: 'Scrollscan', url: 'https://scrollscan.com' } }
+      },
+      {
+        id: 5000,
+        name: 'Mantle',
+        nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
+        rpcUrls: { default: { http: ['https://rpc.mantle.xyz'] } },
+        blockExplorers: { default: { name: 'Mantlescan', url: 'https://mantlescan.xyz' } }
+      },
+      // Testnets
+      {
+        id: 11155420,
+        name: 'Optimism Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia.optimism.io'] } },
+        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://sepolia-optimism.etherscan.io' } }
+      },
+      {
+        id: 421614,
+        name: 'Arbitrum Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] } },
+        blockExplorers: { default: { name: 'Arbiscan', url: 'https://sepolia.arbiscan.io' } }
+      },
+      {
+        id: 84532,
+        name: 'Base Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
+        blockExplorers: { default: { name: 'Basescan', url: 'https://sepolia.basescan.org' } }
+      },
+      {
+        id: 534351,
+        name: 'Scroll Sepolia',
+        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+        rpcUrls: { default: { http: ['https://sepolia-rpc.scroll.io'] } },
+        blockExplorers: { default: { name: 'Scrollscan', url: 'https://sepolia.scrollscan.com' } }
+      },
+      {
+        id: 5003,
+        name: 'Mantle Sepolia',
+        nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
+        rpcUrls: { default: { http: ['https://rpc.sepolia.mantle.xyz'] } },
+        blockExplorers: { default: { name: 'Mantlescan', url: 'https://sepolia.mantlescan.xyz' } }
+      },
+      {
+        id: 10143,
+        name: 'Monad Testnet',
+        nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
+        rpcUrls: { default: { http: ['https://testnet-rpc.monad.xyz'] } },
+        blockExplorers: { default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' } }
       }
-    }
+    ];
     
-    // Basic wallet event listeners
-    function setupBasicWalletListeners() {
-      if (typeof window.ethereum !== 'undefined' && window.ethereum.on) {
-        try {
-          window.ethereum.on('accountsChanged', (accounts) => {
-            console.log('Accounts changed:', accounts);
-            if (accounts.length === 0) {
-              currentUser = null;
-              showWalletSection();
-              showToast('Wallet disconnected', 'info');
-            } else if (accounts[0] !== currentUser) {
-              currentUser = accounts[0];
-              detectNetwork();
-              if (!document.getElementById('dashboardSection').classList.contains('hidden')) {
-                showDashboard();
-                loadCampaigns();
-              }
-            }
-          });
-          
-          window.ethereum.on('chainChanged', (chainId) => {
-            console.log('Chain changed:', chainId);
-            detectNetwork();
-          });
-          
-          console.log('Basic wallet listeners set up');
-        } catch (error) {
-          console.warn('Failed to set up wallet listeners:', error);
-        }
-      }
-    }
-    
-    // Connect wallet function
-    async function connectWallet() {
-      console.log('Connect wallet clicked');
-      try {
-        if (typeof window.ethereum !== 'undefined') {
-          console.log('Web3 wallet detected, requesting accounts...');
-          
-          const accounts = await window.ethereum.request({ 
-            method: 'eth_requestAccounts' 
-          });
-          
-          console.log('Accounts received:', accounts);
-          if (accounts && accounts.length > 0) {
-            currentUser = accounts[0];
-            console.log('Current user set to:', currentUser);
-            
-            // Detect network after successful connection
-            await detectNetwork();
-            showDashboard();
-            loadCampaigns();
-            showToast('Wallet connected successfully!', 'success');
-          } else {
-            throw new Error('No accounts returned from wallet');
-          }
-        } else {
-          console.log('No Web3 wallet detected');
-          showToast('Please install MetaMask or another Web3 wallet', 'error');
-        }
-      } catch (error) {
-        console.error('Wallet connection failed:', error);
-        
-        if (error.code === 4001) {
-          showToast('Connection request was rejected', 'error');
-        } else if (error.code === -32002) {
-          showToast('Connection request is already pending. Please check your wallet.', 'error');
-        } else {
-          showToast('Failed to connect wallet: ' + (error.message || 'Unknown error'), 'error');
-        }
-      }
-    }
-    
-    // Disconnect wallet function
-    function disconnectWallet() {
-      currentUser = null;
-      currentNetwork = null;
-      showWalletSection();
-      showToast('Wallet disconnected', 'info');
-    }
-    
-    // Initialize page
-    window.addEventListener('load', () => {
-      console.log('Page loaded, checking wallet availability...');
-      checkWalletAvailability();
-      
-      // Set up button event listeners
-      const connectBtn = document.getElementById('connectWalletBtn');
-      if (connectBtn) {
-        connectBtn.addEventListener('click', connectWallet);
-      }
-      
-      const disconnectBtn = document.getElementById('disconnectBtn');
-      if (disconnectBtn) {
-        disconnectBtn.addEventListener('click', disconnectWallet);
-      }
-      
-      const switchNetworkBtn = document.getElementById('switchNetworkBtn');
-      if (switchNetworkBtn) {
-        switchNetworkBtn.addEventListener('click', showNetworkSwitchOptions);
+    // Create AppKit instance
+    const appKit = createAppKit({
+      adapters: [new EthersAdapter()],
+      networks,
+      projectId,
+      metadata: {
+        name: 'Chingadrop.xyz',
+        description: 'Token Distribution Platform',
+        url: window.location.origin,
+        icons: [window.location.origin + '/icons/icon-192x192.png']
+      },
+      features: {
+        analytics: false,
+        onramp: false,
+        swaps: false,
+        email: true,
+        socials: ['google', 'x', 'github', 'discord', 'apple'],
+        emailShowWallets: true
+      },
+      themeMode: 'dark',
+      themeVariables: {
+        '--w3m-accent': '#7dd3fc',
+        '--w3m-color-mix': '#0b1220',
+        '--w3m-color-mix-strength': 20,
+        '--w3m-border-radius-master': '12px',
+        '--w3m-font-size-master': '14px'
       }
     });
     
-    // Network detection and display functions
-    async function detectNetwork() {
-      if (typeof window.ethereum !== 'undefined') {
-        try {
-          if (!window.ethereum.request || typeof window.ethereum.request !== 'function') {
-            console.warn('Wallet does not support eth_chainId request');
-            return null;
-          }
-          
-          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-          const networkInfo = getNetworkInfo(chainId);
-          currentNetwork = networkInfo;
-          updateNetworkDisplay();
-          return networkInfo;
-        } catch (error) {
-          console.error('Error detecting network:', error);
-          return null;
+    // Make AppKit available globally
+    window.appKit = appKit;
+    
+    // Set up event listeners
+    appKit.subscribeAccount((account) => {
+      if (account.address && account.address !== window.currentUser) {
+        window.currentUser = account.address;
+        console.log('User connected:', account.address);
+        
+        if (!document.getElementById('dashboardSection').classList.contains('hidden')) {
+          window.showDashboard();
+          window.loadCampaigns();
+        }
+      } else if (!account.address && window.currentUser) {
+        window.currentUser = null;
+        window.showWalletSection();
+      }
+    });
+    
+    appKit.subscribeChainId((chainId) => {
+      const networkInfo = getNetworkInfo(chainId);
+      if (networkInfo) {
+        window.currentNetwork = networkInfo;
+        if (window.updateNetworkDisplay) {
+          window.updateNetworkDisplay();
         }
       }
-      return null;
-    }
+    });
     
-    function updateNetworkDisplay() {
+    // Check if already connected
+    setTimeout(() => {
+      const state = appKit.getState();
+      if (state.address) {
+        window.currentUser = state.address;
+        if (state.selectedNetworkId) {
+          const networkInfo = getNetworkInfo(state.selectedNetworkId);
+          window.currentNetwork = networkInfo;
+        }
+        window.showDashboard();
+        window.loadCampaigns();
+      }
+    }, 1000);
+    
+  </script>
+  
+  <script>
+    // Global variables for AppKit integration
+    window.currentUser = null;
+    window.currentNetwork = null;
+    
+    // Network detection and display functions
+    window.updateNetworkDisplay = function() {
       const networkInfoElement = document.getElementById('networkInfo');
       if (!networkInfoElement) return;
       
-      if (currentNetwork) {
-        networkInfoElement.innerHTML = '<span style="color: ' + currentNetwork.color + ';">' + currentNetwork.icon + '</span>' +
-                                       '<span>' + currentNetwork.name + '</span>' +
-                                       '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + currentNetwork.currency + ')</span>';
-        networkInfoElement.style.color = currentNetwork.color;
+      if (window.currentNetwork) {
+        networkInfoElement.innerHTML = '<span style="color: ' + window.currentNetwork.color + ';">' + window.currentNetwork.icon + '</span>' +
+                                       '<span>' + window.currentNetwork.name + '</span>' +
+                                       '<span style="font-size: 12px; color: var(--muted); margin-left: 4px;">(' + window.currentNetwork.currency + ')</span>';
+        networkInfoElement.style.color = window.currentNetwork.color;
       } else {
         networkInfoElement.innerHTML = '<span style="color: var(--red);">❌ Unsupported Network</span>';
         networkInfoElement.style.color = 'var(--red)';
@@ -351,161 +349,25 @@ export default async function handler(req, res) {
     }
     
     // UI functions
-    function showWalletSection() {
+    window.showWalletSection = function() {
       document.getElementById('walletSection').classList.remove('hidden');
       document.getElementById('dashboardSection').classList.add('hidden');
     }
     
-    function showDashboard() {
+    window.showDashboard = function() {
       console.log('Showing dashboard...');
       document.getElementById('walletSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
       
       // Truncate wallet address for better mobile display
       const walletElement = document.getElementById('userWallet');
-      if (currentUser && currentUser.length > 20) {
-        const truncated = currentUser.substring(0, 6) + '...' + currentUser.substring(currentUser.length - 4);
+      if (window.currentUser && window.currentUser.length > 20) {
+        const truncated = window.currentUser.substring(0, 6) + '...' + window.currentUser.substring(window.currentUser.length - 4);
         walletElement.textContent = truncated;
-        walletElement.title = currentUser; // Show full address on hover
+        walletElement.title = window.currentUser; // Show full address on hover
       } else {
-        walletElement.textContent = currentUser;
+        walletElement.textContent = window.currentUser;
       }
-    }
-    
-    // Network switching functionality
-    window.switchToNetwork = async function(chainIdHex) {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: chainIdHex }],
-        });
-        
-        // Close any open modal
-        const modal = document.querySelector('div[style*="z-index: 1000"]');
-        if (modal) modal.remove();
-        
-        // Re-detect network after successful switch
-        setTimeout(detectNetwork, 1000);
-        
-        return true;
-      } catch (switchError) {
-        console.error('Failed to switch network:', switchError);
-        
-        // If the network doesn't exist in wallet, try to add it
-        if (switchError.code === 4902) {
-          const numericChainId = parseInt(chainIdHex, 16);
-          const networkInfo = getNetworkInfo(numericChainId);
-          
-          if (networkInfo) {
-            try {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: chainIdHex,
-                  chainName: networkInfo.name,
-                  nativeCurrency: {
-                    name: networkInfo.currency,
-                    symbol: networkInfo.currency,
-                    decimals: 18
-                  },
-                  rpcUrls: [networkInfo.rpcUrl],
-                  blockExplorerUrls: [networkInfo.explorerUrl]
-                }]
-              });
-              
-              // Close any open modal
-              const modal = document.querySelector('div[style*="z-index: 1000"]');
-              if (modal) modal.remove();
-              
-              // Re-detect network after successful add
-              setTimeout(detectNetwork, 1000);
-              
-              return true;
-            } catch (addError) {
-              console.error('Failed to add network:', addError);
-              return false;
-            }
-          }
-        }
-        return false;
-      }
-    }
-    
-    window.showNetworkSwitchOptions = function() {
-      const supportedNetworks = getAllNetworks();
-      
-      // Separate mainnet and testnet networks
-      const mainnetChainIds = [10, 42161, 8453, 534352, 5000]; // Known mainnet chain IDs
-      const mainnets = [];
-      const testnets = [];
-      
-      supportedNetworks.forEach(function(network) {
-        if (mainnetChainIds.includes(network.chainId)) {
-          mainnets.push(network);
-        } else {
-          testnets.push(network);
-        }
-      });
-      
-      // Get current network info for highlighting
-      const currentChainId = currentNetwork ? currentNetwork.chainId : null;
-      
-      // Function to generate network buttons
-      function generateNetworkButtons(networks) {
-        let options = '';
-        networks.forEach(function(network) {
-          const isCurrentNetwork = currentChainId === network.chainId;
-          
-          // Use centralized light color detection
-          const isLight = isLightColor(network.chainId);
-          const textColor = isLight ? '#000' : '#fff';
-          
-          const buttonStyle = isCurrentNetwork ? 
-            'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
-            'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: none; border-radius: 4px; cursor: pointer;';
-          
-          const buttonText = isCurrentNetwork ? 
-            network.icon + ' ' + network.name + ' (Current)' :
-            network.icon + ' Switch to ' + network.name;
-            
-          options += '<button onclick="switchToNetwork(&quot;' + network.chainIdHex + '&quot;)" ' +
-            'style="' + buttonStyle + '"' +
-            (isCurrentNetwork ? ' disabled' : '') + '>' +
-            buttonText +
-            '</button>';
-        });
-        return options;
-      }
-      
-      // Generate sections
-      let networkOptions = '';
-      
-      if (mainnets.length > 0) {
-        networkOptions += '<div style="margin-bottom: 16px;">' +
-          '<h4 style="margin: 0 0 8px; font-size: 14px; color: #334155; font-weight: 600;">🌐 Mainnet Networks</h4>' +
-          generateNetworkButtons(mainnets) +
-          '</div>';
-      }
-      
-      if (testnets.length > 0) {
-        networkOptions += '<div>' +
-          '<h4 style="margin: 0 0 8px; font-size: 14px; color: #334155; font-weight: 600;">🧪 Testnet Networks</h4>' +
-          generateNetworkButtons(testnets) +
-          '</div>';
-      }
-      
-      const modal = document.createElement('div');
-      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
-      modal.innerHTML = 
-        '<div style="background: var(--card-bg, white); padding: 20px; border-radius: 8px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;">' +
-          '<h3 style="margin-top: 0;">Select Network</h3>' +
-          '<p style="font-size: 14px; color: var(--muted);">Choose a network to switch to:</p>' +
-          networkOptions +
-          '<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 16px; padding: 8px 16px; background: var(--muted, #ccc); border: none; border-radius: 4px; cursor: pointer; width: 100%;">' +
-            'Cancel' +
-          '</button>' +
-        '</div>';
-      document.body.appendChild(modal);
     }
   </script>
 </head>
@@ -528,10 +390,9 @@ export default async function handler(req, res) {
         </div>
       </div>
       
-      <!-- Connect Wallet Button -->
-      <button id="connectWalletBtn" class="btn btn-primary wallet-btn">
-        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjEyIiBoZWlnaHQ9IjE4OSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwb2x5Z29uIGZpbGw9IiNDREJEQjIiIHBvaW50cz0iMTYuMjE4IDAgNDA4IDAgNDA4IDE4OSAxNi4yMTggMTg5Ii8+PHBhdGggZD0iTTIxMS43ODYgNzMuNzM0SDEuMjE4djkxLjI2NmgxNzBjMjEuNzk1IDAgMzguNTY4LTE5LjAxNSA0MC41NjgtNDAuODc2aDAtLjAwN1Y3My43MzR6IiBmaWxsPSIjNzZEMkY1Ii8+PHBhdGggZD0iTTgxLjU5IDE3M2wyLjAzNC0xNy44MzJoLS4xNmMtLjAyMSAwLS4wNDItLjAwNS0uMDY0LS4wMDUtLjM5MS0uNTg2LS43ODktMS4xNzUtMS4xOTMtMS43NjgtMS4wNTEtMS41NDQtMi4xNTItMy4xMTItMy4zMDItNC43MDdoLS4wMDFjLjM2IDIuOTE3LjI4NiA1LjY2OS0xLjMzIDcuNDQ0LTEuNDM3IDEuNTc4LTMuODYyIDEuNzItNS4wNDQtLjgxMi0uNzcyLTEuNjUtLjQ3OC0zLjcxOS43NDItNS4zNTh2LS4wMDJsNS40ODEtOS4wNDQtMy4zOC0xLjM3OC02LjM0MiA0LjcyMmwtMS44ODQtLjc2OGMtLjQ0MS0uMTQ3LS45MDUtLjI5MS0xLjM5LS40MzItMi44NzUtLjgzNy02LjI4Ni0xLjU3NC0xMC4xNDUtMS41NzQtOC44NDYgMC0xNi4wMzggMy4xNDUtMjAuMzkyIDguMTk1LTMuNDg0IDQuMDQtMy40NDcgOC44MDEuMTk1IDEyLjU5N2wtLjAwOS4wMTFjMS44MTQgMS42MzUgNC4yMyAyLjc1MSA3LjAwNiAzLjIwNCAyLjA2Mi40NjQgNC4xNjkuNDY3IDYuMTYyLjAwMS4wOTEgMCAuMTgzIDAgLjI3NC0uMDA0LTUuNzE3IDEuNDQyLTEwLjIgMy4zMDktMTMuMjE4IDUuMzk2LTQuNDY3IDMuMDk0LTYuNTM3IDYuODUxLTQuMDg0IDEwLjgzNSIgZmlsbD0iI0Y2ODExNyIvPjwvZz48L3N2Zz4=" alt="MetaMask" class="metamask-icon">
-        Connect Wallet
+      <!-- Reown AppKit Connect Button -->
+      <button id="connectWalletBtn" class="btn btn-primary wallet-btn" onclick="window.appKit.open()">
+        🔗 Connect Wallet
       </button>
     </div>
 
@@ -548,8 +409,8 @@ export default async function handler(req, res) {
           </div>
         </div>
         <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
-          <button id="switchNetworkBtn" class="btn">Switch Network</button>
-          <button id="disconnectBtn" class="btn btn-danger">Disconnect</button>
+          <button id="switchNetworkBtn" class="btn" onclick="window.appKit.open({ view: 'Networks' })">Switch Network</button>
+          <button id="disconnectBtn" class="btn btn-danger" onclick="window.appKit.disconnect()">Disconnect</button>
         </div>
       </div>
 
