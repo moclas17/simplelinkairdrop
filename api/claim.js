@@ -48,12 +48,16 @@ export default async function handler(req, res) {
         });
       }
       console.log('[CLAIM] ENS resolved:', userWalletInput, '→', userWallet);
-    } else if (ethers.isAddress(userWalletInput)) {
-      userWallet = userWalletInput;
-      console.log('[CLAIM] Valid address provided:', userWallet);
     } else {
-      console.log('[CLAIM] Invalid wallet address/ENS:', userWalletInput);
-      return res.status(400).json({ error: 'Invalid wallet address or ENS name' });
+      try {
+        // First normalize to lowercase, then use getAddress to validate and checksum properly
+        const normalizedInput = userWalletInput.toLowerCase();
+        userWallet = ethers.getAddress(normalizedInput);
+        console.log('[CLAIM] Valid address provided:', userWallet);
+      } catch (addressError) {
+        console.log('[CLAIM] Invalid wallet address/ENS:', userWalletInput);
+        return res.status(400).json({ error: 'Invalid wallet address or ENS name' });
+      }
     }
   } catch (ensError) {
     console.error('[CLAIM] ENS resolution failed:', ensError);
@@ -99,11 +103,18 @@ export default async function handler(req, res) {
   }
   
   // Create provider and wallet for this specific chain
-  const provider = new ethers.JsonRpcProvider(rpcUrl, {
-    chainId: parseInt(campaignChainId),
-    name: `chain-${campaignChainId}`,
-    ensAddress: null // Explicitly disable ENS for custom networks
-  });
+  let provider;
+  if (campaignChainId) {
+    // If we have a chainId, use it with proper network configuration
+    provider = new ethers.JsonRpcProvider(rpcUrl, {
+      chainId: parseInt(campaignChainId),
+      name: `chain-${campaignChainId}`,
+      ensAddress: null
+    });
+  } else {
+    // If no chainId, create provider without network options (let it auto-detect)
+    provider = new ethers.JsonRpcProvider(rpcUrl);
+  }
   const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
   // Validate that the token is still valid (native or ERC-20) using the campaign's RPC
