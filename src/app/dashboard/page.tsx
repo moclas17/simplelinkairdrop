@@ -15,7 +15,10 @@ import {
   Wallet,
   LogOut,
   Shield,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -32,6 +35,8 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
+  const [checkingFunding, setCheckingFunding] = useState<string | null>(null);
+  const [fundingResults, setFundingResults] = useState<Record<string, any>>({});
 
   // Load campaigns when wallet connects
   useEffect(() => {
@@ -57,6 +62,49 @@ export default function DashboardPage() {
       console.error('Error loading campaigns:', error);
     } finally {
       setLoadingCampaigns(false);
+    }
+  };
+
+  const checkCampaignFunding = async (campaignId: string) => {
+    if (!address) return;
+    
+    setCheckingFunding(campaignId);
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/check-funding`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: address
+        }),
+      });
+
+      const data = await response.json();
+      
+      // Store the result
+      setFundingResults(prev => ({
+        ...prev,
+        [campaignId]: data
+      }));
+
+      if (data.funded) {
+        // Refresh campaigns to get updated status
+        loadCampaigns();
+      }
+      
+    } catch (error) {
+      console.error('Error checking funding:', error);
+      setFundingResults(prev => ({
+        ...prev,
+        [campaignId]: {
+          success: false,
+          funded: false,
+          error: 'Failed to check funding'
+        }
+      }));
+    } finally {
+      setCheckingFunding(null);
     }
   };
 
@@ -341,17 +389,72 @@ export default function DashboardPage() {
                       {campaign.links_generated && (
                         <span className="text-xs text-success">Links Generated</span>
                       )}
+                      
+                      {/* Check Funding Button for pending campaigns */}
+                      {campaign.status === 'pending_funding' && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => checkCampaignFunding(campaign.id)}
+                          disabled={checkingFunding === campaign.id}
+                          className="text-xs"
+                        >
+                          {checkingFunding === campaign.id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
+                              Checking...
+                            </>
+                          ) : (
+                            <>
+                              <Search className="h-3 w-3 mr-1" />
+                              Check Funding
+                            </>
+                          )}
+                        </Button>
+                      )}
+                      
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => {
-                          // Copy campaign ID to clipboard for now
                           navigator.clipboard.writeText(campaign.id);
                         }}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
+                    
+                    {/* Funding check results */}
+                    {fundingResults[campaign.id] && (
+                      <div className="mt-3 p-3 rounded-lg border-t">
+                        {fundingResults[campaign.id].funded ? (
+                          <div className="flex items-start gap-2 text-sm text-success">
+                            <CheckCircle className="h-4 w-4 mt-0.5" />
+                            <div>
+                              <div className="font-medium">Campaign Funded Successfully!</div>
+                              <div className="text-xs text-muted mt-1">
+                                {fundingResults[campaign.id].message}
+                              </div>
+                              {fundingResults[campaign.id].transaction?.hash && (
+                                <div className="text-xs text-muted mt-1 font-mono">
+                                  TX: {fundingResults[campaign.id].transaction.hash.substring(0, 20)}...
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-start gap-2 text-sm text-destructive">
+                            <XCircle className="h-4 w-4 mt-0.5" />
+                            <div>
+                              <div className="font-medium">Funding Not Found</div>
+                              <div className="text-xs text-muted mt-1">
+                                {fundingResults[campaign.id].details || 'Please ensure you have sent the required tokens to the deposit address.'}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
