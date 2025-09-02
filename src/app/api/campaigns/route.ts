@@ -30,3 +30,87 @@ export async function GET(req: NextRequest) {
     );
   }
 }
+
+export async function POST(req: NextRequest) {
+  console.log('[CAMPAIGNS] POST request received');
+  
+  try {
+    const body = await req.json();
+    console.log('[CAMPAIGNS] Campaign data:', body);
+    
+    const {
+      walletAddress,
+      title,
+      description,
+      tokenAddress,
+      chainId,
+      claimType,
+      amountPerClaim,
+      totalClaims,
+      maxClaimsPerLink,
+      expiresInHours
+    } = body;
+
+    // Validate required fields
+    if (!walletAddress || !title || !tokenAddress || !chainId || !claimType || !amountPerClaim || !totalClaims) {
+      return NextResponse.json({ 
+        error: 'Missing required fields',
+        required: ['walletAddress', 'title', 'tokenAddress', 'chainId', 'claimType', 'amountPerClaim', 'totalClaims']
+      }, { status: 400 });
+    }
+
+    // Validate claim type
+    if (!['single', 'multi'].includes(claimType)) {
+      return NextResponse.json({ 
+        error: 'Invalid claim type. Must be "single" or "multi"' 
+      }, { status: 400 });
+    }
+
+    // For multi-claim, validate maxClaimsPerLink
+    if (claimType === 'multi' && (!maxClaimsPerLink || maxClaimsPerLink < 1)) {
+      return NextResponse.json({ 
+        error: 'For multi-claim campaigns, maxClaimsPerLink is required and must be > 0' 
+      }, { status: 400 });
+    }
+
+    // Prepare campaign data
+    const campaignData = {
+      walletAddress,
+      title: title.trim(),
+      description: description?.trim() || '',
+      tokenAddress: tokenAddress.trim(),
+      chainId: parseInt(chainId),
+      claimType,
+      amountPerClaim: parseFloat(amountPerClaim),
+      totalClaims: parseInt(totalClaims),
+      maxClaimsPerLink: claimType === 'multi' ? parseInt(maxClaimsPerLink) : 1,
+      expiresInHours: expiresInHours ? parseFloat(expiresInHours) : null
+    };
+
+    console.log('[CAMPAIGNS] Creating campaign with data:', campaignData);
+
+    // Create campaign using the database function
+    const campaign = await (db as any).createCampaign(campaignData);
+    
+    console.log('[CAMPAIGNS] Campaign created successfully:', campaign.id);
+    
+    return NextResponse.json({ 
+      success: true,
+      campaign,
+      message: 'Campaign created successfully'
+    });
+    
+  } catch (error: any) {
+    console.error('[CAMPAIGNS] Error creating campaign:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to create campaign', 
+        details: error.message,
+        ...(error.message.includes('Invalid token') && { 
+          type: 'token_validation_error'
+        })
+      },
+      { status: 500 }
+    );
+  }
+}

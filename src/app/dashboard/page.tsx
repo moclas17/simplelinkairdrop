@@ -169,15 +169,44 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Generate Links Form */}
+        {/* Quick Actions */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Plus className="h-5 w-5" />
-              Generate Claim Links
+              Quick Actions
             </CardTitle>
             <CardDescription>
-              Create token claim links from your wallet
+              Create new campaigns or generate links for existing ones
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Link 
+                href="/campaigns/create"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-gradient-to-b from-primary to-primary/80 px-6 py-4 text-sm font-semibold text-primary-foreground transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Campaign
+              </Link>
+              
+              <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-secondary px-6 py-4 text-sm font-medium text-secondary-foreground opacity-75">
+                <Shield className="h-4 w-4" />
+                Generate Links (Select Campaign)
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Legacy Quick Generation Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Legacy: Quick Generate Links
+            </CardTitle>
+            <CardDescription>
+              Quick generation using wallet address as campaign ID (legacy method)
             </CardDescription>
           </CardHeader>
           <CardContent>
