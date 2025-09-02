@@ -18,7 +18,11 @@ import {
   AlertTriangle,
   Search,
   CheckCircle,
-  XCircle
+  XCircle,
+  Eye,
+  BarChart3,
+  Link as LinkIcon,
+  X
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { getNetworkInfo, getExplorerUrl } from '../../../lib/networks.js';
@@ -38,6 +42,11 @@ export default function DashboardPage() {
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [checkingFunding, setCheckingFunding] = useState<string | null>(null);
   const [fundingResults, setFundingResults] = useState<Record<string, any>>({});
+  const [campaignLinks, setCampaignLinks] = useState<Record<string, any>>({});
+  const [campaignStats, setCampaignStats] = useState<Record<string, any>>({});
+  const [loadingStates, setLoadingStates] = useState<Record<string, string>>({});
+  const [showLinksModal, setShowLinksModal] = useState<string | null>(null);
+  const [showStatsModal, setShowStatsModal] = useState<string | null>(null);
 
   // Load campaigns when wallet connects
   useEffect(() => {
@@ -123,6 +132,85 @@ export default function DashboardPage() {
       }));
     } finally {
       setCheckingFunding(null);
+    }
+  };
+
+  const getCampaignLinks = async (campaignId: string) => {
+    if (!address) return;
+    
+    setLoadingStates(prev => ({ ...prev, [campaignId]: 'links' }));
+    try {
+      const response = await fetch('/api/campaigns/links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId, walletAddress: address }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCampaignLinks(prev => ({ ...prev, [campaignId]: data.links }));
+        setShowLinksModal(campaignId);
+      } else {
+        console.error('Failed to get links:', data.error);
+      }
+    } catch (error) {
+      console.error('Error getting links:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [campaignId]: '' }));
+    }
+  };
+
+  const getCampaignStats = async (campaignId: string) => {
+    if (!address) return;
+    
+    setLoadingStates(prev => ({ ...prev, [campaignId]: 'stats' }));
+    try {
+      const response = await fetch('/api/campaigns/stats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId, walletAddress: address }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCampaignStats(prev => ({ ...prev, [campaignId]: data.stats }));
+        setShowStatsModal(campaignId);
+      } else {
+        console.error('Failed to get stats:', data.error);
+      }
+    } catch (error) {
+      console.error('Error getting stats:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [campaignId]: '' }));
+    }
+  };
+
+  const generateCampaignLinks = async (campaignId: string) => {
+    if (!address) return;
+    
+    setLoadingStates(prev => ({ ...prev, [campaignId]: 'generating' }));
+    try {
+      const response = await fetch('/api/campaigns/generate-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ campaignId, walletAddress: address }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        setCampaignLinks(prev => ({ ...prev, [campaignId]: data.links }));
+        setShowLinksModal(campaignId);
+        loadCampaigns(); // Refresh to update links_generated status
+      } else {
+        console.error('Failed to generate links:', data.error);
+      }
+    } catch (error) {
+      console.error('Error generating links:', error);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [campaignId]: '' }));
     }
   };
 
@@ -406,9 +494,68 @@ export default function DashboardPage() {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {campaign.links_generated && (
                         <span className="text-xs text-success">Links Generated</span>
+                      )}
+                      
+                      {/* Buttons for active campaigns */}
+                      {campaign.status === 'active' && (
+                        <>
+                          {campaign.links_generated ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => getCampaignLinks(campaign.id)}
+                                disabled={loadingStates[campaign.id] === 'links'}
+                                className="text-xs"
+                              >
+                                {loadingStates[campaign.id] === 'links' ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
+                                ) : (
+                                  <Eye className="h-3 w-3 mr-1" />
+                                )}
+                                View Links
+                              </Button>
+                              
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => getCampaignStats(campaign.id)}
+                                disabled={loadingStates[campaign.id] === 'stats'}
+                                className="text-xs"
+                              >
+                                {loadingStates[campaign.id] === 'stats' ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
+                                ) : (
+                                  <BarChart3 className="h-3 w-3 mr-1" />
+                                )}
+                                Stats
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => generateCampaignLinks(campaign.id)}
+                              disabled={loadingStates[campaign.id] === 'generating'}
+                              className="text-xs bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+                            >
+                              {loadingStates[campaign.id] === 'generating' ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
+                                  Generating...
+                                </>
+                              ) : (
+                                <>
+                                  <LinkIcon className="h-3 w-3 mr-1" />
+                                  Generate Links
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </>
                       )}
                       
                       {/* Check Funding Button for pending campaigns */}
@@ -654,6 +801,143 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Links Modal */}
+        {showLinksModal && campaignLinks[showLinksModal] && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background border border-border rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <h2 className="text-xl font-bold text-foreground">Campaign Links</h2>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowLinksModal(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="p-6 overflow-y-auto max-h-[60vh]">
+                <div className="space-y-3">
+                  {campaignLinks[showLinksModal].map((link: any, index: number) => (
+                    <div 
+                      key={link.id}
+                      className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border"
+                    >
+                      <span className="text-sm text-muted w-8">
+                        {index + 1}.
+                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs px-2 py-1 rounded bg-primary/20 text-primary">
+                            {link.type}
+                          </span>
+                          {link.status === 'claimed' && (
+                            <span className="text-xs px-2 py-1 rounded bg-success/20 text-success">
+                              Claimed
+                            </span>
+                          )}
+                          {link.claimsUsed > 0 && (
+                            <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400">
+                              {link.claimsUsed} claimed
+                            </span>
+                          )}
+                        </div>
+                        <code className="text-xs font-mono text-foreground">
+                          {`${window.location.origin}${link.url}`}
+                        </code>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyToClipboard(`${window.location.origin}${link.url}`)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(`${window.location.origin}${link.url}`, '_blank')}
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Modal */}
+        {showStatsModal && campaignStats[showStatsModal] && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-background border border-border rounded-2xl max-w-2xl w-full">
+              <div className="flex items-center justify-between p-6 border-b border-border">
+                <h2 className="text-xl font-bold text-foreground">Campaign Statistics</h2>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowStatsModal(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                      <div className="text-sm text-muted mb-1">Total Claims</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {campaignStats[showStatsModal].totalClaims || 0}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                      <div className="text-sm text-muted mb-1">Successfully Claimed</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {campaignStats[showStatsModal].successfulClaims || 0}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                      <div className="text-sm text-muted mb-1">Tokens Distributed</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {campaignStats[showStatsModal].tokensDistributed || 0}
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                      <div className="text-sm text-muted mb-1">Completion Rate</div>
+                      <div className="text-2xl font-bold text-foreground">
+                        {campaignStats[showStatsModal].completionRate || 0}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {campaignStats[showStatsModal].recentClaims && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">Recent Claims</h3>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {campaignStats[showStatsModal].recentClaims.map((claim: any, index: number) => (
+                        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                          <div className="font-mono text-xs text-foreground">
+                            {claim.claimerAddress.substring(0, 10)}...{claim.claimerAddress.substring(claim.claimerAddress.length - 8)}
+                          </div>
+                          <div className="text-xs text-muted">
+                            {new Date(claim.claimedAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
