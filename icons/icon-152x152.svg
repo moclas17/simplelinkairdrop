@@ -1,0 +1,13 @@
+<svg width="152" height="152" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="grad" cx="30%" cy="30%" r="70%">
+        <stop offset="0%" style="stop-color:#7dd3fc"/>
+        <stop offset="100%" style="stop-color:#0369a1"/>
+      </radialGradient>
+    </defs>
+    <circle cx="76" cy="76" r="66" fill="url(#grad)"/>
+    <circle cx="76" cy="50.666666666666664" r="25.333333333333332" fill="white" opacity="0.9"/>
+    <text x="76" y="86" font-family="Arial" font-size="19" font-weight="bold" text-anchor="middle" fill="white">💎</text>
+    <circle cx="45.6" cy="106.39999999999999" rx="7.6" ry="5.066666666666666" fill="none" stroke="white" stroke-width="3"/>
+    <circle cx="106.39999999999999" cy="106.39999999999999" rx="7.6" ry="5.066666666666666" fill="none" stroke="white" stroke-width="3"/>
+  </svg>

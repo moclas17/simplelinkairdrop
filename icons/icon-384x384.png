@@ -1,0 +1,19 @@
+<svg width="384" height="384" xmlns="http://www.w3.org/2000/svg">
+  <rect width="384" height="384" fill="#0b1220" rx="48"/>
+  <defs>
+    <radialGradient id="grad384" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#7dd3fc"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </radialGradient>
+  </defs>
+  <rect x="38.400000000000006" y="38.400000000000006" width="307.20000000000005" height="307.20000000000005" 
+        fill="url(#grad384)" rx="38.400000000000006"/>
+  <circle cx="192" cy="134.39999999999998" r="57.599999999999994" 
+          fill="rgba(255,255,255,0.9)"/>
+  <text x="192" y="249.60000000000002" 
+        font-family="Arial, sans-serif" 
+        font-size="57.599999999999994" 
+        font-weight="bold" 
+        text-anchor="middle" 
+        fill="white">💎</text>
+</svg>
