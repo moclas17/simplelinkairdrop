@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 215 28% 7%;
+  --foreground: 218 84% 93%;
+  --primary: 199 89% 73%;
+  --primary-foreground: 215 28% 7%;
+  --secondary: 220 27% 13%;
+  --secondary-foreground: 218 84% 93%;
+  --muted: 218 20% 55%;
+  --muted-foreground: 218 84% 93%;
+  --accent: 199 89% 73%;
+  --accent-foreground: 215 28% 7%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 0 0% 100% / 0.08;
+  --input: 220 27% 13%;
+  --ring: 199 89% 73%;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  color: hsl(var(--foreground));
+  background: radial-gradient(1000px 600px at 10% -10%, #1a2440, transparent), hsl(var(--background));
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Inter, Arial, sans-serif;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.glass-effect {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-gradient-to-b from-primary to-primary/80 px-6 py-3 text-sm font-semibold text-primary-foreground transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-secondary px-6 py-3 text-sm font-medium text-secondary-foreground transition-all hover:bg-white/5 disabled:opacity-50;
+}
+
+.input-primary {
+  @apply w-full rounded-xl border border-white/10 bg-secondary px-4 py-3 text-sm text-foreground placeholder:text-muted focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/20;
+}
+
+.card-primary {
+  @apply glass-effect rounded-2xl p-7 shadow-xl shadow-black/20;
+}
+
+.animate-in {
+  animation: slideUp 0.3s ease-out;
+}

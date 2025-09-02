@@ -1,35 +1,18 @@
 {
-  "version": 2,
-  "buildCommand": "echo 'No build needed for serverless functions'",
-  "outputDirectory": ".",
-  "rewrites": [
-    {
-      "source": "/",
-      "destination": "/api/index"
-    },
-    {
-      "source": "/dashboard",
-      "destination": "/api/dashboard"
-    },
-    {
-      "source": "/create-campaign",
-      "destination": "/api/create-campaign"
-    },
-    {
-      "source": "/login",
-      "destination": "/api/login"
-    },
-    {
-      "source": "/claim/(.*)",
-      "destination": "/api/claim-view?id=$1"
-    }
-  ],
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
   "functions": {
-    "api/generate.js": {
-      "maxDuration": 30
-    },
-    "api/claim.js": {
+    "api/**/*.ts": {
       "maxDuration": 30
     }
+  },
+  "env": {
+    "SUPABASE_URL": "@supabase-url",
+    "SUPABASE_SERVICE_ROLE": "@supabase-service-role", 
+    "PRIVATE_KEY": "@private-key",
+    "ADMIN_TOKEN": "@admin-token",
+    "TOKEN_ADDRESS": "@token-address",
+    "TOKEN_DECIMALS": "@token-decimals",
+    "RPC_URL": "@rpc-url"
   }
 }
