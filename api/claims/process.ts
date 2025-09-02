@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ethers } from 'ethers';
 import db from '../../lib/db';
+const dbAny = db as any;
 import { getRpcUrl, getExplorerUrl } from '../../lib/networks';
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '';
 
 export default async function handler(req: NextRequest) {
   console.log('[CLAIM] Request received:', {
@@ -35,13 +36,14 @@ export default async function handler(req: NextRequest) {
         
         const ensProvider = new ethers.JsonRpcProvider('https://lb.drpc.org/ethereum/Au_X8MHT5km3gTHdk3Zh9IDdBvMcMPoR8I_zzoXPVSjK');
         
-        userWallet = await ensProvider.resolveName(userWalletInput);
-        if (!userWallet) {
+        const resolvedWallet = await ensProvider.resolveName(userWalletInput);
+        if (!resolvedWallet) {
           return NextResponse.json({
             error: 'ENS name not found',
             details: `The ENS name "${userWalletInput}" could not be resolved. Please check if it exists or use a wallet address instead.`
           }, { status: 400 });
         }
+        userWallet = resolvedWallet;
         console.log('[CLAIM] ENS resolved:', userWalletInput, '→', userWallet);
       } else {
         // First normalize to lowercase, then use getAddress to validate and checksum properly
@@ -56,7 +58,7 @@ export default async function handler(req: NextRequest) {
 
     // Check if this is a multi-claim or single-claim link and get campaign info
     console.log('[CLAIM] Checking link validity for:', linkId);
-    const current = await db.getClaimWithCampaignInfo(linkId);
+    const current = await dbAny.getClaimWithCampaignInfo(linkId);
     console.log('[CLAIM] Current link data with campaign info:', current);
     
     if (!current) {
@@ -93,7 +95,7 @@ export default async function handler(req: NextRequest) {
       provider = new ethers.JsonRpcProvider(rpcUrl, {
         chainId: parseInt(campaignChainId),
         name: `chain-${campaignChainId}`,
-        ensAddress: null
+        ensAddress: undefined
       });
     } else {
       provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -101,7 +103,7 @@ export default async function handler(req: NextRequest) {
     const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 
     // Validate that the token is still valid (native or ERC-20)
-    const tokenValidation = await db.validateTokenContract(campaignTokenAddress, campaignChainId, rpcUrl);
+    const tokenValidation = await dbAny.validateTokenContract(campaignTokenAddress, campaignChainId, rpcUrl);
     if (!tokenValidation.isValid) {
       return NextResponse.json({
         error: 'Invalid token contract',
@@ -122,7 +124,7 @@ export default async function handler(req: NextRequest) {
       console.log('[CLAIM] Processing multi-claim link');
       
       // Check if wallet already claimed from this multi-claim link
-      const alreadyClaimed = await db.checkWalletAlreadyClaimed(linkId, userWallet, current.campaign_id);
+      const alreadyClaimed = await dbAny.checkWalletAlreadyClaimed(linkId, userWallet, current.campaign_id);
       if (alreadyClaimed) {
         const explorerBaseUrl = getExplorerUrl(campaignChainId) || 'https://etherscan.io';
         const explorerUrl = `${explorerBaseUrl}/tx/${alreadyClaimed.tx_hash}`;
@@ -143,7 +145,7 @@ export default async function handler(req: NextRequest) {
         return NextResponse.json({ error: 'All claims have been used' }, { status: 400 });
       }
       
-      const reserveResult = await db.reserveMultiClaim(linkId, userWallet);
+      const reserveResult = await dbAny.reserveMultiClaim(linkId, userWallet);
       
       if (reserveResult?.error === 'already_claimed') {
         const claimData = reserveResult.claimData;
@@ -170,7 +172,7 @@ export default async function handler(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid or already claimed' }, { status: 400 });
       }
       
-      reserved = await db.reserve(linkId);
+      reserved = await dbAny.reserve(linkId);
     }
     
     console.log('[CLAIM] Reserved result:', reserved);
@@ -218,7 +220,7 @@ export default async function handler(req: NextRequest) {
       // Rollback reservation for single-use claims
       if (!current.is_multi_claim) {
         try { 
-          await db.rollback(linkId); 
+          await dbAny.rollback(linkId); 
           console.log('[CLAIM] Rollback successful due to insufficient balance');
         } catch (rollbackError) {
           console.error('[CLAIM] Rollback failed:', rollbackError);
@@ -252,9 +254,9 @@ export default async function handler(req: NextRequest) {
     // Save to database
     try {
       if (current.is_multi_claim) {
-        await db.markMultiClaimed(linkId, userWallet, tx.hash, amount, current.campaign_id);
+        await dbAny.markMultiClaimed(linkId, userWallet, tx.hash, amount, current.campaign_id);
       } else {
-        await db.markClaimed(linkId, tx.hash);
+        await dbAny.markClaimed(linkId, tx.hash);
       }
       console.log('[CLAIM] Database save successful');
     } catch (dbError) {
@@ -268,10 +270,10 @@ export default async function handler(req: NextRequest) {
     
     return NextResponse.json({ success: true, txHash: tx.hash });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('[CLAIM] Transfer failed:', error);
     return NextResponse.json(
-      { error: 'Transfer failed', details: error.message },
+      { error: 'Transfer failed', details: error.message || 'Unknown error' },
       { status: 500 }
     );
   }

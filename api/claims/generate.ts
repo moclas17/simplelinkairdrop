@@ -39,7 +39,7 @@ export default async function handler(req: NextRequest) {
       return NextResponse.json({ error: 'Missing count or amount' }, { status: 400 });
     }
 
-    let expires_at = null;
+    let expires_at: string | null = null;
     if (expiresInHours && Number(expiresInHours) > 0) {
       const d = new Date();
       d.setHours(d.getHours() + Number(expiresInHours));
@@ -56,7 +56,7 @@ export default async function handler(req: NextRequest) {
       const id = randomUUID();
       console.log(`[GENERATE] Saving link ${i + 1}/${count}, id:`, id);
       
-      await db.save(id, Number(amount), expires_at, campaign_id);
+      await (db as any).save(id, Number(amount), expires_at, campaign_id);
       const link = `${protocol}://${host}/claim/${id}`;
       links.push(link);
       
@@ -66,10 +66,10 @@ export default async function handler(req: NextRequest) {
     console.log('[GENERATE] Success! Generated', links.length, 'links');
     
     return NextResponse.json({ links, expires_at });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[GENERATE] Error:', error);
     return NextResponse.json(
-      { error: 'Failed to generate links', details: error.message },
+      { error: 'Failed to generate links', details: error.message || 'Unknown error' },
       { status: 500 }
     );
   }

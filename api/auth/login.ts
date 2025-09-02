@@ -18,7 +18,7 @@ export default async function handler(req: NextRequest) {
     } else {
       return NextResponse.json({ error: 'Invalid admin token' }, { status: 401 });
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AUTH] Login error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },

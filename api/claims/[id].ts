@@ -14,17 +14,17 @@ export default async function handler(req: NextRequest) {
   }
 
   try {
-    const claimData = await db.getClaimWithCampaignInfo(id);
+    const claimData = await (db as any).getClaimWithCampaignInfo(id);
     
     if (!claimData) {
       return NextResponse.json({ error: 'Claim not found' }, { status: 404 });
     }
 
     return NextResponse.json(claimData);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[API] Get claim error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { error: 'Internal server error', details: error.message || 'Unknown error' },
       { status: 500 }
     );
   }
