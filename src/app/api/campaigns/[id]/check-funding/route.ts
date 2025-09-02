@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '../../../../../../lib/db';
 
 interface RouteContext {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function POST(req: NextRequest, context: RouteContext) {
-  console.log('[FUNDING] Check funding request received for campaign:', context.params.id);
+  const params = await context.params;
+  console.log('[FUNDING] Check funding request received for campaign:', params.id);
   
   try {
     const { walletAddress } = await req.json();
@@ -19,13 +20,14 @@ export async function POST(req: NextRequest, context: RouteContext) {
       }, { status: 400 });
     }
 
-    const campaignId = context.params.id;
+    const campaignId = params.id;
     console.log('[FUNDING] Checking funding for campaign:', campaignId, 'wallet:', walletAddress);
 
     // Use the database function to check funding
+    console.log('[FUNDING] About to call checkCampaignFunding with:', { campaignId, walletAddress });
     const result = await (db as any).checkCampaignFunding(campaignId, walletAddress);
     
-    console.log('[FUNDING] Check result:', result);
+    console.log('[FUNDING] Check result:', JSON.stringify(result, null, 2));
     
     if (result.funded) {
       return NextResponse.json({ 

@@ -67,11 +67,19 @@ export default function DashboardPage() {
   };
 
   const checkCampaignFunding = async (campaignId: string) => {
-    if (!address) return;
+    if (!address) {
+      console.error('No wallet address available');
+      return;
+    }
     
+    console.log('Starting funding check for campaign:', campaignId, 'wallet:', address);
     setCheckingFunding(campaignId);
+    
     try {
-      const response = await fetch(`/api/campaigns/${campaignId}/check-funding`, {
+      const url = `/api/campaigns/${campaignId}/check-funding`;
+      console.log('Making request to:', url);
+      
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +89,11 @@ export default function DashboardPage() {
         }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
       const data = await response.json();
+      console.log('Response data:', data);
       
       // Store the result
       setFundingResults(prev => ({
@@ -90,8 +102,11 @@ export default function DashboardPage() {
       }));
 
       if (data.funded) {
+        console.log('Campaign funded! Refreshing campaigns...');
         // Refresh campaigns to get updated status
         loadCampaigns();
+      } else {
+        console.log('Campaign not funded:', data.details || data.error);
       }
       
     } catch (error) {
@@ -101,7 +116,7 @@ export default function DashboardPage() {
         [campaignId]: {
           success: false,
           funded: false,
-          error: 'Failed to check funding'
+          error: `Failed to check funding: ${error instanceof Error ? error.message : 'Unknown error'}`
         }
       }));
     } finally {
