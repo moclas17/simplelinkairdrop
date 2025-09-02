@@ -5,14 +5,5 @@
     "api/**/*.ts": {
       "maxDuration": 30
     }
-  },
-  "env": {
-    "SUPABASE_URL": "@supabase-url",
-    "SUPABASE_SERVICE_ROLE": "@supabase-service-role", 
-    "PRIVATE_KEY": "@private-key",
-    "ADMIN_TOKEN": "@admin-token",
-    "TOKEN_ADDRESS": "@token-address",
-    "TOKEN_DECIMALS": "@token-decimals",
-    "RPC_URL": "@rpc-url"
   }
 }
