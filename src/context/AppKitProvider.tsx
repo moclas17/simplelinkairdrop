@@ -11,7 +11,7 @@ import { mainnet, arbitrum, optimism, base } from '@reown/appkit/networks'
 const metadata = {
   name: 'ChingaDrop',
   description: 'Multi-chain token airdrop platform',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://simplelinkairdrop-axh8pdwk8-nftrenegadoscls-projects.vercel.app',
+  url: typeof window !== 'undefined' ? window.location.origin : 'https://localhost:3000',
   icons: ['/favicon.ico']
 }
 
@@ -39,7 +39,7 @@ export default function AppKitProvider({
   cookies?: string | null 
 }) {
   return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig} initialState={cookies ? JSON.parse(cookies) : undefined}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         {children}
       </QueryClientProvider>

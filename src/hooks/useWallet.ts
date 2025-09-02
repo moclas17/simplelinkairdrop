@@ -9,15 +9,29 @@ export function useWallet() {
   const { open } = useAppKit()
 
   const connectWallet = () => {
-    open()
+    try {
+      open()
+    } catch (error) {
+      console.error('Failed to open AppKit modal:', error)
+      // Fallback: Show user-friendly message
+      alert('Please connect your wallet manually or refresh the page.')
+    }
   }
 
   const disconnectWallet = () => {
-    disconnect()
+    try {
+      disconnect()
+    } catch (error) {
+      console.error('Failed to disconnect:', error)
+    }
   }
 
   const openModal = () => {
-    open()
+    try {
+      open()
+    } catch (error) {
+      console.error('Failed to open modal:', error)
+    }
   }
 
   return {

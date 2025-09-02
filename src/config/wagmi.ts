@@ -1,4 +1,3 @@
-import { cookieStorage, createStorage, http } from 'wagmi'
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
 import { mainnet, arbitrum, optimism, base } from '@reown/appkit/networks'
 
@@ -12,11 +11,8 @@ if (!projectId) {
 // Define the networks we want to support
 export const networks = [mainnet, arbitrum, optimism, base]
 
-// Create the Wagmi Adapter
+// Create the Wagmi Adapter with simplified configuration
 export const wagmiAdapter = new WagmiAdapter({
-  storage: createStorage({ 
-    storage: cookieStorage 
-  }),
   ssr: true,
   projectId,
   networks
