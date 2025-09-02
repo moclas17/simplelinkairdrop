@@ -30,6 +30,35 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLinks, setGeneratedLinks] = useState<string[]>([]);
   const [error, setError] = useState('');
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
+
+  // Load campaigns when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      loadCampaigns();
+    }
+  }, [isConnected, address]);
+
+  const loadCampaigns = async () => {
+    if (!address) return;
+    
+    setLoadingCampaigns(true);
+    try {
+      const response = await fetch(`/api/campaigns?wallet=${address}`);
+      const data = await response.json();
+      
+      if (response.ok) {
+        setCampaigns(data.campaigns || []);
+      } else {
+        console.error('Failed to load campaigns:', data.error);
+      }
+    } catch (error) {
+      console.error('Error loading campaigns:', error);
+    } finally {
+      setLoadingCampaigns(false);
+    }
+  };
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,6 +255,78 @@ export default function DashboardPage() {
                 )}
               </Button>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Existing Campaigns */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              My Campaigns ({campaigns.length})
+            </CardTitle>
+            <CardDescription>
+              Your previous token distribution campaigns
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingCampaigns ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
+                <span className="ml-2 text-muted">Loading campaigns...</span>
+              </div>
+            ) : campaigns.length === 0 ? (
+              <div className="text-center py-8 text-muted">
+                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>No campaigns found</p>
+                <p className="text-sm">Create your first campaign above</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {campaigns.map((campaign) => (
+                  <div
+                    key={campaign.id}
+                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-foreground">{campaign.title}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          campaign.status === 'active' 
+                            ? 'bg-success/20 text-success' 
+                            : campaign.status === 'pending_funding'
+                            ? 'bg-yellow-500/20 text-yellow-600'
+                            : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {campaign.status}
+                        </span>
+                      </div>
+                      <div className="text-sm text-muted">
+                        {campaign.token_symbol} • {campaign.amount_per_claim} per claim • {campaign.claim_type} claim
+                      </div>
+                      <div className="text-xs text-muted mt-1">
+                        Created: {new Date(campaign.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {campaign.links_generated && (
+                        <span className="text-xs text-success">Links Generated</span>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          // Copy campaign ID to clipboard for now
+                          navigator.clipboard.writeText(campaign.id);
+                        }}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
