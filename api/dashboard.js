@@ -162,168 +162,98 @@ export default async function handler(req, res) {
   </style>
   <script src="../lib/networks-client.js"></script>
   
-  <!-- Reown AppKit for vanilla JavaScript -->
-  <script type="module">
-    import { createAppKit } from 'https://esm.sh/@reown/appkit@1.8.1'
-    import { EthersAdapter } from 'https://esm.sh/@reown/appkit-adapter-ethers@1.8.1'
+  <!-- WalletConnect Modal (Alternative to Reown AppKit) -->
+  <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
+  <script>
+    // Initialize WalletConnect Modal (simpler alternative)
+    let walletConnectModal = null;
     
-    // Initialize Reown AppKit
-    const projectId = '${reownProjectId}';
-    
-    // Networks configuration
-    const networks = [
-      // Mainnets
-      {
-        id: 10,
-        name: 'Optimism',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://mainnet.optimism.io'] } },
-        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://optimistic.etherscan.io' } }
-      },
-      {
-        id: 42161,
-        name: 'Arbitrum One',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://arb1.arbitrum.io/rpc'] } },
-        blockExplorers: { default: { name: 'Arbiscan', url: 'https://arbiscan.io' } }
-      },
-      {
-        id: 8453,
-        name: 'Base',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://mainnet.base.org'] } },
-        blockExplorers: { default: { name: 'Basescan', url: 'https://basescan.org' } }
-      },
-      {
-        id: 534352,
-        name: 'Scroll',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://rpc.scroll.io'] } },
-        blockExplorers: { default: { name: 'Scrollscan', url: 'https://scrollscan.com' } }
-      },
-      {
-        id: 5000,
-        name: 'Mantle',
-        nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
-        rpcUrls: { default: { http: ['https://rpc.mantle.xyz'] } },
-        blockExplorers: { default: { name: 'Mantlescan', url: 'https://mantlescan.xyz' } }
-      },
-      // Testnets
-      {
-        id: 11155420,
-        name: 'Optimism Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia.optimism.io'] } },
-        blockExplorers: { default: { name: 'Optimistic Etherscan', url: 'https://sepolia-optimism.etherscan.io' } }
-      },
-      {
-        id: 421614,
-        name: 'Arbitrum Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia-rollup.arbitrum.io/rpc'] } },
-        blockExplorers: { default: { name: 'Arbiscan', url: 'https://sepolia.arbiscan.io' } }
-      },
-      {
-        id: 84532,
-        name: 'Base Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia.base.org'] } },
-        blockExplorers: { default: { name: 'Basescan', url: 'https://sepolia.basescan.org' } }
-      },
-      {
-        id: 534351,
-        name: 'Scroll Sepolia',
-        nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-        rpcUrls: { default: { http: ['https://sepolia-rpc.scroll.io'] } },
-        blockExplorers: { default: { name: 'Scrollscan', url: 'https://sepolia.scrollscan.com' } }
-      },
-      {
-        id: 5003,
-        name: 'Mantle Sepolia',
-        nativeCurrency: { name: 'MNT', symbol: 'MNT', decimals: 18 },
-        rpcUrls: { default: { http: ['https://rpc.sepolia.mantle.xyz'] } },
-        blockExplorers: { default: { name: 'Mantlescan', url: 'https://sepolia.mantlescan.xyz' } }
-      },
-      {
-        id: 10143,
-        name: 'Monad Testnet',
-        nativeCurrency: { name: 'MON', symbol: 'MON', decimals: 18 },
-        rpcUrls: { default: { http: ['https://testnet-rpc.monad.xyz'] } },
-        blockExplorers: { default: { name: 'Monad Explorer', url: 'https://testnet.monadexplorer.com' } }
-      }
-    ];
-    
-    // Create AppKit instance
-    const appKit = createAppKit({
-      adapters: [new EthersAdapter()],
-      networks,
-      projectId,
-      metadata: {
-        name: 'Chingadrop.xyz',
-        description: 'Token Distribution Platform',
-        url: window.location.origin,
-        icons: [window.location.origin + '/icons/icon-192x192.png']
-      },
-      features: {
-        analytics: false,
-        onramp: false,
-        swaps: false,
-        email: true,
-        socials: ['google', 'x', 'github', 'discord', 'apple'],
-        emailShowWallets: true
-      },
-      themeMode: 'dark',
-      themeVariables: {
-        '--w3m-accent': '#7dd3fc',
-        '--w3m-color-mix': '#0b1220',
-        '--w3m-color-mix-strength': 20,
-        '--w3m-border-radius-master': '12px',
-        '--w3m-font-size-master': '14px'
-      }
-    });
-    
-    // Make AppKit available globally
-    window.appKit = appKit;
-    
-    // Set up event listeners
-    appKit.subscribeAccount((account) => {
-      if (account.address && account.address !== window.currentUser) {
-        window.currentUser = account.address;
-        console.log('User connected:', account.address);
-        
-        if (!document.getElementById('dashboardSection').classList.contains('hidden')) {
-          window.showDashboard();
-          window.loadCampaigns();
+    try {
+      // Create WalletConnect modal with project ID
+      const projectId = '${reownProjectId}';
+      
+      walletConnectModal = new WalletConnectModal.WalletConnectModal({
+        projectId: projectId,
+        chains: [10, 42161, 8453, 534352, 5000, 11155420, 421614, 84532, 534351, 5003, 10143],
+        themeMode: 'dark',
+        themeVariables: {
+          '--wcm-accent-color': '#7dd3fc',
+          '--wcm-background-color': '#0b1220',
+        },
+        enableExplorer: true,
+        explorerRecommendedWalletIds: [
+          'c57ca95b47569778a828d19178114f4db188b89b763c899ba0be274e97267d96', // MetaMask
+          'fd20dc426fb37566d803205b19bbc1d4096b248ac04548e3cfb6b3a38bd033aa', // Coinbase
+        ],
+        enableAuthMode: false,
+        enableNetworkView: true
+      });
+      
+      // Make modal available globally
+      window.appKit = walletConnectModal;
+      
+      console.log('WalletConnect Modal initialized successfully');
+      
+    } catch (error) {
+      console.error('Failed to initialize WalletConnect Modal:', error);
+      
+      // Fallback to simple connect function
+      window.appKit = {
+        open: () => {
+          console.log('Opening wallet connection...');
+          connectWithMetaMask();
+        },
+        disconnect: () => {
+          console.log('Disconnecting wallet...');
+          disconnectWallet();
         }
-      } else if (!account.address && window.currentUser) {
-        window.currentUser = null;
-        window.showWalletSection();
-      }
-    });
+      };
+    }
     
-    appKit.subscribeChainId((chainId) => {
-      const networkInfo = getNetworkInfo(chainId);
-      if (networkInfo) {
-        window.currentNetwork = networkInfo;
-        if (window.updateNetworkDisplay) {
-          window.updateNetworkDisplay();
+    // Simple MetaMask connection fallback
+    async function connectWithMetaMask() {
+      try {
+        if (typeof window.ethereum !== 'undefined') {
+          const accounts = await window.ethereum.request({ 
+            method: 'eth_requestAccounts' 
+          });
+          
+          if (accounts && accounts.length > 0) {
+            window.currentUser = accounts[0];
+            
+            // Detect network
+            try {
+              const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+              const networkInfo = getNetworkInfo(chainId);
+              window.currentNetwork = networkInfo;
+              window.updateNetworkDisplay();
+            } catch (networkError) {
+              console.warn('Network detection failed:', networkError);
+            }
+            
+            window.showDashboard();
+            window.loadCampaigns();
+            showToast('Wallet connected successfully!', 'success');
+          }
+        } else {
+          showToast('Please install MetaMask or another Web3 wallet', 'error');
+        }
+      } catch (error) {
+        console.error('Connection failed:', error);
+        if (error.code === 4001) {
+          showToast('Connection request was rejected', 'error');
+        } else {
+          showToast('Failed to connect wallet', 'error');
         }
       }
-    });
+    }
     
-    // Check if already connected
-    setTimeout(() => {
-      const state = appKit.getState();
-      if (state.address) {
-        window.currentUser = state.address;
-        if (state.selectedNetworkId) {
-          const networkInfo = getNetworkInfo(state.selectedNetworkId);
-          window.currentNetwork = networkInfo;
-        }
-        window.showDashboard();
-        window.loadCampaigns();
-      }
-    }, 1000);
+    function disconnectWallet() {
+      window.currentUser = null;
+      window.currentNetwork = null;
+      window.showWalletSection();
+      showToast('Wallet disconnected', 'info');
+    }
     
   </script>
   
@@ -369,6 +299,148 @@ export default async function handler(req, res) {
         walletElement.textContent = window.currentUser;
       }
     }
+    
+    // Network switching functionality
+    window.switchToNetwork = async function(chainIdHex) {
+      try {
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: chainIdHex }],
+        });
+        
+        // Close any open modal
+        const modal = document.querySelector('div[style*="z-index: 1000"]');
+        if (modal) modal.remove();
+        
+        // Re-detect network after successful switch
+        setTimeout(async () => {
+          try {
+            const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+            const networkInfo = getNetworkInfo(chainId);
+            window.currentNetwork = networkInfo;
+            window.updateNetworkDisplay();
+          } catch (error) {
+            console.warn('Failed to detect network after switch:', error);
+          }
+        }, 1000);
+        
+        return true;
+      } catch (switchError) {
+        console.error('Failed to switch network:', switchError);
+        
+        // If the network doesn't exist in wallet, try to add it
+        if (switchError.code === 4902) {
+          const numericChainId = parseInt(chainIdHex, 16);
+          const networkInfo = getNetworkInfo(numericChainId);
+          
+          if (networkInfo) {
+            try {
+              await window.ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: chainIdHex,
+                  chainName: networkInfo.name,
+                  nativeCurrency: {
+                    name: networkInfo.currency,
+                    symbol: networkInfo.currency,
+                    decimals: 18
+                  },
+                  rpcUrls: [networkInfo.rpcUrl],
+                  blockExplorerUrls: [networkInfo.explorerUrl]
+                }]
+              });
+              
+              // Close any open modal
+              const modal = document.querySelector('div[style*="z-index: 1000"]');
+              if (modal) modal.remove();
+              
+              return true;
+            } catch (addError) {
+              console.error('Failed to add network:', addError);
+              return false;
+            }
+          }
+        }
+        return false;
+      }
+    }
+    
+    window.showNetworkSwitchOptions = function() {
+      const supportedNetworks = getAllNetworks();
+      
+      // Separate mainnet and testnet networks
+      const mainnetChainIds = [10, 42161, 8453, 534352, 5000]; // Known mainnet chain IDs
+      const mainnets = [];
+      const testnets = [];
+      
+      supportedNetworks.forEach(function(network) {
+        if (mainnetChainIds.includes(network.chainId)) {
+          mainnets.push(network);
+        } else {
+          testnets.push(network);
+        }
+      });
+      
+      // Get current network info for highlighting
+      const currentChainId = window.currentNetwork ? window.currentNetwork.chainId : null;
+      
+      // Function to generate network buttons
+      function generateNetworkButtons(networks) {
+        let options = '';
+        networks.forEach(function(network) {
+          const isCurrentNetwork = currentChainId === network.chainId;
+          
+          // Use centralized light color detection
+          const isLight = isLightColor(network.chainId);
+          const textColor = isLight ? '#000' : '#fff';
+          
+          const buttonStyle = isCurrentNetwork ? 
+            'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: 2px solid #fff; border-radius: 4px; cursor: pointer; opacity: 0.7;' :
+            'display: block; width: 100%; margin: 4px 0; padding: 8px; background: ' + network.color + '; color: ' + textColor + '; border: none; border-radius: 4px; cursor: pointer;';
+          
+          const buttonText = isCurrentNetwork ? 
+            network.icon + ' ' + network.name + ' (Current)' :
+            network.icon + ' Switch to ' + network.name;
+            
+          options += '<button onclick="switchToNetwork(&quot;' + network.chainIdHex + '&quot;)" ' +
+            'style="' + buttonStyle + '"' +
+            (isCurrentNetwork ? ' disabled' : '') + '>' +
+            buttonText +
+            '</button>';
+        });
+        return options;
+      }
+      
+      // Generate sections
+      let networkOptions = '';
+      
+      if (mainnets.length > 0) {
+        networkOptions += '<div style="margin-bottom: 16px;">' +
+          '<h4 style="margin: 0 0 8px; font-size: 14px; color: #334155; font-weight: 600;">🌐 Mainnet Networks</h4>' +
+          generateNetworkButtons(mainnets) +
+          '</div>';
+      }
+      
+      if (testnets.length > 0) {
+        networkOptions += '<div>' +
+          '<h4 style="margin: 0 0 8px; font-size: 14px; color: #334155; font-weight: 600;">🧪 Testnet Networks</h4>' +
+          generateNetworkButtons(testnets) +
+          '</div>';
+      }
+      
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+      modal.innerHTML = 
+        '<div style="background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 20px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.5);">' +
+          '<h3 style="margin-top: 0; color: var(--acc);">Select Network</h3>' +
+          '<p style="font-size: 14px; color: var(--muted);">Choose a network to switch to:</p>' +
+          networkOptions +
+          '<button onclick="this.parentElement.parentElement.remove()" style="margin-top: 16px; padding: 8px 16px; background: var(--muted, #ccc); border: none; border-radius: 4px; cursor: pointer; width: 100%;">' +
+            'Cancel' +
+          '</button>' +
+        '</div>';
+      document.body.appendChild(modal);
+    }
   </script>
 </head>
 <body>
@@ -409,7 +481,7 @@ export default async function handler(req, res) {
           </div>
         </div>
         <div class="button-group" style="display: flex; gap: 8px; align-items: center;">
-          <button id="switchNetworkBtn" class="btn" onclick="window.appKit.open({ view: 'Networks' })">Switch Network</button>
+          <button id="switchNetworkBtn" class="btn" onclick="showNetworkSwitchOptions()">Switch Network</button>
           <button id="disconnectBtn" class="btn btn-danger" onclick="window.appKit.disconnect()">Disconnect</button>
         </div>
       </div>
