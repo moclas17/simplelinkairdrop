@@ -76,7 +76,8 @@ export default function DashboardPage() {
     setCheckingFunding(campaignId);
     
     try {
-      const url = `/api/campaigns/${campaignId}/check-funding`;
+      // Use simplified endpoint temporarily to debug
+      const url = `/api/check-funding-simple`;
       console.log('Making request to:', url);
       
       const response = await fetch(url, {
@@ -85,6 +86,7 @@ export default function DashboardPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          campaignId: campaignId,
           walletAddress: address
         }),
       });
