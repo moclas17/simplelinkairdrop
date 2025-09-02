@@ -31,7 +31,7 @@ if (projectId) {
     },
     themeMode: 'dark',
     themeVariables: {
-      '--w3m-z-index': '9999'
+      '--w3m-z-index': 9999
     }
   })
 }
