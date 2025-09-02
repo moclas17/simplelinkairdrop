@@ -21,7 +21,7 @@ import { useWallet } from '@/hooks/useWallet';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { address, isConnected, isAdmin, openModal } = useWallet();
+  const { address, isConnected, openModal } = useWallet();
   
   // Form states
   const [count, setCount] = useState('');
@@ -48,7 +48,8 @@ export default function DashboardPage() {
           count: parseInt(count),
           amount: parseFloat(amount),
           expiresInHours: expiresInHours ? parseFloat(expiresInHours) : null,
-          campaign_id: 'wallet-auth-campaign'
+          campaign_id: address, // Use wallet address as campaign_id
+          wallet_address: address // Add wallet address to request
         }),
       });
 
@@ -88,20 +89,20 @@ export default function DashboardPage() {
     openModal();
   };
 
-  // Redirect if not authenticated
+  // Redirect if not connected
   useEffect(() => {
-    if (!isConnected || !isAdmin) {
+    if (!isConnected) {
       router.push('/login');
     }
-  }, [isConnected, isAdmin, router]);
+  }, [isConnected, router]);
 
-  // Show loading if not authenticated
-  if (!isConnected || !isAdmin) {
+  // Show loading if not connected
+  if (!isConnected) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
-          <p className="text-muted">Checking authentication...</p>
+          <p className="text-muted">Connecting to wallet...</p>
         </div>
       </div>
     );
@@ -121,13 +122,13 @@ export default function DashboardPage() {
               Home
             </Link>
             <div className="h-6 w-px bg-border" />
-            <h1 className="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
           </div>
           
           {/* User info and logout */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border">
-              <Shield className="h-4 w-4 text-success" />
+              <Wallet className="h-4 w-4 text-success" />
               <span className="text-sm font-mono">
                 {address?.slice(0, 6)}...{address?.slice(-4)}
               </span>
@@ -147,7 +148,7 @@ export default function DashboardPage() {
               Generate Claim Links
             </CardTitle>
             <CardDescription>
-              Create new token claim links for distribution
+              Create token claim links from your wallet
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -286,11 +287,11 @@ export default function DashboardPage() {
               <Wallet className="h-5 w-5 text-primary mt-1" />
               <div>
                 <h3 className="font-medium text-foreground mb-1">
-                  Wallet-Based Authentication
+                  Personal Wallet Dashboard
                 </h3>
                 <p className="text-sm text-muted">
-                  This dashboard is now secured with wallet-based authentication using Reown (WalletConnect). 
-                  Only authorized wallet addresses can access admin functions.
+                  This is your personal dashboard. You can generate and manage claim links 
+                  associated with your connected wallet address. Other users will only see their own links.
                 </p>
               </div>
             </div>

@@ -13,17 +13,16 @@ export default function LoginPage() {
   const { 
     address, 
     isConnected, 
-    isAdmin, 
     isLoading,
     connectWallet 
   } = useWallet();
 
-  // Redirect to dashboard if authenticated as admin
+  // Redirect to dashboard if wallet is connected
   useEffect(() => {
-    if (isConnected && isAdmin) {
+    if (isConnected) {
       router.push('/dashboard');
     }
-  }, [isConnected, isAdmin, router]);
+  }, [isConnected, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
@@ -40,19 +39,19 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center">
           <div className="mx-auto h-12 w-12 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 shadow-2xl shadow-primary/30 mb-4" />
-          <h1 className="text-2xl font-bold text-foreground">Admin Access</h1>
-          <p className="text-muted">Connect your authorized wallet to access the dashboard</p>
+          <h1 className="text-2xl font-bold text-foreground">Connect Wallet</h1>
+          <p className="text-muted">Connect your wallet to access your dashboard</p>
         </div>
 
         {/* Wallet Connection */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Wallet Authentication
+              <Wallet className="h-5 w-5" />
+              Wallet Connection
             </CardTitle>
             <CardDescription>
-              Only authorized wallet addresses can access the admin dashboard.
+              Connect your wallet to access your personal dashboard and manage your claims.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -87,49 +86,24 @@ export default function LoginPage() {
                   </p>
                 </div>
 
-                {/* Admin status */}
-                {isAdmin ? (
-                  <div className="p-4 rounded-lg border bg-success/5 border-success/20">
-                    <div className="flex items-center gap-3 mb-2">
-                      <CheckCircle className="h-4 w-4 text-success" />
-                      <span className="text-sm font-medium text-success">Admin Access Granted</span>
-                    </div>
-                    <p className="text-sm text-muted">
-                      Your wallet has admin privileges. Redirecting to dashboard...
-                    </p>
+                {/* Connected status */}
+                <div className="p-4 rounded-lg border bg-success/5 border-success/20">
+                  <div className="flex items-center gap-3 mb-2">
+                    <CheckCircle className="h-4 w-4 text-success" />
+                    <span className="text-sm font-medium text-success">Wallet Connected</span>
                   </div>
-                ) : (
-                  <div className="p-4 rounded-lg border bg-destructive/5 border-destructive/20">
-                    <div className="flex items-center gap-3 mb-2">
-                      <AlertCircle className="h-4 w-4 text-destructive" />
-                      <span className="text-sm font-medium text-destructive">Access Denied</span>
-                    </div>
-                    <p className="text-sm text-muted mb-3">
-                      This wallet is not authorized for admin access.
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={connectWallet}
-                      className="w-full"
-                    >
-                      Try Different Wallet
-                    </Button>
-                  </div>
-                )}
+                  <p className="text-sm text-muted">
+                    Redirecting to your dashboard...
+                  </p>
+                </div>
               </div>
             )}
 
-            {!isAdmin && isConnected && (
-              <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                This wallet is not authorized for admin access
-              </div>
-            )}
           </CardContent>
         </Card>
 
         <div className="text-center text-sm text-muted">
-          Only authorized wallets can access the admin dashboard.
+          Connect any wallet to access your personal dashboard.
         </div>
       </div>
     </div>

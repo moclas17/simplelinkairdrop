@@ -2,11 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-// Lista de wallets admin autorizadas  
-const ADMIN_WALLETS = [
-  '0x86300E0a857aAB39A601E89b0e7F15e1488d9F0C', // Hot wallet from env
-  // Agregar más wallets admin aquí
-].map(addr => addr.toLowerCase())
+// Removed admin wallet restrictions - all connected wallets can access dashboard
 
 declare global {
   interface Window {
@@ -17,7 +13,6 @@ declare global {
 export function useWallet() {
   const [address, setAddress] = useState<string | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
   // Check if wallet is already connected on mount
@@ -30,7 +25,6 @@ export function useWallet() {
             const connectedAddress = accounts[0]
             setAddress(connectedAddress)
             setIsConnected(true)
-            setIsAdmin(ADMIN_WALLETS.includes(connectedAddress.toLowerCase()))
           }
         })
         .catch(console.error)
@@ -53,7 +47,6 @@ export function useWallet() {
         const connectedAddress = accounts[0]
         setAddress(connectedAddress)
         setIsConnected(true)
-        setIsAdmin(ADMIN_WALLETS.includes(connectedAddress.toLowerCase()))
       }
     } catch (error) {
       console.error('Failed to connect wallet:', error)
@@ -65,7 +58,6 @@ export function useWallet() {
   const disconnect = () => {
     setAddress(null)
     setIsConnected(false)
-    setIsAdmin(false)
   }
 
   const openModal = () => {
@@ -82,7 +74,6 @@ export function useWallet() {
   return {
     address,
     isConnected,
-    isAdmin,
     isLoading,
     connectWallet,
     openModal,
