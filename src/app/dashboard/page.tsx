@@ -56,14 +56,27 @@ export default function DashboardPage() {
   }, [isConnected, address]);
 
   const loadCampaigns = async () => {
-    if (!address) return;
+    if (!address) {
+      console.error('No wallet address for loading campaigns');
+      return;
+    }
     
+    console.log('Loading campaigns for wallet:', address);
     setLoadingCampaigns(true);
+    
     try {
-      const response = await fetch(`/api/campaigns?wallet=${address}`);
+      const url = `/api/campaigns?wallet=${address}`;
+      console.log('Fetching campaigns from:', url);
+      
+      const response = await fetch(url);
+      console.log('Campaigns response status:', response.status);
+      console.log('Campaigns response ok:', response.ok);
+      
       const data = await response.json();
+      console.log('Campaigns response data:', data);
       
       if (response.ok) {
+        console.log('Setting campaigns:', data.campaigns?.length || 0, 'campaigns');
         setCampaigns(data.campaigns || []);
       } else {
         console.error('Failed to load campaigns:', data.error);

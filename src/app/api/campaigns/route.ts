@@ -3,13 +3,17 @@ import db from '../../../../lib/db';
 
 export async function GET(req: NextRequest) {
   console.log('[CAMPAIGNS] GET request received');
+  console.log('[CAMPAIGNS] Request URL:', req.url);
   
   try {
     // Get wallet address from query parameters
     const { searchParams } = new URL(req.url);
     const walletAddress = searchParams.get('wallet');
     
+    console.log('[CAMPAIGNS] Parsed wallet address:', walletAddress);
+    
     if (!walletAddress) {
+      console.log('[CAMPAIGNS] No wallet address provided');
       return NextResponse.json({ error: 'Wallet address required' }, { status: 400 });
     }
 
@@ -18,12 +22,18 @@ export async function GET(req: NextRequest) {
     // Get campaigns for the user
     const campaigns = await (db as any).getUserCampaigns(walletAddress);
     
-    console.log('[CAMPAIGNS] Found campaigns:', campaigns?.length || 0);
+    console.log('[CAMPAIGNS] Raw campaigns result:', campaigns);
+    console.log('[CAMPAIGNS] Found campaigns count:', campaigns?.length || 0);
     
-    return NextResponse.json({ campaigns });
+    if (campaigns && campaigns.length > 0) {
+      console.log('[CAMPAIGNS] Sample campaign:', JSON.stringify(campaigns[0], null, 2));
+    }
+    
+    return NextResponse.json({ campaigns: campaigns || [] });
     
   } catch (error: any) {
-    console.error('[CAMPAIGNS] Error:', error);
+    console.error('[CAMPAIGNS] Error getting campaigns:', error);
+    console.error('[CAMPAIGNS] Error stack:', error.stack);
     return NextResponse.json(
       { error: 'Failed to get campaigns', details: error.message },
       { status: 500 }
