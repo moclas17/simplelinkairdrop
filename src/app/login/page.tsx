@@ -1,37 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Wallet, Shield, CheckCircle, AlertCircle } from 'lucide-react';
-// Temporarily disabled while fixing WalletConnect integration
-// import { useWalletAuth } from '@/hooks/useWalletAuth';
+import { useWallet } from '@/hooks/useWallet';
 
 export default function LoginPage() {
   const router = useRouter();
-  
-  // Temporary: simulate connecting for demo
-  const [isConnected, setIsConnected] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
-  const address = isConnected ? '0x86300E0a857aAB39A601E89b0e7F15e1488d9F0C' : null;
-  const isAdmin = isConnected; // For demo purposes
-  
-  const connectWallet = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsConnected(true);
-      setIsLoading(false);
-    }, 1500);
-  };
+  const { 
+    address, 
+    isConnected, 
+    isAdmin, 
+    isLoading,
+    connectWallet 
+  } = useWallet();
 
   // Redirect to dashboard if authenticated as admin
   useEffect(() => {
     if (isConnected && isAdmin) {
-      setTimeout(() => router.push('/dashboard'), 2000);
+      router.push('/dashboard');
     }
   }, [isConnected, isAdmin, router]);
 
@@ -114,17 +104,25 @@ export default function LoginPage() {
                       <AlertCircle className="h-4 w-4 text-destructive" />
                       <span className="text-sm font-medium text-destructive">Access Denied</span>
                     </div>
-                    <p className="text-sm text-muted">
+                    <p className="text-sm text-muted mb-3">
                       This wallet is not authorized for admin access.
                     </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={connectWallet}
+                      className="w-full"
+                    >
+                      Try Different Wallet
+                    </Button>
                   </div>
                 )}
               </div>
             )}
 
-            {error && (
+            {!isAdmin && isConnected && (
               <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
-                {error}
+                This wallet is not authorized for admin access
               </div>
             )}
           </CardContent>

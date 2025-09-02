@@ -17,17 +17,11 @@ import {
   Shield,
   AlertTriangle
 } from 'lucide-react';
-// Temporarily disabled while fixing WalletConnect integration
-// import { useWalletAuth } from '@/hooks/useWalletAuth';
+import { useWallet } from '@/hooks/useWallet';
 
 export default function DashboardPage() {
   const router = useRouter();
-  
-  // Temporary: simulate authenticated state for now
-  const address = '0x86300E0a857aAB39A601E89b0e7F15e1488d9F0C';
-  const isConnected = true;
-  const isAdmin = true;
-  const disconnect = () => router.push('/');
+  const { address, isConnected, isAdmin, openModal } = useWallet();
   
   // Form states
   const [count, setCount] = useState('');
@@ -90,11 +84,28 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
-    disconnect();
-    router.push('/');
+    // Open AppKit modal to disconnect
+    openModal();
   };
 
-  // Temporarily skip auth check for deployment
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isConnected || !isAdmin) {
+      router.push('/login');
+    }
+  }, [isConnected, isAdmin, router]);
+
+  // Show loading if not authenticated
+  if (!isConnected || !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen p-6">
