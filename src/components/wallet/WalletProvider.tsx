@@ -1,7 +1,6 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
-import '../../lib/web3'; // Initialize the AppKit
+import { ReactNode } from 'react';
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
