@@ -69,3 +69,23 @@ a {
 .animate-in {
   animation: slideUp 0.3s ease-out;
 }
+
+/* Fix z-index for Reown AppKit modal */
+w3m-modal,
+w3m-network-button,
+w3m-connect-button,
+w3m-account-button {
+  z-index: 9999 !important;
+}
+
+/* Ensure modal backdrop is above other content */
+[data-testid="w3m-modal-backdrop"],
+.w3m-modal-backdrop {
+  z-index: 9998 !important;
+}
+
+/* Fix modal positioning */
+w3m-modal[open] {
+  z-index: 9999 !important;
+  position: fixed !important;
+}

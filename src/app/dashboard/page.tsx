@@ -21,7 +21,7 @@ import { useWallet } from '@/hooks/useWallet';
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { address, isConnected, openModal } = useWallet();
+  const { address, isConnected, disconnectWallet } = useWallet();
   
   // Form states
   const [count, setCount] = useState('');
@@ -114,8 +114,8 @@ export default function DashboardPage() {
   };
 
   const handleLogout = () => {
-    // Open AppKit modal to disconnect
-    openModal();
+    // Disconnect wallet directly
+    disconnectWallet();
   };
 
   // Redirect if not connected

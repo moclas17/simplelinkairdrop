@@ -40,6 +40,7 @@ export function useWallet() {
     isLoading: isConnecting,
     connectWallet,
     openModal,
-    disconnect: disconnectWallet
+    disconnect: disconnectWallet,
+    disconnectWallet
   }
 }

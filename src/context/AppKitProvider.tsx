@@ -11,8 +11,8 @@ import { mainnet, arbitrum, optimism, base } from '@reown/appkit/networks'
 const metadata = {
   name: 'ChingaDrop',
   description: 'Multi-chain token airdrop platform',
-  url: typeof window !== 'undefined' ? window.location.origin : 'https://localhost:3000',
-  icons: ['/favicon.ico']
+  url: 'https://chingadrop.xyz',
+  icons: ['https://chingadrop.xyz/favicon.ico']
 }
 
 // Create the AppKit modal
@@ -24,7 +24,14 @@ if (projectId) {
     defaultNetwork: mainnet,
     metadata,
     features: {
-      analytics: false
+      analytics: false,
+      socials: false,
+      email: false,
+      onramp: false
+    },
+    themeMode: 'dark',
+    themeVariables: {
+      '--w3m-z-index': '9999'
     }
   })
 }
