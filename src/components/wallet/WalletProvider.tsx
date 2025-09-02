@@ -1,8 +1,8 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
+import '../../lib/web3'; // Initialize the AppKit
 
-// Placeholder wallet provider - we'll implement WalletConnect later
 export function WalletProvider({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
