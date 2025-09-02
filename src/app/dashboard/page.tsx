@@ -21,6 +21,7 @@ import {
   XCircle
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
+import { getNetworkInfo, getExplorerUrl } from '../../../lib/networks.js';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -383,6 +384,9 @@ export default function DashboardPage() {
                       </div>
                       <div className="text-xs text-muted mt-1">
                         Created: {new Date(campaign.created_at).toLocaleDateString()}
+                        {campaign.total_budget && (
+                          <span> • Budget: {campaign.total_budget} {campaign.token_symbol}</span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -423,6 +427,109 @@ export default function DashboardPage() {
                         <Copy className="h-3 w-3" />
                       </Button>
                     </div>
+
+                    {/* Funding Information for pending campaigns */}
+                    {campaign.status === 'pending_funding' && (
+                      <div className="mt-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                        <div className="flex items-center gap-2 mb-3">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                          <span className="font-medium text-yellow-600">Funding Required</span>
+                        </div>
+                        <div className="space-y-2 text-sm">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-muted uppercase tracking-wide">Amount to Send</div>
+                              <div className="font-mono text-foreground">
+                                {campaign.total_budget || campaign.required_balance} {campaign.token_symbol}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-muted uppercase tracking-wide">Token Type</div>
+                              <div className="text-foreground">
+                                {campaign.token_address === 'NATIVE' || campaign.token_address?.toLowerCase() === 'native' 
+                                  ? `Native Token (${campaign.token_symbol})`
+                                  : 'ERC-20 Token'
+                                }
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {campaign.deposit_address && (
+                            <div>
+                              <div className="text-xs text-muted uppercase tracking-wide">Send To Address</div>
+                              <div className="flex items-center gap-2">
+                                <code className="text-xs bg-secondary/50 px-2 py-1 rounded font-mono text-foreground break-all">
+                                  {campaign.deposit_address}
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => navigator.clipboard.writeText(campaign.deposit_address)}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {campaign.token_address && campaign.token_address !== 'NATIVE' && campaign.token_address?.toLowerCase() !== 'native' && (
+                            <div>
+                              <div className="text-xs text-muted uppercase tracking-wide">Token Contract</div>
+                              <div className="flex items-center gap-2">
+                                <code className="text-xs bg-secondary/50 px-2 py-1 rounded font-mono text-foreground break-all">
+                                  {campaign.token_address}
+                                </code>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => navigator.clipboard.writeText(campaign.token_address)}
+                                >
+                                  <Copy className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {campaign.chain_id && (
+                            <div>
+                              <div className="text-xs text-muted uppercase tracking-wide">Network</div>
+                              <div className="flex items-center gap-2">
+                                <div className="text-foreground">
+                                  {(() => {
+                                    const network = getNetworkInfo(campaign.chain_id);
+                                    return network 
+                                      ? `${network.icon} ${network.name} (${network.currency})` 
+                                      : `Chain ID: ${campaign.chain_id}`;
+                                  })()}
+                                </div>
+                                {getExplorerUrl(campaign.chain_id) && (
+                                  <a
+                                    href={getExplorerUrl(campaign.chain_id)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    Explorer
+                                  </a>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="mt-3 p-3 rounded-lg bg-secondary/30 border border-secondary">
+                            <div className="text-xs text-muted mb-1">💡 Instructions:</div>
+                            <div className="text-xs text-foreground space-y-1">
+                              <div>1. Send exactly <strong>{campaign.total_budget || campaign.required_balance} {campaign.token_symbol}</strong> from your connected wallet</div>
+                              <div>2. To address: <strong>{campaign.deposit_address}</strong></div>
+                              <div>3. Click "Check Funding" once transaction is confirmed</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     
                     {/* Funding check results */}
                     {fundingResults[campaign.id] && (
