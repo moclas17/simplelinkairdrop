@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import { headers } from 'next/headers';
 import './globals.css';
-import { WalletProvider } from '@/components/wallet/WalletProvider';
+import AppKitProvider from '@/context/AppKitProvider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -13,11 +14,14 @@ export const metadata: Metadata = {
   viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const headersObj = await headers();
+  const cookies = headersObj.get('cookie');
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -25,9 +29,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#7dd3fc" />
       </head>
       <body className={inter.className}>
-        <WalletProvider>
+        <AppKitProvider cookies={cookies}>
           {children}
-        </WalletProvider>
+        </AppKitProvider>
       </body>
     </html>
   );
