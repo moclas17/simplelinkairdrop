@@ -11,6 +11,7 @@ import { apiClient } from '@/lib/api';
 // Using the type from api.ts
 import type { ClaimData } from '@/lib/api';
 import { formatAmount } from '@/lib/utils';
+import { getExplorerUrl as getNetworkExplorerUrl } from '@/lib/networks.js';
 
 export default function ClaimPage() {
   const params = useParams();
@@ -21,6 +22,7 @@ export default function ClaimPage() {
   const [wallet, setWallet] = useState('');
   const [claiming, setClaiming] = useState(false);
   const [claimed, setClaimed] = useState(false);
+  const [justClaimed, setJustClaimed] = useState(false);
   const [txHash, setTxHash] = useState('');
   const [error, setError] = useState('');
 
@@ -60,6 +62,7 @@ export default function ClaimPage() {
 
       if (result.success) {
         setClaimed(true);
+        setJustClaimed(true);
         setTxHash(result.txHash);
       }
     } catch (err: unknown) {
@@ -72,15 +75,16 @@ export default function ClaimPage() {
 
   const getExplorerUrl = (txHash: string) => {
     const chainId = claimData?.campaigns?.chain_id;
-    // Default to Ethereum mainnet explorer
-    let baseUrl = 'https://etherscan.io';
     
-    // Add other explorer URLs based on chain ID
-    if (chainId === 10) baseUrl = 'https://optimistic.etherscan.io';
-    else if (chainId === 42161) baseUrl = 'https://arbiscan.io';
-    else if (chainId === 8453) baseUrl = 'https://basescan.org';
+    // Use the network configuration to get proper explorer URLs
+    const baseUrl = getNetworkExplorerUrl(chainId);
     
-    return `${baseUrl}/tx/${txHash}`;
+    if (baseUrl) {
+      return `${baseUrl}/tx/${txHash}`;
+    }
+    
+    // Fallback to Ethereum mainnet if network not found
+    return `https://etherscan.io/tx/${txHash}`;
   };
 
   if (loading) {
@@ -160,7 +164,9 @@ export default function ClaimPage() {
             <div className="mx-auto h-12 w-12 rounded-xl bg-success/10 flex items-center justify-center mb-4">
               <CheckCircle className="h-6 w-6 text-success" />
             </div>
-            <CardTitle className="text-success">Already Claimed</CardTitle>
+            <CardTitle className="text-success">
+              {justClaimed ? 'Claim Successful!' : 'Already Claimed'}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="bg-success/5 border border-success/20 rounded-xl p-4 mb-6">
