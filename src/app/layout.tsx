@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
-import { headers } from 'next/headers';
+// import { headers } from 'next/headers'; // Unused for now
 import './globals.css';
 import AppKitProvider from '@/context/AppKitProvider';
 
