@@ -1,9 +1,4 @@
 {
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "functions": {
-    "api/**/*.ts": {
-      "maxDuration": 30
-    }
-  }
+  "buildCommand": "npm run build"
 }
