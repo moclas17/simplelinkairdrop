@@ -1584,6 +1584,163 @@ class Database {
       };
     }
   }
+
+  async processClaim(linkId, wallet) {
+    console.log('[DB] Processing claim:', { linkId, wallet });
+    
+    try {
+      // First, get the claim to check if it's single or multi-claim
+      const claim = await this.get(linkId);
+      
+      if (!claim) {
+        console.log('[DB] Claim not found:', linkId);
+        return {
+          success: false,
+          error: 'Claim not found'
+        };
+      }
+
+      // Check if it's a multi-claim
+      if (claim.is_multi_claim) {
+        return this.processMultiClaim(linkId, wallet);
+      } else {
+        return this.processSingleClaim(linkId, wallet);
+      }
+
+    } catch (error) {
+      console.error('[DB] Error processing claim:', error);
+      return {
+        success: false,
+        error: 'Failed to process claim',
+        details: error.message
+      };
+    }
+  }
+
+  async processSingleClaim(linkId, wallet) {
+    console.log('[DB] Processing single claim:', { linkId, wallet });
+    
+    try {
+      // Reserve the claim
+      const reservation = await this.reserve(linkId);
+      
+      if (!reservation) {
+        return {
+          success: false,
+          error: 'Claim is no longer available'
+        };
+      }
+
+      // Get claim with campaign info for token details
+      const claimWithCampaign = await this.getClaimWithCampaignInfo(linkId);
+      
+      if (!claimWithCampaign) {
+        await this.rollback(linkId);
+        return {
+          success: false,
+          error: 'Claim information not found'
+        };
+      }
+
+      // Mock transaction for testing (replace with actual blockchain transaction)
+      const mockTxHash = `0x${Math.random().toString(16).substring(2, 15)}${Math.random().toString(16).substring(2, 15)}`;
+      
+      // Mark as claimed
+      await this.markClaimed(linkId, mockTxHash);
+
+      console.log('[DB] Single claim processed successfully');
+      return {
+        success: true,
+        txHash: mockTxHash,
+        message: `Successfully claimed ${claimWithCampaign.amount} ${claimWithCampaign.campaigns.token_symbol}`,
+        amount: claimWithCampaign.amount,
+        tokenSymbol: claimWithCampaign.campaigns.token_symbol
+      };
+
+    } catch (error) {
+      console.error('[DB] Error processing single claim:', error);
+      // Rollback on error
+      try {
+        await this.rollback(linkId);
+      } catch (rollbackError) {
+        console.error('[DB] Rollback failed:', rollbackError);
+      }
+      
+      return {
+        success: false,
+        error: 'Failed to process claim',
+        details: error.message
+      };
+    }
+  }
+
+  async processMultiClaim(linkId, wallet) {
+    console.log('[DB] Processing multi claim:', { linkId, wallet });
+    
+    try {
+      // Reserve the multi-claim
+      const reservation = await this.reserveMultiClaim(linkId, wallet);
+      
+      if (!reservation) {
+        return {
+          success: false,
+          error: 'Claim is no longer available or you have already claimed'
+        };
+      }
+
+      // Check if this is an error response (already claimed)
+      if (reservation.error === 'already_claimed') {
+        return {
+          success: false,
+          error: 'You have already claimed from this link',
+          details: `Transaction: ${reservation.claimData.tx_hash}`
+        };
+      }
+
+      // Get claim with campaign info for token details
+      const claimWithCampaign = await this.getClaimWithCampaignInfo(linkId);
+      
+      if (!claimWithCampaign) {
+        await this.rollbackMultiClaim(linkId, wallet, reservation.campaign_id);
+        return {
+          success: false,
+          error: 'Claim information not found'
+        };
+      }
+
+      // Mock transaction for testing (replace with actual blockchain transaction)
+      const mockTxHash = `0x${Math.random().toString(16).substring(2, 15)}${Math.random().toString(16).substring(2, 15)}`;
+      
+      // Mark as claimed
+      await this.markMultiClaimed(linkId, wallet, mockTxHash, reservation.amount, reservation.campaign_id);
+
+      console.log('[DB] Multi claim processed successfully');
+      return {
+        success: true,
+        txHash: mockTxHash,
+        message: `Successfully claimed ${reservation.amount} ${claimWithCampaign.campaigns.token_symbol}`,
+        amount: reservation.amount,
+        tokenSymbol: claimWithCampaign.campaigns.token_symbol
+      };
+
+    } catch (error) {
+      console.error('[DB] Error processing multi claim:', error);
+      // Rollback on error
+      try {
+        if (reservation && reservation.campaign_id) {
+          await this.rollbackMultiClaim(linkId, wallet, reservation.campaign_id);
+        }
+      } catch (rollbackError) {
+        console.error('[DB] Multi rollback failed:', rollbackError);
+      }
+      
+      return {
+        success: false,
+        error: 'Failed to process claim',
+        details: error.message
+      };
+    }
+  }
 }
 
 const db = new Database();
