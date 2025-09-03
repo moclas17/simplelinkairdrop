@@ -3,13 +3,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import { 
   ArrowLeft, 
   Plus, 
-  Download, 
   Copy, 
   ExternalLink, 
   Wallet,
@@ -32,13 +31,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const { address, isConnected, disconnectWallet } = useWallet();
   
-  // Form states
-  const [count, setCount] = useState('');
-  const [amount, setAmount] = useState('');
-  const [expiresInHours, setExpiresInHours] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedLinks, setGeneratedLinks] = useState<string[]>([]);
-  const [error, setError] = useState('');
+  // Form states (removed legacy form variables)
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [checkingFunding, setCheckingFunding] = useState<string | null>(null);
@@ -228,59 +221,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGenerating(true);
-    setError('');
-    setGeneratedLinks([]);
-
-    try {
-      const response = await fetch('/api/claims/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-admin-token': process.env.NEXT_PUBLIC_ADMIN_TOKEN || '2b73c9c4e023564e6f91f7f5e74291c3b4',
-        },
-        body: JSON.stringify({
-          count: parseInt(count),
-          amount: parseFloat(amount),
-          expiresInHours: expiresInHours ? parseFloat(expiresInHours) : null,
-          campaign_id: address, // Use wallet address as campaign_id
-          wallet_address: address // Add wallet address to request
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate links');
-      }
-
-      const data = await response.json();
-      setGeneratedLinks(data.links);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to generate links';
-      setError(errorMessage);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-  };
-
-  const downloadLinks = () => {
-    const content = generatedLinks.join('\n');
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `claim-links-${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
   const handleLogout = () => {
     // Disconnect wallet directly
@@ -320,7 +260,16 @@ export default function DashboardPage() {
               Home
             </Link>
             <div className="h-6 w-px bg-border" />
-            <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
+            <div className="flex items-center gap-3">
+              <Image 
+                src="/chingadrop-logo.svg" 
+                alt="CHINGADROP" 
+                width={40} 
+                height={40}
+                className="opacity-80"
+              />
+              <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
+            </div>
           </div>
           
           {/* User info and logout */}
@@ -346,115 +295,20 @@ export default function DashboardPage() {
               Quick Actions
             </CardTitle>
             <CardDescription>
-              Create new campaigns or generate links for existing ones
+              Create new token distribution campaigns
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Link 
-                href="/campaigns/create"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-primary/30 bg-gradient-to-b from-primary to-primary/80 px-6 py-4 text-sm font-semibold text-primary-foreground transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Campaign
-              </Link>
-              
-              <div className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-secondary px-6 py-4 text-sm font-medium text-secondary-foreground opacity-75">
-                <Shield className="h-4 w-4" />
-                Generate Links (Select Campaign)
-              </div>
-            </div>
+            <Link 
+              href="/campaigns/create"
+              className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-primary/30 bg-gradient-to-b from-primary to-primary/80 px-6 py-4 text-sm font-semibold text-primary-foreground transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
+            >
+              <Plus className="h-4 w-4" />
+              Create New Campaign
+            </Link>
           </CardContent>
         </Card>
 
-        {/* Legacy Quick Generation Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Legacy: Quick Generate Links
-            </CardTitle>
-            <CardDescription>
-              Quick generation using wallet address as campaign ID (legacy method)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleGenerate} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label htmlFor="count" className="block text-sm font-medium text-foreground mb-2">
-                    Number of Links
-                  </label>
-                  <Input
-                    id="count"
-                    type="number"
-                    placeholder="10"
-                    value={count}
-                    onChange={(e) => setCount(e.target.value)}
-                    min="1"
-                    max="100"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium text-foreground mb-2">
-                    Amount per Link
-                  </label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    placeholder="100"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    min="0"
-                    step="any"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="expires" className="block text-sm font-medium text-foreground mb-2">
-                    Expires In (Hours)
-                  </label>
-                  <Input
-                    id="expires"
-                    type="number"
-                    placeholder="24 (optional)"
-                    value={expiresInHours}
-                    onChange={(e) => setExpiresInHours(e.target.value)}
-                    min="1"
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
-                  {error}
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isGenerating || !count || !amount}
-                className="w-full md:w-auto"
-              >
-                {isGenerating ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2" />
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Generate Links
-                  </>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
 
         {/* My Campaigns - Modern Grid Layout */}
         <Card className="overflow-hidden">
@@ -832,56 +686,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Generated Links */}
-        {generatedLinks.length > 0 && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Generated Links ({generatedLinks.length})</CardTitle>
-                  <CardDescription>
-                    Share these links with users to claim tokens
-                  </CardDescription>
-                </div>
-                <Button onClick={downloadLinks}>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {generatedLinks.map((link, index) => (
-                  <div 
-                    key={index}
-                    className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 border"
-                  >
-                    <span className="text-sm text-muted w-8">
-                      {index + 1}.
-                    </span>
-                    <code className="flex-1 text-xs font-mono text-foreground truncate">
-                      {link}
-                    </code>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(link)}
-                    >
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(link, '_blank')}
-                    >
-                      <ExternalLink className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Info Card */}
         <Card>

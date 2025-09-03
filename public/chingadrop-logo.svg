@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800">
+  <defs>
+    <style>
+      .logo-text {
+        fill: #e5e7eb;
+        font-family: 'Arial Black', Arial, sans-serif;
+        font-weight: 900;
+        text-anchor: middle;
+      }
+      .parachute {
+        fill: none;
+        stroke: #e5e7eb;
+        stroke-width: 8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+    </style>
+  </defs>
+  
+  <!-- Parachute -->
+  <g class="parachute">
+    <!-- Main canopy -->
+    <path d="M200 150 C200 80, 280 80, 400 80 C520 80, 600 80, 600 150 C600 200, 550 240, 400 240 C250 240, 200 200, 200 150 Z" />
+    
+    <!-- Parachute lines -->
+    <line x1="200" y1="150" x2="220" y2="240" />
+    <line x1="280" y1="100" x2="260" y2="240" />
+    <line x1="400" y1="80" x2="400" y2="240" />
+    <line x1="520" y1="100" x2="540" y2="240" />
+    <line x1="600" y1="150" x2="580" y2="240" />
+    
+    <!-- Canopy segments -->
+    <path d="M200 150 C250 120, 350 120, 400 120" />
+    <path d="M400 120 C450 120, 550 120, 600 150" />
+    <path d="M280 100 C320 110, 380 110, 400 110" />
+    <path d="M400 110 C420 110, 480 110, 520 100" />
+  </g>
+  
+  <!-- CHINGA text -->
+  <text x="400" y="380" class="logo-text" font-size="120">CHINGA</text>
+  
+  <!-- DROP text -->
+  <text x="400" y="520" class="logo-text" font-size="120">DROP</text>
+  
+  <!-- .xyz text -->
+  <text x="400" y="600" class="logo-text" font-size="60">.xyz</text>
+</svg>
