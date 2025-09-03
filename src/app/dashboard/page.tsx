@@ -221,6 +221,9 @@ export default function DashboardPage() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
 
   const handleLogout = () => {
     // Disconnect wallet directly
