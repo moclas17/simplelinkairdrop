@@ -1642,19 +1642,36 @@ class Database {
         };
       }
 
-      // Mock transaction for testing (replace with actual blockchain transaction)
-      const mockTxHash = `0x${Math.random().toString(16).substring(2, 15)}${Math.random().toString(16).substring(2, 15)}`;
+      // Send real blockchain transaction
+      const tokenSendResult = await this.sendTokens(
+        wallet,
+        claimWithCampaign.campaigns.token_address,
+        claimWithCampaign.amount,
+        claimWithCampaign.campaigns.token_decimals,
+        claimWithCampaign.campaigns.chain_id
+      );
+
+      if (!tokenSendResult.success) {
+        await this.rollback(linkId);
+        return {
+          success: false,
+          error: 'Failed to send tokens',
+          details: tokenSendResult.error
+        };
+      }
       
-      // Mark as claimed
-      await this.markClaimed(linkId, mockTxHash);
+      // Mark as claimed with real transaction hash
+      await this.markClaimed(linkId, tokenSendResult.txHash);
 
       console.log('[DB] Single claim processed successfully');
       return {
         success: true,
-        txHash: mockTxHash,
+        txHash: tokenSendResult.txHash,
         message: `Successfully claimed ${claimWithCampaign.amount} ${claimWithCampaign.campaigns.token_symbol}`,
         amount: claimWithCampaign.amount,
-        tokenSymbol: claimWithCampaign.campaigns.token_symbol
+        tokenSymbol: claimWithCampaign.campaigns.token_symbol,
+        blockNumber: tokenSendResult.blockNumber,
+        gasUsed: tokenSendResult.gasUsed
       };
 
     } catch (error) {
@@ -1708,19 +1725,36 @@ class Database {
         };
       }
 
-      // Mock transaction for testing (replace with actual blockchain transaction)
-      const mockTxHash = `0x${Math.random().toString(16).substring(2, 15)}${Math.random().toString(16).substring(2, 15)}`;
+      // Send real blockchain transaction
+      const tokenSendResult = await this.sendTokens(
+        wallet,
+        claimWithCampaign.campaigns.token_address,
+        reservation.amount,
+        claimWithCampaign.campaigns.token_decimals,
+        claimWithCampaign.campaigns.chain_id
+      );
+
+      if (!tokenSendResult.success) {
+        await this.rollbackMultiClaim(linkId, wallet, reservation.campaign_id);
+        return {
+          success: false,
+          error: 'Failed to send tokens',
+          details: tokenSendResult.error
+        };
+      }
       
-      // Mark as claimed
-      await this.markMultiClaimed(linkId, wallet, mockTxHash, reservation.amount, reservation.campaign_id);
+      // Mark as claimed with real transaction hash
+      await this.markMultiClaimed(linkId, wallet, tokenSendResult.txHash, reservation.amount, reservation.campaign_id);
 
       console.log('[DB] Multi claim processed successfully');
       return {
         success: true,
-        txHash: mockTxHash,
+        txHash: tokenSendResult.txHash,
         message: `Successfully claimed ${reservation.amount} ${claimWithCampaign.campaigns.token_symbol}`,
         amount: reservation.amount,
-        tokenSymbol: claimWithCampaign.campaigns.token_symbol
+        tokenSymbol: claimWithCampaign.campaigns.token_symbol,
+        blockNumber: tokenSendResult.blockNumber,
+        gasUsed: tokenSendResult.gasUsed
       };
 
     } catch (error) {
@@ -1739,6 +1773,132 @@ class Database {
         error: 'Failed to process claim',
         details: error.message
       };
+    }
+  }
+
+  async sendTokens(recipientWallet, tokenAddress, amount, decimals, chainId) {
+    console.log('[DB] Sending tokens:', { recipientWallet, tokenAddress, amount, decimals, chainId });
+    
+    try {
+      const { ethers } = await import('ethers');
+      const { getRpcUrl } = await import('./networks.js');
+      
+      // Get the hot wallet private key from environment
+      const privateKey = process.env.PRIVATE_KEY;
+      if (!privateKey) {
+        throw new Error('PRIVATE_KEY not configured');
+      }
+
+      // Get RPC URL for the chain
+      const rpcUrl = getRpcUrl(chainId);
+      if (!rpcUrl) {
+        throw new Error(`No RPC URL configured for chain ID ${chainId}`);
+      }
+
+      // Create provider and wallet
+      const provider = new ethers.JsonRpcProvider(rpcUrl, {
+        chainId: parseInt(chainId),
+        name: `chain-${chainId}`,
+        ensAddress: null
+      });
+
+      const wallet = new ethers.Wallet(privateKey, provider);
+      console.log('[DB] Using wallet address:', wallet.address);
+
+      let tx;
+
+      // Check if it's a native token
+      if (this.isNativeToken(tokenAddress)) {
+        console.log('[DB] Sending native tokens');
+        tx = await this.sendNativeTokens(wallet, recipientWallet, amount);
+      } else {
+        console.log('[DB] Sending ERC-20 tokens');
+        tx = await this.sendERC20Tokens(wallet, recipientWallet, tokenAddress, amount, decimals);
+      }
+
+      console.log('[DB] Transaction sent:', tx.hash);
+      
+      // Wait for confirmation
+      console.log('[DB] Waiting for transaction confirmation...');
+      const receipt = await tx.wait();
+      console.log('[DB] Transaction confirmed in block:', receipt.blockNumber);
+
+      return {
+        success: true,
+        txHash: tx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: receipt.gasUsed.toString()
+      };
+
+    } catch (error) {
+      console.error('[DB] Error sending tokens:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  async sendNativeTokens(wallet, recipientWallet, amount) {
+    console.log('[DB] Sending native tokens:', { amount, to: recipientWallet });
+    
+    try {
+      const { ethers } = await import('ethers');
+      
+      // Convert amount to wei (native tokens always use 18 decimals)
+      const amountInWei = ethers.parseEther(amount.toString());
+      console.log('[DB] Amount in wei:', amountInWei.toString());
+
+      // Create transaction
+      const tx = await wallet.sendTransaction({
+        to: recipientWallet,
+        value: amountInWei
+      });
+
+      return tx;
+
+    } catch (error) {
+      console.error('[DB] Error sending native tokens:', error);
+      throw error;
+    }
+  }
+
+  async sendERC20Tokens(wallet, recipientWallet, tokenAddress, amount, decimals) {
+    console.log('[DB] Sending ERC-20 tokens:', { tokenAddress, amount, decimals, to: recipientWallet });
+    
+    try {
+      const { ethers } = await import('ethers');
+      
+      // ERC20 ABI for transfer function
+      const erc20ABI = [
+        "function transfer(address to, uint256 amount) returns (bool)",
+        "function balanceOf(address owner) view returns (uint256)",
+        "function decimals() view returns (uint8)"
+      ];
+
+      // Create contract instance
+      const tokenContract = new ethers.Contract(tokenAddress, erc20ABI, wallet);
+
+      // Convert amount to the proper units based on decimals
+      const amountInUnits = ethers.parseUnits(amount.toString(), decimals);
+      console.log('[DB] Amount in token units:', amountInUnits.toString());
+
+      // Check wallet balance first
+      const balance = await tokenContract.balanceOf(wallet.address);
+      console.log('[DB] Wallet balance:', ethers.formatUnits(balance, decimals));
+
+      if (balance < amountInUnits) {
+        throw new Error(`Insufficient balance. Required: ${amount}, Available: ${ethers.formatUnits(balance, decimals)}`);
+      }
+
+      // Send the transaction
+      const tx = await tokenContract.transfer(recipientWallet, amountInUnits);
+      
+      return tx;
+
+    } catch (error) {
+      console.error('[DB] Error sending ERC-20 tokens:', error);
+      throw error;
     }
   }
 }
