@@ -783,7 +783,7 @@ export default function DashboardPage() {
                             <div className="text-xs text-yellow-700 space-y-1 font-medium">
                               <div>• Send <strong>{campaign.total_budget || campaign.required_balance} {campaign.token_symbol}</strong> from your connected wallet</div>
                               <div>• Use the deposit address above as the recipient</div>
-                              <div>• Click "Verify Funding" once transaction confirms</div>
+                              <div>• Click &quot;Verify Funding&quot; once transaction confirms</div>
                             </div>
                           </div>
                         </div>
