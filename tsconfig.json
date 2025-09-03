@@ -23,6 +23,7 @@
       "@/*": ["./src/*"],
       "@/components/*": ["./src/components/*"],
       "@/lib/*": ["./src/lib/*"],
+      "@/lib/db": ["./lib/db.js"],
       "@/api/*": ["./api/*"]
     }
   },

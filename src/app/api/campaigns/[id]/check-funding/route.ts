@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db from "@/lib/db";
 
 interface RouteContext {
   params: Promise<{
@@ -25,7 +25,15 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     // Use the database function to check funding
     console.log('[FUNDING] About to call checkCampaignFunding with:', { campaignId, walletAddress });
-    const result = await (db as any).checkCampaignFunding(campaignId, walletAddress);
+    const result = await (db as { checkCampaignFunding: (id: string, wallet: string) => Promise<{
+      funded: boolean;
+      campaign?: unknown;
+      transaction?: unknown;
+      amount?: number;
+      message?: string;
+      error?: string;
+      details?: string;
+    }> }).checkCampaignFunding(campaignId, walletAddress);
     
     console.log('[FUNDING] Check result:', JSON.stringify(result, null, 2));
     
@@ -48,14 +56,15 @@ export async function POST(req: NextRequest, context: RouteContext) {
       });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[FUNDING] Error checking funding:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { 
         success: false,
         funded: false,
         error: 'Failed to check funding', 
-        details: error.message 
+        details: errorMessage 
       },
       { status: 500 }
     );

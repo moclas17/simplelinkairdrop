@@ -43,7 +43,15 @@ export default function CreateCampaignPage() {
   const [tokenValidation, setTokenValidation] = useState<{
     isValidating: boolean;
     isValid: boolean;
-    tokenInfo: any;
+    tokenInfo: {
+      name?: string;
+      symbol?: string;
+      decimals?: number;
+      address?: string;
+      totalSupply?: string;
+      chainId?: number;
+      network?: string;
+    } | null;
     error: string;
   }>({
     isValidating: false,
@@ -88,7 +96,7 @@ export default function CreateCampaignPage() {
           setTokenValidation({
             isValidating: false,
             isValid: true,
-            tokenInfo: data.tokenInfo,
+            tokenInfo: data.tokenInfo || null,
             error: ''
           });
         } else {
@@ -99,12 +107,13 @@ export default function CreateCampaignPage() {
             error: data.error || 'Token validation failed'
           });
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to validate token';
         setTokenValidation({
           isValidating: false,
           isValid: false,
           tokenInfo: null,
-          error: err.message || 'Failed to validate token'
+          error: errorMessage
         });
       }
     };
@@ -113,17 +122,18 @@ export default function CreateCampaignPage() {
     return () => clearTimeout(timeoutId);
   }, [tokenAddress, chainId]);
 
-  const isNativeToken = (address: string) => {
-    const normalized = address.toLowerCase();
-    return normalized === 'native' || 
-           normalized === '0x0000000000000000000000000000000000000000' ||
-           normalized === '0x0' ||
-           normalized === 'eth' ||
-           normalized === 'matic' ||
-           normalized === 'bnb' ||
-           normalized === 'mnt' ||
-           normalized === 'mon';
-  };
+  // Native token check function (commented out as not currently used)
+  // const isNativeToken = (address: string) => {
+  //   const normalized = address.toLowerCase();
+  //   return normalized === 'native' || 
+  //          normalized === '0x0000000000000000000000000000000000000000' ||
+  //          normalized === '0x0' ||
+  //          normalized === 'eth' ||
+  //          normalized === 'matic' ||
+  //          normalized === 'bnb' ||
+  //          normalized === 'mnt' ||
+  //          normalized === 'mon';
+  // };
 
   const selectedNetwork = networks.find(n => n.chainId.toString() === chainId);
   const totalBudget = amountPerClaim && totalClaims 
@@ -156,7 +166,7 @@ export default function CreateCampaignPage() {
         }),
       });
 
-      const data = await response.json();
+      const data: { details?: string; error?: string } = await response.json();
 
       if (!response.ok) {
         throw new Error(data.details || data.error || 'Failed to create campaign');
@@ -169,8 +179,9 @@ export default function CreateCampaignPage() {
         router.push('/dashboard');
       }, 2000);
 
-    } catch (err: any) {
-      setError(err.message || 'Failed to create campaign');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create campaign';
+      setError(errorMessage);
     } finally {
       setIsCreating(false);
     }
@@ -196,7 +207,7 @@ export default function CreateCampaignPage() {
             <CheckCircle className="h-16 w-16 text-success mx-auto mb-4" />
             <h2 className="text-xl font-bold text-foreground mb-2">Campaign Created!</h2>
             <p className="text-muted mb-4">
-              Your campaign has been created successfully. You'll be redirected to your dashboard.
+              Your campaign has been created successfully. You&apos;ll be redirected to your dashboard.
             </p>
             <div className="space-y-2 text-sm text-muted">
               <p>Next steps:</p>
@@ -311,13 +322,13 @@ export default function CreateCampaignPage() {
                 <Input
                   id="tokenAddress"
                   type="text"
-                  placeholder="0x... or 'native' for native token"
+                  placeholder="0x... or &apos;native&apos; for native token"
                   value={tokenAddress}
                   onChange={(e) => setTokenAddress(e.target.value)}
                   required
                 />
                 <div className="mt-2 text-xs text-muted">
-                  Use 'native' for {selectedNetwork?.currency || 'ETH'}, or enter ERC-20 contract address
+                  Use &apos;native&apos; for {selectedNetwork?.currency || 'ETH'}, or enter ERC-20 contract address
                 </div>
                 
                 {/* Token Validation Status */}
@@ -335,12 +346,12 @@ export default function CreateCampaignPage() {
                           Token Validated Successfully
                         </div>
                         <div className="text-xs text-muted space-y-1">
-                          <p><span className="font-medium">Name:</span> {tokenValidation.tokenInfo.name}</p>
-                          <p><span className="font-medium">Symbol:</span> {tokenValidation.tokenInfo.symbol}</p>
-                          <p><span className="font-medium">Decimals:</span> {tokenValidation.tokenInfo.decimals}</p>
-                          {tokenValidation.tokenInfo.address !== 'NATIVE' && (
+                          <p><span className="font-medium">Name:</span> {tokenValidation.tokenInfo?.name || 'N/A'}</p>
+                          <p><span className="font-medium">Symbol:</span> {tokenValidation.tokenInfo?.symbol || 'N/A'}</p>
+                          <p><span className="font-medium">Decimals:</span> {tokenValidation.tokenInfo?.decimals || 'N/A'}</p>
+                          {tokenValidation.tokenInfo?.address !== 'NATIVE' && (
                             <p className="font-mono text-xs break-all">
-                              <span className="font-medium">Address:</span> {tokenValidation.tokenInfo.address}
+                              <span className="font-medium">Address:</span> {tokenValidation.tokenInfo?.address || 'N/A'}
                             </p>
                           )}
                         </div>

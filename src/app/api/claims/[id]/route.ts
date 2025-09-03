@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db from "@/lib/db";
 
 interface RouteContext {
   params: Promise<{
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
   }
 
   try {
-    const claimData = await (db as any).getClaimWithCampaignInfo(id);
+    const claimData = await (db as { getClaimWithCampaignInfo: (id: string) => Promise<unknown> }).getClaimWithCampaignInfo(id);
     
     console.log('[CLAIMS] Found claim data:', claimData ? 'Yes' : 'No');
     
@@ -27,10 +27,11 @@ export async function GET(req: NextRequest, context: RouteContext) {
     }
 
     return NextResponse.json(claimData);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[CLAIMS] Get claim error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message || 'Unknown error' },
+      { error: 'Internal server error', details: errorMessage },
       { status: 500 }
     );
   }

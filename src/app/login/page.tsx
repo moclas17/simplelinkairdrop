@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, Wallet, Shield, CheckCircle, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Wallet, CheckCircle } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 
 export default function LoginPage() {

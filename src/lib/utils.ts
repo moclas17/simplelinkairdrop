@@ -10,7 +10,7 @@ export function formatAddress(address: string): string {
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
-export function formatAmount(amount: number | string, decimals: number = 18): string {
+export function formatAmount(amount: number | string): string {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   return num.toLocaleString('en-US', { maximumFractionDigits: 4 });
 }

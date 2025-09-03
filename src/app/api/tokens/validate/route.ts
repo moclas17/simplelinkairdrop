@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db from "@/lib/db";
 import { getRpcUrl } from '../../../../../lib/networks.js';
 
 export async function POST(req: NextRequest) {
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Use the database validation function
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const validation = await (db as any).validateTokenContract(tokenAddress.trim(), chainId, rpcUrl);
     
     console.log('[TOKENS] Validation result:', validation);
@@ -43,12 +44,13 @@ export async function POST(req: NextRequest) {
       });
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[TOKENS] Validation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { 
         isValid: false,
-        error: error.message || 'Token validation failed' 
+        error: errorMessage 
       },
       { status: 500 }
     );

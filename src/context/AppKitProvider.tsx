@@ -20,7 +20,7 @@ if (projectId) {
   createAppKit({
     adapters: [wagmiAdapter],
     projectId,
-    networks: [mainnet, arbitrum, optimism, base] as any,
+    networks: [mainnet, arbitrum, optimism, base],
     defaultNetwork: mainnet,
     metadata,
     features: {
@@ -39,11 +39,9 @@ if (projectId) {
 const queryClient = new QueryClient()
 
 export default function AppKitProvider({ 
-  children, 
-  cookies 
+  children 
 }: { 
   children: ReactNode
-  cookies?: string | null 
 }) {
   return (
     <WagmiProvider config={wagmiAdapter.wagmiConfig}>

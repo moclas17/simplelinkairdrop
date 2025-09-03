@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { getNetworkInfo, getExplorerUrl } from '../../../lib/networks.js';
+import type { Campaign, FundingResult, ClaimLink, CampaignStats } from '@/types/database';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -38,24 +39,17 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLinks, setGeneratedLinks] = useState<string[]>([]);
   const [error, setError] = useState('');
-  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [checkingFunding, setCheckingFunding] = useState<string | null>(null);
-  const [fundingResults, setFundingResults] = useState<Record<string, any>>({});
-  const [campaignLinks, setCampaignLinks] = useState<Record<string, any>>({});
-  const [campaignStats, setCampaignStats] = useState<Record<string, any>>({});
+  const [fundingResults, setFundingResults] = useState<Record<string, FundingResult>>({});
+  const [campaignLinks, setCampaignLinks] = useState<Record<string, ClaimLink[]>>({});
+  const [campaignStats, setCampaignStats] = useState<Record<string, CampaignStats>>({});
   const [loadingStates, setLoadingStates] = useState<Record<string, string>>({});
   const [showLinksModal, setShowLinksModal] = useState<string | null>(null);
   const [showStatsModal, setShowStatsModal] = useState<string | null>(null);
 
-  // Load campaigns when wallet connects
-  useEffect(() => {
-    if (isConnected && address) {
-      loadCampaigns();
-    }
-  }, [isConnected, address]);
-
-  const loadCampaigns = async () => {
+  const loadCampaigns = useCallback(async () => {
     if (!address) {
       console.error('No wallet address for loading campaigns');
       return;
@@ -86,7 +80,14 @@ export default function DashboardPage() {
     } finally {
       setLoadingCampaigns(false);
     }
-  };
+  }, [address]);
+
+  // Load campaigns when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      loadCampaigns();
+    }
+  }, [isConnected, address, loadCampaigns]);
 
   const checkCampaignFunding = async (campaignId: string) => {
     if (!address) {
@@ -256,8 +257,9 @@ export default function DashboardPage() {
 
       const data = await response.json();
       setGeneratedLinks(data.links);
-    } catch (err: any) {
-      setError(err.message || 'Failed to generate links');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to generate links';
+      setError(errorMessage);
     } finally {
       setIsGenerating(false);
     }
@@ -642,7 +644,7 @@ export default function DashboardPage() {
                                   size="sm"
                                   variant="outline"
                                   className="h-6 w-6 p-0"
-                                  onClick={() => navigator.clipboard.writeText(campaign.deposit_address)}
+                                  onClick={() => campaign.deposit_address && navigator.clipboard.writeText(campaign.deposit_address)}
                                 >
                                   <Copy className="h-3 w-3" />
                                 </Button>
@@ -701,7 +703,7 @@ export default function DashboardPage() {
                             <div className="text-xs text-foreground space-y-1">
                               <div>1. Send exactly <strong>{campaign.total_budget || campaign.required_balance} {campaign.token_symbol}</strong> from your connected wallet</div>
                               <div>2. To address: <strong>{campaign.deposit_address}</strong></div>
-                              <div>3. Click "Check Funding" once transaction is confirmed</div>
+                              <div>3. Click &quot;Check Funding&quot; once transaction is confirmed</div>
                             </div>
                           </div>
                         </div>
@@ -721,7 +723,7 @@ export default function DashboardPage() {
                               </div>
                               {fundingResults[campaign.id].transaction?.hash && (
                                 <div className="text-xs text-muted mt-1 font-mono">
-                                  TX: {fundingResults[campaign.id].transaction.hash.substring(0, 20)}...
+                                  TX: {fundingResults[campaign.id].transaction!.hash.substring(0, 20)}...
                                 </div>
                               )}
                             </div>
@@ -831,9 +833,9 @@ export default function DashboardPage() {
               </div>
               <div className="p-6 overflow-y-auto max-h-[60vh]">
                 <div className="space-y-3">
-                  {campaignLinks[showLinksModal].map((link: any, index: number) => (
+                  {campaignLinks[showLinksModal].map((link, index: number) => (
                     <div 
-                      key={link.id}
+                      key={(link as ClaimLink).id}
                       className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border"
                     >
                       <span className="text-sm text-muted w-8">
@@ -842,34 +844,34 @@ export default function DashboardPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs px-2 py-1 rounded bg-primary/20 text-primary">
-                            {link.type}
+                            {(link as ClaimLink).type}
                           </span>
-                          {link.status === 'claimed' && (
+                          {(link as ClaimLink).status === 'claimed' && (
                             <span className="text-xs px-2 py-1 rounded bg-success/20 text-success">
                               Claimed
                             </span>
                           )}
-                          {link.claimsUsed > 0 && (
+                          {(link as ClaimLink).claimsUsed && (link as ClaimLink).claimsUsed! > 0 && (
                             <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400">
-                              {link.claimsUsed} claimed
+                              {(link as ClaimLink).claimsUsed} claimed
                             </span>
                           )}
                         </div>
                         <code className="text-xs font-mono text-foreground">
-                          {`${window.location.origin}${link.url}`}
+                          {`${window.location.origin}${(link as ClaimLink).url}`}
                         </code>
                       </div>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => copyToClipboard(`${window.location.origin}${link.url}`)}
+                        onClick={() => copyToClipboard(`${window.location.origin}${(link as ClaimLink).url}`)}
                       >
                         <Copy className="h-3 w-3" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => window.open(`${window.location.origin}${link.url}`, '_blank')}
+                        onClick={() => window.open(`${window.location.origin}${(link as ClaimLink).url}`, '_blank')}
                       >
                         <ExternalLink className="h-3 w-3" />
                       </Button>
@@ -934,13 +936,13 @@ export default function DashboardPage() {
                   <div className="mt-6">
                     <h3 className="text-lg font-semibold text-foreground mb-3">Recent Claims</h3>
                     <div className="space-y-2 max-h-40 overflow-y-auto">
-                      {campaignStats[showStatsModal].recentClaims.map((claim: any, index: number) => (
+                      {campaignStats[showStatsModal].recentClaims!.map((claim, index: number) => (
                         <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                           <div className="font-mono text-xs text-foreground">
-                            {claim.claimerAddress.substring(0, 10)}...{claim.claimerAddress.substring(claim.claimerAddress.length - 8)}
+                            {(claim as { claimerAddress: string }).claimerAddress.substring(0, 10)}...{(claim as { claimerAddress: string }).claimerAddress.substring((claim as { claimerAddress: string }).claimerAddress.length - 8)}
                           </div>
                           <div className="text-xs text-muted">
-                            {new Date(claim.claimedAt).toLocaleDateString()}
+                            {new Date((claim as { claimedAt: string }).claimedAt).toLocaleDateString()}
                           </div>
                         </div>
                       ))}

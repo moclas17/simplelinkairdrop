@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ArrowLeft, ExternalLink, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import { apiClient, ClaimData } from '@/lib/api';
+import { apiClient } from '@/lib/api';
+// Using the type from api.ts
+import type { ClaimData } from '@/lib/api';
 import { formatAmount } from '@/lib/utils';
 
 export default function ClaimPage() {
@@ -22,13 +24,7 @@ export default function ClaimPage() {
   const [txHash, setTxHash] = useState('');
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (claimId) {
-      fetchClaimData();
-    }
-  }, [claimId]);
-
-  const fetchClaimData = async () => {
+  const fetchClaimData = useCallback(async () => {
     try {
       const data = await apiClient.getClaimData(claimId);
       setClaimData(data);
@@ -37,12 +33,19 @@ export default function ClaimPage() {
         setClaimed(true);
         setTxHash(data.tx_hash || '');
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load claim data');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load claim data';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [claimId]);
+
+  useEffect(() => {
+    if (claimId) {
+      fetchClaimData();
+    }
+  }, [claimId, fetchClaimData]);
 
   const handleClaim = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,8 +62,9 @@ export default function ClaimPage() {
         setClaimed(true);
         setTxHash(result.txHash);
       }
-    } catch (err: any) {
-      setError(err.message || 'Claim failed');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Claim failed';
+      setError(errorMessage);
     } finally {
       setClaiming(false);
     }

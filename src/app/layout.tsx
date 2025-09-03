@@ -20,7 +20,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const headersObj = await headers();
-  const cookies = headersObj.get('cookie');
+  // const cookies = headersObj.get('cookie'); // Unused for now
 
   return (
     <html lang="en" className="dark">
@@ -29,7 +29,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#7dd3fc" />
       </head>
       <body className={inter.className}>
-        <AppKitProvider cookies={cookies}>
+        <AppKitProvider>
           {children}
         </AppKitProvider>
       </body>

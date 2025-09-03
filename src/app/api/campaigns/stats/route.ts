@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   console.log('[CAMPAIGN-STATS] Request received');
@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     console.log('[CAMPAIGN-STATS] Getting stats for:', { campaignId, walletAddress });
 
     // Get campaign statistics
-    const result = await (db as any).getCampaignStats(campaignId, walletAddress);
+    const result = await (db as { getCampaignStats: (id: string, wallet: string) => Promise<unknown> }).getCampaignStats(campaignId, walletAddress);
     
     console.log('[CAMPAIGN-STATS] Stats result:', JSON.stringify(result, null, 2));
     
@@ -26,13 +26,14 @@ export async function POST(req: NextRequest) {
       message: 'Campaign statistics retrieved successfully'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[CAMPAIGN-STATS] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { 
         success: false,
         error: 'Failed to get campaign statistics', 
-        details: error.message 
+        details: errorMessage 
       },
       { status: 500 }
     );

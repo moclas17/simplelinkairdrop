@@ -1,8 +1,10 @@
+import { DashboardData, ActivityItem, Campaign } from '@/types/common';
+
 const API_BASE = process.env.NODE_ENV === 'production' 
   ? 'https://chingadrop.xyz' 
   : 'http://localhost:3000';
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success?: boolean;
   error?: string;
   details?: string;
@@ -97,7 +99,7 @@ class ApiClient {
   async getClaimData(id: string): Promise<ClaimData | null> {
     try {
       return await this.request(`/api/claims/${id}`);
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -121,26 +123,26 @@ class ApiClient {
   }
 
   // Dashboard
-  async getDashboardStats(adminToken: string): Promise<any> {
+  async getDashboardStats(adminToken: string): Promise<DashboardData> {
     return this.request('/api/dashboard/stats', {
       headers: { 'x-admin-token': adminToken },
     });
   }
 
-  async getDashboardActivity(adminToken: string): Promise<any> {
+  async getDashboardActivity(adminToken: string): Promise<ActivityItem[]> {
     return this.request('/api/dashboard/activity', {
       headers: { 'x-admin-token': adminToken },
     });
   }
 
   // Campaigns
-  async getCampaigns(adminToken: string): Promise<any[]> {
+  async getCampaigns(adminToken: string): Promise<Campaign[]> {
     return this.request('/api/campaigns', {
       headers: { 'x-admin-token': adminToken },
     });
   }
 
-  async createCampaign(data: any, adminToken: string): Promise<any> {
+  async createCampaign(data: Campaign, adminToken: string): Promise<Campaign> {
     return this.request('/api/campaigns/create', {
       method: 'POST',
       headers: { 'x-admin-token': adminToken },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '../../../../lib/db';
+import db from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   console.log('[CAMPAIGNS] GET request received');
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     console.log('[CAMPAIGNS] Getting campaigns for wallet:', walletAddress);
     
     // Get campaigns for the user
-    const campaigns = await (db as any).getUserCampaigns(walletAddress);
+    const campaigns = await (db as { getUserCampaigns: (wallet: string) => Promise<unknown[]> }).getUserCampaigns(walletAddress);
     
     console.log('[CAMPAIGNS] Raw campaigns result:', campaigns);
     console.log('[CAMPAIGNS] Found campaigns count:', campaigns?.length || 0);
@@ -31,11 +31,13 @@ export async function GET(req: NextRequest) {
     
     return NextResponse.json({ campaigns: campaigns || [] });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[CAMPAIGNS] Error getting campaigns:', error);
-    console.error('[CAMPAIGNS] Error stack:', error.stack);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : undefined;
+    if (errorStack) console.error('[CAMPAIGNS] Error stack:', errorStack);
     return NextResponse.json(
-      { error: 'Failed to get campaigns', details: error.message },
+      { error: 'Failed to get campaigns', details: errorMessage },
       { status: 500 }
     );
   }
@@ -100,7 +102,7 @@ export async function POST(req: NextRequest) {
     console.log('[CAMPAIGNS] Creating campaign with data:', campaignData);
 
     // Create campaign using the database function
-    const campaign = await (db as any).createCampaign(campaignData);
+    const campaign = await (db as { createCampaign: (data: unknown) => Promise<{ id: string }> }).createCampaign(campaignData);
     
     console.log('[CAMPAIGNS] Campaign created successfully:', campaign.id);
     
@@ -110,13 +112,14 @@ export async function POST(req: NextRequest) {
       message: 'Campaign created successfully'
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[CAMPAIGNS] Error creating campaign:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { 
         error: 'Failed to create campaign', 
-        details: error.message,
-        ...(error.message.includes('Invalid token') && { 
+        details: errorMessage,
+        ...(errorMessage.includes('Invalid token') && { 
           type: 'token_validation_error'
         })
       },

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   console.log('[CLAIMS] Process claim request received');
@@ -16,6 +16,7 @@ export async function POST(req: NextRequest) {
     console.log('[CLAIMS] Processing claim:', { wallet, linkId });
 
     // Process the claim using the database function
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const result = await (db as any).processClaim(linkId, wallet);
     
     console.log('[CLAIMS] Claim result:', result.success ? 'Success' : 'Failed');
@@ -37,13 +38,14 @@ export async function POST(req: NextRequest) {
       );
     }
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[CLAIMS] Process claim error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { 
         success: false,
         error: 'Failed to process claim', 
-        details: error.message 
+        details: errorMessage 
       },
       { status: 500 }
     );

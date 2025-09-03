@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
+import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   console.log('[CAMPAIGN-LINKS] Request received');
@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
     console.log('[CAMPAIGN-LINKS] Getting links for:', { campaignId, walletAddress });
 
     // Get existing links for campaign
-    const result = await (db as any).getExistingLinksForCampaign(campaignId, walletAddress);
+    const result = await (db as { getExistingLinksForCampaign: (id: string, wallet: string) => Promise<{
+      links?: unknown[];
+      campaign?: unknown;
+      message?: string;
+    }> }).getExistingLinksForCampaign(campaignId, walletAddress);
     
     console.log('[CAMPAIGN-LINKS] Found links:', result.links?.length || 0);
     
@@ -27,13 +31,14 @@ export async function POST(req: NextRequest) {
       message: result.message
     });
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[CAMPAIGN-LINKS] Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       { 
         success: false,
         error: 'Failed to get campaign links', 
-        details: error.message 
+        details: errorMessage 
       },
       { status: 500 }
     );
