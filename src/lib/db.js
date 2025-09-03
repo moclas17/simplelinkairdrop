@@ -20,7 +20,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
 
 console.log('[DB] Supabase client initialized');
 
-export default {
+class Database {
   // Original single-claim functions
   async get(id) {
     console.log('[DB] Getting claim:', id);
@@ -1584,7 +1584,7 @@ export default {
       };
     }
   }
-};
+}
 
 const db = new Database();
 export default db;
