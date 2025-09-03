@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from "@/lib/db";
-import { getRpcUrl } from '../../../../../lib/networks.js';
+import { getRpcUrl } from '@/lib/networks.js';
 
 export async function POST(req: NextRequest) {
   console.log('[TOKENS] Validation request received');

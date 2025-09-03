@@ -25,7 +25,7 @@ import {
   X
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
-import { getNetworkInfo, getExplorerUrl } from '../../../lib/networks.js';
+import { getNetworkInfo, getExplorerUrl } from '@/lib/networks.js';
 import type { Campaign, FundingResult, ClaimLink, CampaignStats } from '@/types/database';
 
 export default function DashboardPage() {

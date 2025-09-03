@@ -18,7 +18,7 @@ import {
   Network
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
-import { getAllNetworks } from '../../../../lib/networks.js';
+import { getAllNetworks } from '@/lib/networks.js';
 
 export default function CreateCampaignPage() {
   const router = useRouter();
