@@ -456,293 +456,377 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Existing Campaigns */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              My Campaigns ({campaigns.length})
-            </CardTitle>
-            <CardDescription>
-              Your previous token distribution campaigns
-            </CardDescription>
+        {/* My Campaigns - Modern Grid Layout */}
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-background via-background to-primary/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
+                    <Shield className="h-5 w-5 text-primary" />
+                  </div>
+                  My Campaigns
+                  <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full bg-primary/15 text-primary text-sm font-bold">
+                    {campaigns.length}
+                  </span>
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Manage your token distribution campaigns across multiple networks
+                </CardDescription>
+              </div>
+              {campaigns.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="text-sm text-muted font-medium">
+                    {campaigns.filter(c => c.status === 'active').length} Active
+                  </div>
+                  <div className="h-4 w-px bg-border" />
+                  <div className="text-sm text-muted font-medium">
+                    {campaigns.filter(c => c.status === 'pending_funding').length} Pending
+                  </div>
+                </div>
+              )}
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             {loadingCampaigns ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary" />
-                <span className="ml-2 text-muted">Loading campaigns...</span>
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto" />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-foreground">Loading your campaigns...</p>
+                    <p className="text-xs text-muted">Fetching data from blockchain</p>
+                  </div>
+                </div>
               </div>
             ) : campaigns.length === 0 ? (
-              <div className="text-center py-8 text-muted">
-                <Shield className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No campaigns found</p>
-                <p className="text-sm">Create your first campaign above</p>
+              <div className="text-center py-12">
+                <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-center mb-6">
+                  <Shield className="h-10 w-10 text-primary/60" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No campaigns yet</h3>
+                <p className="text-sm text-muted mb-6 max-w-md mx-auto">
+                  Create your first token distribution campaign to get started with decentralized airdrops
+                </p>
+                <Link 
+                  href="/campaigns/create"
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-semibold hover:scale-105 transition-transform"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Campaign
+                </Link>
               </div>
             ) : (
-              <div className="space-y-3">
-                {campaigns.map((campaign) => (
-                  <div
-                    key={campaign.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium text-foreground">{campaign.title}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          campaign.status === 'active' 
-                            ? 'bg-success/20 text-success' 
-                            : campaign.status === 'pending_funding'
-                            ? 'bg-yellow-500/20 text-yellow-600'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {campaign.status}
-                        </span>
-                      </div>
-                      <div className="text-sm text-muted">
-                        {campaign.token_symbol} • {campaign.amount_per_claim} per claim • {campaign.claim_type} claim
-                      </div>
-                      <div className="text-xs text-muted mt-1">
-                        Created: {new Date(campaign.created_at).toLocaleDateString()}
-                        {campaign.total_budget && (
-                          <span> • Budget: {campaign.total_budget} {campaign.token_symbol}</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {campaign.links_generated && (
-                        <span className="text-xs text-success">Links Generated</span>
-                      )}
-                      
-                      {/* Buttons for active campaigns */}
-                      {campaign.status === 'active' && (
-                        <>
-                          {campaign.links_generated ? (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => getCampaignLinks(campaign.id)}
-                                disabled={loadingStates[campaign.id] === 'links'}
-                                className="text-xs"
-                              >
-                                {loadingStates[campaign.id] === 'links' ? (
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
-                                ) : (
-                                  <Eye className="h-3 w-3 mr-1" />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {campaigns.map((campaign) => {
+                  const network = getNetworkInfo(campaign.chain_id);
+                  const isActive = campaign.status === 'active';
+                  const isPending = campaign.status === 'pending_funding';
+                  
+                  return (
+                    <div
+                      key={campaign.id}
+                      className={`group relative overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${
+                        isActive 
+                          ? 'border-success/30 bg-gradient-to-br from-success/5 via-background to-success/5 hover:border-success/50 hover:shadow-success/20' 
+                          : isPending
+                          ? 'border-yellow-500/30 bg-gradient-to-br from-yellow-500/5 via-background to-yellow-500/5 hover:border-yellow-500/50 hover:shadow-yellow-500/20'
+                          : 'border-border bg-gradient-to-br from-background to-muted/20 hover:border-border hover:shadow-muted/20'
+                      }`}
+                    >
+                      {/* Header */}
+                      <div className="p-5 pb-4">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold text-foreground text-lg leading-tight">
+                                {campaign.title}
+                              </h3>
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                                  isActive 
+                                    ? 'bg-success/20 text-success' 
+                                    : isPending
+                                    ? 'bg-yellow-500/20 text-yellow-600'
+                                    : 'bg-muted text-muted-foreground'
+                                }`}>
+                                  {campaign.status.replace('_', ' ')}
+                                </span>
+                                {campaign.links_generated && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                                    <CheckCircle className="h-3 w-3" />
+                                    Links Ready
+                                  </span>
                                 )}
-                                View Links
-                              </Button>
-                              
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => getCampaignStats(campaign.id)}
-                                disabled={loadingStates[campaign.id] === 'stats'}
-                                className="text-xs"
-                              >
-                                {loadingStates[campaign.id] === 'stats' ? (
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
-                                ) : (
-                                  <BarChart3 className="h-3 w-3 mr-1" />
-                                )}
-                                Stats
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => generateCampaignLinks(campaign.id)}
-                              disabled={loadingStates[campaign.id] === 'generating'}
-                              className="text-xs bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
-                            >
-                              {loadingStates[campaign.id] === 'generating' ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
-                                  Generating...
-                                </>
-                              ) : (
-                                <>
-                                  <LinkIcon className="h-3 w-3 mr-1" />
-                                  Generate Links
-                                </>
-                              )}
-                            </Button>
-                          )}
-                        </>
-                      )}
-                      
-                      {/* Check Funding Button for pending campaigns */}
-                      {campaign.status === 'pending_funding' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => checkCampaignFunding(campaign.id)}
-                          disabled={checkingFunding === campaign.id}
-                          className="text-xs"
-                        >
-                          {checkingFunding === campaign.id ? (
-                            <>
-                              <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1" />
-                              Checking...
-                            </>
-                          ) : (
-                            <>
-                              <Search className="h-3 w-3 mr-1" />
-                              Check Funding
-                            </>
-                          )}
-                        </Button>
-                      )}
-                      
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(campaign.id);
-                        }}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                    </div>
-
-                    {/* Funding Information for pending campaigns */}
-                    {campaign.status === 'pending_funding' && (
-                      <div className="mt-3 p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                        <div className="flex items-center gap-2 mb-3">
-                          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                          <span className="font-medium text-yellow-600">Funding Required</span>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                              <div className="text-xs text-muted uppercase tracking-wide">Amount to Send</div>
-                              <div className="font-mono text-foreground">
-                                {campaign.total_budget || campaign.required_balance} {campaign.token_symbol}
                               </div>
                             </div>
-                            <div>
-                              <div className="text-xs text-muted uppercase tracking-wide">Token Type</div>
-                              <div className="text-foreground">
-                                {campaign.token_address === 'NATIVE' || campaign.token_address?.toLowerCase() === 'native' 
-                                  ? `Native Token (${campaign.token_symbol})`
-                                  : 'ERC-20 Token'
-                                }
+                            
+                            <div className="flex items-center gap-4 text-sm">
+                              <div className="flex items-center gap-1.5">
+                                <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center">
+                                  <span className="text-xs font-bold text-primary">
+                                    {campaign.token_symbol?.charAt(0) || 'T'}
+                                  </span>
+                                </div>
+                                <span className="font-semibold text-foreground">{campaign.token_symbol}</span>
+                              </div>
+                              <div className="h-4 w-px bg-border" />
+                              <div className="text-muted">
+                                <span className="font-semibold text-foreground">{campaign.amount_per_claim}</span> per claim
+                              </div>
+                              <div className="h-4 w-px bg-border" />
+                              <div className="text-muted">
+                                <span className="font-semibold text-primary capitalize">{campaign.claim_type}</span> use
                               </div>
                             </div>
                           </div>
                           
-                          {campaign.deposit_address && (
-                            <div>
-                              <div className="text-xs text-muted uppercase tracking-wide">Send To Address</div>
-                              <div className="flex items-center gap-2">
-                                <code className="text-xs bg-secondary/50 px-2 py-1 rounded font-mono text-foreground break-all">
-                                  {campaign.deposit_address}
-                                </code>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => campaign.deposit_address && navigator.clipboard.writeText(campaign.deposit_address)}
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          )}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="opacity-60 hover:opacity-100 h-8 w-8 p-0"
+                            onClick={() => navigator.clipboard.writeText(campaign.id)}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
 
-                          {campaign.token_address && campaign.token_address !== 'NATIVE' && campaign.token_address?.toLowerCase() !== 'native' && (
-                            <div>
-                              <div className="text-xs text-muted uppercase tracking-wide">Token Contract</div>
-                              <div className="flex items-center gap-2">
-                                <code className="text-xs bg-secondary/50 px-2 py-1 rounded font-mono text-foreground break-all">
-                                  {campaign.token_address}
-                                </code>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => navigator.clipboard.writeText(campaign.token_address)}
-                                >
-                                  <Copy className="h-3 w-3" />
-                                </Button>
+                        {/* Network & Budget Info */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            {network && (
+                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card border border-border/50">
+                                <span className="text-sm">{network.icon}</span>
+                                <span className="text-xs font-medium text-foreground">{network.shortName}</span>
                               </div>
-                            </div>
-                          )}
-
-                          {campaign.chain_id && (
-                            <div>
-                              <div className="text-xs text-muted uppercase tracking-wide">Network</div>
-                              <div className="flex items-center gap-2">
-                                <div className="text-foreground">
-                                  {(() => {
-                                    const network = getNetworkInfo(campaign.chain_id);
-                                    return network 
-                                      ? `${network.icon} ${network.name} (${network.currency})` 
-                                      : `Chain ID: ${campaign.chain_id}`;
-                                  })()}
-                                </div>
-                                {getExplorerUrl(campaign.chain_id) && (
-                                  <a
-                                    href={getExplorerUrl(campaign.chain_id)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
-                                  >
-                                    <ExternalLink className="h-3 w-3" />
-                                    Explorer
-                                  </a>
-                                )}
+                            )}
+                            {campaign.total_budget && (
+                              <div className="px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                                <span className="text-xs font-semibold text-primary">
+                                  {campaign.total_budget} {campaign.token_symbol} Budget
+                                </span>
                               </div>
-                            </div>
-                          )}
-
-                          <div className="mt-3 p-3 rounded-lg bg-secondary/30 border border-secondary">
-                            <div className="text-xs text-muted mb-1">💡 Instructions:</div>
-                            <div className="text-xs text-foreground space-y-1">
-                              <div>1. Send exactly <strong>{campaign.total_budget || campaign.required_balance} {campaign.token_symbol}</strong> from your connected wallet</div>
-                              <div>2. To address: <strong>{campaign.deposit_address}</strong></div>
-                              <div>3. Click &quot;Check Funding&quot; once transaction is confirmed</div>
+                            )}
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="text-xs text-muted">Created</div>
+                            <div className="text-xs font-semibold text-foreground">
+                              {new Date(campaign.created_at).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: '2-digit'
+                              })}
                             </div>
                           </div>
                         </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {/* Active Campaign Actions */}
+                          {isActive && (
+                            <>
+                              {campaign.links_generated ? (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => getCampaignLinks(campaign.id)}
+                                    disabled={loadingStates[campaign.id] === 'links'}
+                                    className="flex-1 min-w-0 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 text-xs"
+                                  >
+                                    {loadingStates[campaign.id] === 'links' ? (
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1.5" />
+                                    ) : (
+                                      <Eye className="h-3 w-3 mr-1.5" />
+                                    )}
+                                    View Links
+                                  </Button>
+                                  
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => getCampaignStats(campaign.id)}
+                                    disabled={loadingStates[campaign.id] === 'stats'}
+                                    className="flex-1 min-w-0 text-xs"
+                                  >
+                                    {loadingStates[campaign.id] === 'stats' ? (
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1.5" />
+                                    ) : (
+                                      <BarChart3 className="h-3 w-3 mr-1.5" />
+                                    )}
+                                    Analytics
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  onClick={() => generateCampaignLinks(campaign.id)}
+                                  disabled={loadingStates[campaign.id] === 'generating'}
+                                  className="w-full text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                                >
+                                  {loadingStates[campaign.id] === 'generating' ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-2" />
+                                      Generating Links...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <LinkIcon className="h-3 w-3 mr-2" />
+                                      Generate Distribution Links
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          
+                          {/* Pending Campaign Actions */}
+                          {isPending && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => checkCampaignFunding(campaign.id)}
+                              disabled={checkingFunding === campaign.id}
+                              className="w-full text-xs bg-yellow-500/5 border-yellow-500/30 text-yellow-700 hover:bg-yellow-500/10"
+                            >
+                              {checkingFunding === campaign.id ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-2" />
+                                  Checking Funding...
+                                </>
+                              ) : (
+                                <>
+                                  <Search className="h-3 w-3 mr-2" />
+                                  Verify Funding Status
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    
-                    {/* Funding check results */}
-                    {fundingResults[campaign.id] && (
-                      <div className="mt-3 p-3 rounded-lg border-t">
-                        {fundingResults[campaign.id].funded ? (
-                          <div className="flex items-start gap-2 text-sm text-success">
-                            <CheckCircle className="h-4 w-4 mt-0.5" />
-                            <div>
-                              <div className="font-medium">Campaign Funded Successfully!</div>
+
+                      {/* Funding Information Panel */}
+                      {isPending && (
+                        <div className="border-t border-yellow-500/20 bg-gradient-to-r from-yellow-500/5 to-yellow-500/10 p-5">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="p-1.5 rounded-lg bg-yellow-500/20">
+                              <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                            </div>
+                            <span className="font-semibold text-yellow-700">Awaiting Token Deposit</span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div className="space-y-3">
+                              <div>
+                                <div className="text-xs text-yellow-700/70 uppercase tracking-wide font-semibold mb-1">Required Amount</div>
+                                <div className="px-3 py-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                                  <span className="font-bold text-yellow-700 text-lg">
+                                    {campaign.total_budget || campaign.required_balance}
+                                  </span>
+                                  <span className="text-yellow-600 ml-2 font-semibold">{campaign.token_symbol}</span>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="text-xs text-yellow-700/70 uppercase tracking-wide font-semibold mb-1">Token Type</div>
+                                <div className="text-sm text-yellow-700 font-medium">
+                                  {campaign.token_address === 'NATIVE' || campaign.token_address?.toLowerCase() === 'native' 
+                                    ? `${network?.icon || '🟣'} Native Token (${campaign.token_symbol})`
+                                    : '🔧 ERC-20 Contract'
+                                  }
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              {campaign.deposit_address && (
+                                <div>
+                                  <div className="text-xs text-yellow-700/70 uppercase tracking-wide font-semibold mb-1">Deposit Address</div>
+                                  <div className="flex items-center gap-2">
+                                    <code className="flex-1 text-xs bg-yellow-500/10 border border-yellow-500/20 px-2 py-1.5 rounded font-mono text-yellow-700 truncate">
+                                      {campaign.deposit_address}
+                                    </code>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-8 w-8 p-0 border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/10"
+                                      onClick={() => campaign.deposit_address && navigator.clipboard.writeText(campaign.deposit_address)}
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+
+                              {network && getExplorerUrl(campaign.chain_id) && (
+                                <div>
+                                  <div className="text-xs text-yellow-700/70 uppercase tracking-wide font-semibold mb-1">Network Explorer</div>
+                                  <a
+                                    href={getExplorerUrl(campaign.chain_id)!}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 text-sm text-yellow-600 hover:text-yellow-700 font-medium"
+                                  >
+                                    <ExternalLink className="h-3.5 w-3.5" />
+                                    {network.name} Explorer
+                                  </a>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                            <div className="flex items-center gap-2 text-xs text-yellow-700/80 mb-2">
+                              <span className="text-lg">💡</span>
+                              <span className="font-semibold uppercase tracking-wide">Quick Instructions</span>
+                            </div>
+                            <div className="text-xs text-yellow-700 space-y-1 font-medium">
+                              <div>• Send <strong>{campaign.total_budget || campaign.required_balance} {campaign.token_symbol}</strong> from your connected wallet</div>
+                              <div>• Use the deposit address above as the recipient</div>
+                              <div>• Click "Verify Funding" once transaction confirms</div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* Funding Status Results */}
+                      {fundingResults[campaign.id] && (
+                        <div className={`border-t p-4 ${
+                          fundingResults[campaign.id].funded 
+                            ? 'border-success/20 bg-success/5' 
+                            : 'border-destructive/20 bg-destructive/5'
+                        }`}>
+                          <div className="flex items-start gap-3">
+                            {fundingResults[campaign.id].funded ? (
+                              <div className="p-1.5 rounded-lg bg-success/20">
+                                <CheckCircle className="h-4 w-4 text-success" />
+                              </div>
+                            ) : (
+                              <div className="p-1.5 rounded-lg bg-destructive/20">
+                                <XCircle className="h-4 w-4 text-destructive" />
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <div className={`font-semibold text-sm ${
+                                fundingResults[campaign.id].funded ? 'text-success' : 'text-destructive'
+                              }`}>
+                                {fundingResults[campaign.id].funded ? '🎉 Funding Verified!' : 'Funding Not Detected'}
+                              </div>
                               <div className="text-xs text-muted mt-1">
-                                {fundingResults[campaign.id].message}
+                                {fundingResults[campaign.id].message || fundingResults[campaign.id].details}
                               </div>
                               {fundingResults[campaign.id].transaction?.hash && (
-                                <div className="text-xs text-muted mt-1 font-mono">
+                                <div className="text-xs text-muted mt-2 font-mono bg-background/50 px-2 py-1 rounded">
                                   TX: {fundingResults[campaign.id].transaction!.hash.substring(0, 20)}...
                                 </div>
                               )}
                             </div>
                           </div>
-                        ) : (
-                          <div className="flex items-start gap-2 text-sm text-destructive">
-                            <XCircle className="h-4 w-4 mt-0.5" />
-                            <div>
-                              <div className="font-medium">Funding Not Found</div>
-                              <div className="text-xs text-muted mt-1">
-                                {fundingResults[campaign.id].details || 'Please ensure you have sent the required tokens to the deposit address.'}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>
