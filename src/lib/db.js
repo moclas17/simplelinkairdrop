@@ -20,7 +20,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
 
 console.log('[DB] Supabase client initialized');
 
-export default {
+class Database {
   // Original single-claim functions
   async get(id) {
     console.log('[DB] Getting claim:', id);
@@ -35,7 +35,7 @@ export default {
     }
     console.log('[DB] Get result:', data);
     return data;
-  },
+  }
 
   async getClaimWithCampaignInfo(id) {
     console.log('[DB] Getting claim with campaign info:', id);
@@ -86,7 +86,7 @@ export default {
     
     console.log('[DB] Get claim with campaign result:', result);
     return result;
-  },
+  }
 
   async save(id, amount, expires_at = null, campaign_id = 'default') {
     console.log('[DB] Saving claim:', { id, amount, expires_at, campaign_id });
@@ -98,7 +98,7 @@ export default {
       throw error;
     }
     console.log('[DB] Save successful');
-  },
+  }
 
   async reserve(id) {
     console.log('[DB] Reserving claim:', id);
@@ -117,7 +117,7 @@ export default {
     }
     console.log('[DB] Reserve successful:', data);
     return data;
-  },
+  }
 
   async markClaimed(id, txHash) {
     const { error } = await supabase
@@ -125,7 +125,7 @@ export default {
       .update({ claimed: true, status: 'done', tx_hash: txHash, claimed_at: new Date().toISOString() })
       .eq('id', id);
     if (error) throw error;
-  },
+  }
 
   async rollback(id) {
     const { error } = await supabase
@@ -133,7 +133,7 @@ export default {
       .update({ status: 'new' })
       .eq('id', id);
     if (error) throw error;
-  },
+  }
 
   // Multi-claim functions
   async saveMultiClaim(id, amount, maxClaims, expires_at = null, campaign_id = 'default') {
@@ -155,7 +155,7 @@ export default {
       throw error;
     }
     console.log('[DB] Multi-claim save successful');
-  },
+  }
 
   async checkWalletAlreadyClaimed(claimId, walletAddress, campaign_id) {
     console.log('[DB] Checking if wallet already claimed:', { claimId, walletAddress, campaign_id });
@@ -179,7 +179,7 @@ export default {
       console.log('[DB] Wallet has not claimed yet');
       return null;
     }
-  },
+  }
 
   async reserveMultiClaim(claimId, walletAddress) {
     console.log('[DB] Attempting to reserve multi-claim:', { claimId, walletAddress });
@@ -212,7 +212,7 @@ export default {
 
     console.log('[DB] Multi-claim reservation successful:', claimData);
     return claimData;
-  },
+  }
 
   async markMultiClaimed(claimId, walletAddress, txHash, amount, campaign_id) {
     console.log('[DB] Marking multi-claim as completed:', { claimId, walletAddress, txHash, amount, campaign_id });
@@ -263,7 +263,7 @@ export default {
       console.error('[DB] Error in markMultiClaimed:', error);
       throw error;
     }
-  },
+  }
 
   async rollbackMultiClaim(claimId, walletAddress, campaign_id) {
     console.log('[DB] Rolling back multi-claim for wallet:', { claimId, walletAddress, campaign_id });
@@ -310,7 +310,7 @@ export default {
       console.error('[DB] Error in rollbackMultiClaim:', error);
       throw error;
     }
-  },
+  }
 
   async getMultiClaimStats(claimId) {
     console.log('[DB] Getting multi-claim stats:', claimId);
@@ -327,7 +327,7 @@ export default {
 
     console.log('[DB] Multi-claim stats retrieved:', data?.length || 0, 'claims');
     return data || [];
-  },
+  }
 
   // User management functions
   async getOrCreateUser(walletAddress) {
@@ -383,7 +383,7 @@ export default {
       console.error('[DB] Error in getOrCreateUser:', error);
       throw error;
     }
-  },
+  }
 
   async getUserCampaigns(walletAddress) {
     console.log('[DB] Getting campaigns for user:', walletAddress);
@@ -423,7 +423,7 @@ export default {
       // Return empty array if user doesn't exist or other issues
       return [];
     }
-  },
+  }
 
   async getUserIdByWallet(walletAddress) {
     const { data, error } = await supabase
@@ -437,7 +437,7 @@ export default {
     }
 
     return data.id;
-  },
+  }
 
   async createCampaign(campaignData) {
     console.log('[DB] Creating campaign:', campaignData);
@@ -510,7 +510,7 @@ export default {
 
     console.log('[DB] Created campaign:', data.id);
     return data;
-  },
+  }
 
   async updateCampaign(campaignId, updateData) {
     console.log('[DB] Updating campaign:', campaignId, updateData);
@@ -528,7 +528,7 @@ export default {
     }
 
     return data;
-  },
+  }
 
   async deleteCampaign(campaignId) {
     console.log('[DB] Deleting campaign:', campaignId);
@@ -542,7 +542,7 @@ export default {
       console.error('[DB] Error deleting campaign:', error);
       throw error;
     }
-  },
+  }
 
   async checkCampaignFunding(campaignId, walletAddress) {
     console.log('[DB] Checking campaign funding:', { campaignId, walletAddress });
@@ -630,7 +630,7 @@ export default {
       console.error('[DB] Error checking funding:', error);
       return { funded: false, error: error.message };
     }
-  },
+  }
 
   async checkNativeTokenBalance(walletAddress, requiredAmount, chainId) {
     console.log('[DB] Checking native token balance:', { walletAddress, requiredAmount, chainId });
@@ -677,7 +677,7 @@ export default {
       console.error('[DB] Error checking native token balance:', error);
       throw new Error(`Failed to check native token balance: ${error.message}`);
     }
-  },
+  }
 
   async checkTokenBalance(walletAddress, tokenAddress, requiredAmount, decimals = 18, chainId = null) {
     console.log('[DB] Checking token balance:', { walletAddress, tokenAddress, requiredAmount, chainId });
@@ -734,7 +734,7 @@ export default {
       console.error('[DB] Error checking token balance:', error);
       throw new Error(`Failed to check token balance: ${error.message}`);
     }
-  },
+  }
 
   async findFundingTransaction(fromWallet, toWallet, tokenAddress, requiredAmount, decimals, fromDate, chainId) {
     console.log('[DB] Searching for funding transaction:', {
@@ -865,7 +865,7 @@ export default {
         details: `Error searching blockchain: ${error.message}`
       };
     }
-  },
+  }
 
   async getTokenSymbol(tokenAddress) {
     try {
@@ -880,7 +880,7 @@ export default {
     } catch {
       return 'TOKEN';
     }
-  },
+  }
 
   async validateTokenContract(tokenAddress, chainId, rpcUrl = null) {
     console.log('[DB] Validating token contract:', tokenAddress, 'on chain:', chainId);
@@ -893,7 +893,7 @@ export default {
     
     // Continue with ERC-20 validation
     return this.validateERC20Contract(tokenAddress, rpcUrl);
-  },
+  }
 
   isNativeToken(tokenAddress) {
     if (!tokenAddress) return false;
@@ -905,7 +905,7 @@ export default {
            normalizedAddress === 'eth' ||
            normalizedAddress === 'matic' ||
            normalizedAddress === 'bnb';
-  },
+  }
 
   async validateNativeToken(chainId) {
     console.log('[DB] Validating native token for chain:', chainId);
@@ -945,7 +945,7 @@ export default {
         error: `Failed to validate native token: ${error.message}`
       };
     }
-  },
+  }
 
   async validateERC20Contract(tokenAddress, rpcUrl = null) {
     console.log('[DB] Validating ERC-20 contract:', tokenAddress);
@@ -1076,7 +1076,7 @@ export default {
         error: `Contract validation failed: ${error.message}`
       };
     }
-  },
+  }
 
   async recordCampaignDeposit(campaignId, userId, transaction) {
     console.log('[DB] Recording campaign deposit:', { campaignId, userId, txHash: transaction.hash });
@@ -1121,7 +1121,7 @@ export default {
       console.error('[DB] Error in recordCampaignDeposit:', error);
       throw error;
     }
-  },
+  }
 
   async generateLinksForCampaign(campaignId, walletAddress) {
     console.log('[DB] Generating links for campaign:', { campaignId, walletAddress });
@@ -1234,12 +1234,12 @@ export default {
       console.error('[DB] Error generating links:', error);
       throw error;
     }
-  },
+  }
 
   generateUniqueId() {
     // Generate a random ID for claim links
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-  },
+  }
 
   async getExistingLinksForCampaign(campaignId, walletAddress) {
     console.log('[DB] Getting existing links for campaign:', { campaignId, walletAddress });
@@ -1308,7 +1308,7 @@ export default {
       console.error('[DB] Error getting existing links:', error);
       throw error;
     }
-  },
+  }
 
   async getCampaignStats(campaignId, walletAddress) {
     console.log('[DB] Getting campaign stats:', { campaignId, walletAddress });
@@ -1432,7 +1432,7 @@ export default {
       console.error('[DB] Error getting campaign stats:', error);
       throw error;
     }
-  },
+  }
 
   async findNativeFundingTransaction(provider, fromWallet, toWallet, requiredAmount, fromDate, chainId) {
     console.log('[DB] Searching for native token funding transaction');
@@ -1584,4 +1584,7 @@ export default {
       };
     }
   }
-};
+}
+
+const db = new Database();
+export default db;
