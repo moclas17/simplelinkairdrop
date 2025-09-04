@@ -250,11 +250,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen p-3 sm:p-6">
+      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
             <Link 
               href="/"
               className="inline-flex items-center gap-2 text-muted hover:text-foreground transition-colors"
@@ -263,35 +263,36 @@ export default function DashboardPage() {
               <span className="hidden sm:inline">Home</span>
             </Link>
             <div className="h-6 w-px bg-border hidden sm:block" />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Image 
                 src="/chingadrop.png" 
                 alt="CHINGADROP" 
-                width={32} 
-                height={32}
-                className="opacity-90 rounded-lg"
+                width={28} 
+                height={28}
+                className="opacity-90 rounded-lg sm:w-8 sm:h-8"
               />
-              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
+              <h1 className="text-lg sm:text-2xl font-bold text-foreground">Dashboard</h1>
             </div>
           </div>
           
           {/* User info and actions */}
-          <div className="flex items-center justify-between sm:justify-end gap-3">
+          <div className="flex items-center justify-between sm:justify-end gap-2 sm:gap-3">
             <Link 
               href="/campaigns/create"
-              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-sm font-semibold hover:scale-105 transition-transform"
+              className="inline-flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-xs sm:text-sm font-semibold hover:scale-105 transition-transform"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden sm:inline">Create Campaign</span>
+              <span className="sm:hidden">Create</span>
             </Link>
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border">
-              <Wallet className="h-4 w-4 text-success" />
-              <span className="text-xs sm:text-sm font-mono">
-                {address?.slice(0, 6)}...{address?.slice(-4)}
+            <div className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 rounded-lg bg-card border">
+              <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-success" />
+              <span className="text-xs font-mono">
+                {address?.slice(0, 4)}...{address?.slice(-3)}
               </span>
             </div>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 sm:mr-2" />
+            <Button variant="outline" size="sm" onClick={handleLogout} className="px-2 sm:px-3">
+              <LogOut className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-2" />
               <span className="hidden sm:inline">Disconnect</span>
             </Button>
           </div>
@@ -299,36 +300,36 @@ export default function DashboardPage() {
 
         {/* My Campaigns - Modern Grid Layout */}
         <Card className="overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-background via-background to-primary/5">
-            <div className="flex items-center justify-between">
+          <CardHeader className="bg-gradient-to-r from-background via-background to-primary/5 p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
               <div>
-                <CardTitle className="flex items-center gap-3 text-xl">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
-                    <Shield className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 sm:gap-3 text-base sm:text-xl">
+                  <div className="p-1 sm:p-2 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 border border-primary/20">
+                    <Shield className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
                   </div>
                   My Campaigns
-                  <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full bg-primary/15 text-primary text-sm font-bold">
+                  <span className="inline-flex items-center justify-center min-w-[20px] sm:min-w-[28px] h-5 sm:h-7 px-1 sm:px-2 rounded-full bg-primary/15 text-primary text-xs sm:text-sm font-bold">
                     {campaigns.length}
                   </span>
                 </CardTitle>
-                <CardDescription className="mt-1">
+                <CardDescription className="mt-0.5 sm:mt-1 text-xs sm:text-sm">
                   Manage your token distribution campaigns across multiple networks
                 </CardDescription>
               </div>
               {campaigns.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <div className="text-sm text-muted font-medium">
+                <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm mt-2 sm:mt-0">
+                  <div className="text-muted font-medium">
                     {campaigns.filter(c => c.status === 'active').length} Active
                   </div>
-                  <div className="h-4 w-px bg-border" />
-                  <div className="text-sm text-muted font-medium">
+                  <div className="h-3 sm:h-4 w-px bg-border" />
+                  <div className="text-muted font-medium">
                     {campaigns.filter(c => c.status === 'pending_funding').length} Pending
                   </div>
                 </div>
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-3 sm:p-6">
             {loadingCampaigns ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center space-y-4">
@@ -357,7 +358,7 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-6">
                 {campaigns.map((campaign) => {
                   const network = getNetworkInfo(campaign.chain_id);
                   const isActive = campaign.status === 'active';
@@ -375,15 +376,15 @@ export default function DashboardPage() {
                       }`}
                     >
                       {/* Header */}
-                      <div className="p-5 pb-4">
-                        <div className="flex items-start justify-between mb-4">
+                      <div className="p-3 sm:p-5 pb-2 sm:pb-4">
+                        <div className="flex items-start justify-between mb-3 sm:mb-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h3 className="font-semibold text-foreground text-lg leading-tight">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3 sm:mb-2">
+                              <h3 className="font-semibold text-foreground text-base sm:text-lg leading-tight">
                                 {campaign.title}
                               </h3>
-                              <div className="flex items-center gap-2">
-                                <span className={`px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                                   isActive 
                                     ? 'bg-success/20 text-success' 
                                     : isPending
@@ -393,28 +394,29 @@ export default function DashboardPage() {
                                   {campaign.status.replace('_', ' ')}
                                 </span>
                                 {campaign.links_generated && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-primary/15 text-primary text-xs font-medium">
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-full bg-primary/15 text-primary text-xs font-medium">
                                     <CheckCircle className="h-3 w-3" />
-                                    Links Ready
+                                    <span className="hidden sm:inline">Links Ready</span>
+                                    <span className="sm:hidden">Ready</span>
                                   </span>
                                 )}
                               </div>
                             </div>
                             
-                            <div className="flex items-center gap-4 text-sm">
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                               <div className="flex items-center gap-1.5">
-                                <div className="w-6 h-6 rounded-lg bg-primary/15 flex items-center justify-center">
+                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-primary/15 flex items-center justify-center">
                                   <span className="text-xs font-bold text-primary">
                                     {campaign.token_symbol?.charAt(0) || 'T'}
                                   </span>
                                 </div>
                                 <span className="font-semibold text-foreground">{campaign.token_symbol}</span>
                               </div>
-                              <div className="h-4 w-px bg-border" />
+                              <div className="h-4 w-px bg-border hidden sm:block" />
                               <div className="text-muted">
                                 <span className="font-semibold text-foreground">{campaign.amount_per_claim}</span> per claim
                               </div>
-                              <div className="h-4 w-px bg-border" />
+                              <div className="h-4 w-px bg-border hidden sm:block" />
                               <div className="text-muted">
                                 <span className="font-semibold text-primary capitalize">{campaign.claim_type}</span> use
                               </div>
@@ -431,17 +433,17 @@ export default function DashboardPage() {
                           </Button>
                         </div>
 
-                        {/* Network & Budget Info */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
+                        {/* Network & Budget Info - Mobile Optimized */}
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-3 sm:mb-4">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             {network && (
-                              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card border border-border/50">
-                                <span className="text-sm">{network.icon}</span>
+                              <div className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-card border border-border/50">
+                                <span className="text-xs sm:text-sm">{network.icon}</span>
                                 <span className="text-xs font-medium text-foreground">{network.shortName}</span>
                               </div>
                             )}
                             {campaign.total_budget && (
-                              <div className="px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                              <div className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg bg-primary/10 border border-primary/20">
                                 <span className="text-xs font-semibold text-primary">
                                   {campaign.total_budget} {campaign.token_symbol} Budget
                                 </span>
@@ -449,7 +451,7 @@ export default function DashboardPage() {
                             )}
                           </div>
                           
-                          <div className="text-right">
+                          <div className="text-left sm:text-right">
                             <div className="text-xs text-muted">Created</div>
                             <div className="text-xs font-semibold text-foreground">
                               {new Date(campaign.created_at).toLocaleDateString('en-US', { 
@@ -461,8 +463,8 @@ export default function DashboardPage() {
                           </div>
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-2 flex-wrap">
+                        {/* Action Buttons - Mobile Optimized */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
                           {/* Active Campaign Actions */}
                           {isActive && (
                             <>
@@ -473,7 +475,7 @@ export default function DashboardPage() {
                                     variant="outline"
                                     onClick={() => getCampaignLinks(campaign.id)}
                                     disabled={loadingStates[campaign.id] === 'links'}
-                                    className="flex-1 min-w-0 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 text-xs"
+                                    className="w-full sm:flex-1 sm:min-w-0 bg-primary/5 border-primary/30 text-primary hover:bg-primary/10 text-xs sm:text-xs py-2 sm:py-1.5"
                                   >
                                     {loadingStates[campaign.id] === 'links' ? (
                                       <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1.5" />
@@ -488,7 +490,7 @@ export default function DashboardPage() {
                                     variant="outline"
                                     onClick={() => getCampaignStats(campaign.id)}
                                     disabled={loadingStates[campaign.id] === 'stats'}
-                                    className="flex-1 min-w-0 text-xs"
+                                    className="w-full sm:flex-1 sm:min-w-0 text-xs py-2 sm:py-1.5"
                                   >
                                     {loadingStates[campaign.id] === 'stats' ? (
                                       <div className="animate-spin rounded-full h-3 w-3 border-b border-current mr-1.5" />
@@ -503,7 +505,7 @@ export default function DashboardPage() {
                                   size="sm"
                                   onClick={() => generateCampaignLinks(campaign.id)}
                                   disabled={loadingStates[campaign.id] === 'generating'}
-                                  className="w-full text-xs bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                                  className="w-full text-xs py-2 sm:py-1.5 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                                 >
                                   {loadingStates[campaign.id] === 'generating' ? (
                                     <>
@@ -513,7 +515,8 @@ export default function DashboardPage() {
                                   ) : (
                                     <>
                                       <LinkIcon className="h-3 w-3 mr-2" />
-                                      Generate Distribution Links
+                                      <span className="hidden sm:inline">Generate Distribution Links</span>
+                                      <span className="sm:hidden">Generate Links</span>
                                     </>
                                   )}
                                 </Button>
@@ -528,7 +531,7 @@ export default function DashboardPage() {
                               variant="outline"
                               onClick={() => checkCampaignFunding(campaign.id)}
                               disabled={checkingFunding === campaign.id}
-                              className="w-full text-xs bg-yellow-500/5 border-yellow-500/30 text-yellow-700 hover:bg-yellow-500/10"
+                              className="w-full text-xs py-2 sm:py-1.5 bg-yellow-500/5 border-yellow-500/30 text-yellow-700 hover:bg-yellow-500/10"
                             >
                               {checkingFunding === campaign.id ? (
                                 <>
@@ -538,7 +541,8 @@ export default function DashboardPage() {
                               ) : (
                                 <>
                                   <Search className="h-3 w-3 mr-2" />
-                                  Verify Funding Status
+                                  <span className="hidden sm:inline">Verify Funding Status</span>
+                                  <span className="sm:hidden">Check Funding</span>
                                 </>
                               )}
                             </Button>
