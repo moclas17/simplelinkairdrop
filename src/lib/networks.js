@@ -174,6 +174,38 @@ export const SUPPORTED_NETWORKS = {
     blocksPerDay: 86400, // ~1 second blocks
     gasCostPerTx: 0.00001, // MON per transaction (estimated)
     isLightColor: false
+  },
+
+  // Celo Mainnet
+  42220: {
+    name: 'Celo',
+    shortName: 'Celo',
+    chainId: 42220,
+    chainIdHex: '0xa4ec',
+    currency: 'CELO',
+    rpcUrl: 'https://forno.celo.org',
+    explorerUrl: 'https://celoscan.io',
+    color: '#35D07F',
+    icon: '🌱',
+    blocksPerDay: 17280, // ~5 second blocks
+    gasCostPerTx: 0.00001, // CELO per transaction (very low gas fees)
+    isLightColor: false
+  },
+
+  // Celo Alfajores Testnet
+  44787: {
+    name: 'Celo Alfajores',
+    shortName: 'Alfajores',
+    chainId: 44787,
+    chainIdHex: '0xaef3',
+    currency: 'CELO',
+    rpcUrl: 'https://alfajores-forno.celo-testnet.org',
+    explorerUrl: 'https://alfajores.celoscan.io',
+    color: '#35D07F',
+    icon: '🌱',
+    blocksPerDay: 17280, // ~5 second blocks
+    gasCostPerTx: 0.000001, // CELO per transaction (testnet)
+    isLightColor: false
   }
 };
 
