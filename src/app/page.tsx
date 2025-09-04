@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowRight, Shield, Clock, Users, Lock } from 'lucide-react';
@@ -7,19 +8,25 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Header */}
-      <header className="flex items-center justify-between p-6">
-        <div className="flex items-center gap-4">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 shadow-lg shadow-primary/20" />
-          <h1 className="text-xl font-bold text-foreground">Chingadrop.xyz</h1>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6">
+        <div className="flex items-center gap-3">
+          <Image 
+            src="/chingadrop.png" 
+            alt="CHINGADROP" 
+            width={40} 
+            height={40}
+            className="opacity-90 rounded-lg"
+          />
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground">CHINGADROP</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between sm:justify-end gap-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-xs font-medium text-green-500">
             <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
             Service Online
           </span>
           <Link href="/login">
             <Button variant="secondary" size="sm">
-              Admin Login
+              <span className="hidden sm:inline">Admin </span>Login
             </Button>
           </Link>
         </div>
@@ -29,14 +36,20 @@ export default function HomePage() {
         {/* Hero Section */}
         <div className="text-center mb-16">
           <div className="mb-6">
-            <div className="mx-auto h-16 w-16 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 shadow-2xl shadow-primary/30" />
+            <Image 
+              src="/chingadrop.png" 
+              alt="CHINGADROP" 
+              width={80} 
+              height={80}
+              className="mx-auto opacity-90 rounded-2xl shadow-2xl shadow-primary/30"
+            />
           </div>
           <h2 className="text-4xl font-bold text-foreground mb-4 md:text-5xl">
-            Token Distribution System
+            Multichain Airdrops
           </h2>
           <p className="text-xl text-muted mb-8 max-w-2xl mx-auto">
-            A secure token distribution system using <strong>one-time claim links</strong>. 
-            Built for ERC-20 tokens with hot wallet backend integration.
+            Secure token distribution system for <strong>multichain airdrops</strong>. 
+            Create campaigns, fund with tokens, and distribute via one-time claim links.
           </p>
           <div className="flex justify-center">
             <Link href="/login">

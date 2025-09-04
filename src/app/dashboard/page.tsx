@@ -253,65 +253,49 @@ export default function DashboardPage() {
     <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
             <Link 
               href="/"
               className="inline-flex items-center gap-2 text-muted hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Home
+              <span className="hidden sm:inline">Home</span>
             </Link>
-            <div className="h-6 w-px bg-border" />
+            <div className="h-6 w-px bg-border hidden sm:block" />
             <div className="flex items-center gap-3">
               <Image 
-                src="/chingadrop-logo.svg" 
+                src="/chingadrop.png" 
                 alt="CHINGADROP" 
-                width={40} 
-                height={40}
-                className="opacity-80"
+                width={32} 
+                height={32}
+                className="opacity-90 rounded-lg"
               />
-              <h1 className="text-2xl font-bold text-foreground">My Dashboard</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-foreground">Dashboard</h1>
             </div>
           </div>
           
-          {/* User info and logout */}
-          <div className="flex items-center gap-4">
+          {/* User info and actions */}
+          <div className="flex items-center justify-between sm:justify-end gap-3">
+            <Link 
+              href="/campaigns/create"
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-sm font-semibold hover:scale-105 transition-transform"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create Campaign</span>
+            </Link>
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-card border">
               <Wallet className="h-4 w-4 text-success" />
-              <span className="text-sm font-mono">
+              <span className="text-xs sm:text-sm font-mono">
                 {address?.slice(0, 6)}...{address?.slice(-4)}
               </span>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="h-4 w-4 mr-2" />
-              Disconnect
+            <Button variant="outline" size="sm" onClick={handleLogout}>
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Disconnect</span>
             </Button>
           </div>
         </div>
-
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              Quick Actions
-            </CardTitle>
-            <CardDescription>
-              Create new token distribution campaigns
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link 
-              href="/campaigns/create"
-              className="inline-flex items-center justify-center gap-2 w-full rounded-xl border border-primary/30 bg-gradient-to-b from-primary to-primary/80 px-6 py-4 text-sm font-semibold text-primary-foreground transition-all hover:scale-105 hover:shadow-lg hover:shadow-primary/20 disabled:opacity-50 disabled:hover:scale-100"
-            >
-              <Plus className="h-4 w-4" />
-              Create New Campaign
-            </Link>
-          </CardContent>
-        </Card>
-
 
         {/* My Campaigns - Modern Grid Layout */}
         <Card className="overflow-hidden">
@@ -689,24 +673,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-
-        {/* Info Card */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <Wallet className="h-5 w-5 text-primary mt-1" />
-              <div>
-                <h3 className="font-medium text-foreground mb-1">
-                  Personal Wallet Dashboard
-                </h3>
-                <p className="text-sm text-muted">
-                  This is your personal dashboard. You can generate and manage claim links 
-                  associated with your connected wallet address. Other users will only see their own links.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Links Modal */}
         {showLinksModal && campaignLinks[showLinksModal] && (
