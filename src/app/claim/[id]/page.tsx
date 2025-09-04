@@ -352,15 +352,15 @@ export default function ClaimPage() {
               />
             </div>
             <CardTitle>Claim {tokenSymbol} Tokens</CardTitle>
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mt-4">
-            <div className="text-2xl font-bold text-primary mb-2">
-              {formatAmount(claimData.amount)} ${tokenSymbol}
+            <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 mt-4">
+              <div className="text-2xl font-bold text-primary mb-2">
+                {formatAmount(claimData.amount)} ${tokenSymbol}
+              </div>
+              <p className="text-sm text-muted">
+                Available to claim from this link
+              </p>
             </div>
-            <p className="text-sm text-muted">
-              Available to claim from this link
-            </p>
-          </div>
-        </CardHeader>
+          </CardHeader>
 
         <CardContent>
           <form onSubmit={handleClaim} className="space-y-4">
@@ -414,6 +414,7 @@ export default function ClaimPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
