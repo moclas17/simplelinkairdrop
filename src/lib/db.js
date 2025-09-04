@@ -1403,30 +1403,23 @@ class Database {
         }
       }
 
+      // Format stats to match frontend CampaignStats interface
       const stats = {
-        total_budget: campaign.total_budget,
-        amount_per_claim: campaign.amount_per_claim,
-        max_claims: maxClaims,
-        total_claims_completed: totalClaimsCompleted,
-        links_count: links?.length || 0,
-        completion_rate: maxClaims > 0 ? (totalClaimsCompleted / maxClaims) * 100 : 0
+        totalClaims: maxClaims,
+        successfulClaims: totalClaimsCompleted,
+        tokensDistributed: totalClaimsCompleted * campaign.amount_per_claim,
+        completionRate: maxClaims > 0 ? Math.round((totalClaimsCompleted / maxClaims) * 100) : 0,
+        recentClaims: recentClaims.map(claim => ({
+          claimerAddress: claim.wallet_address || 'Single-use claim',
+          claimedAt: claim.claimed_at,
+          amount: claim.amount || campaign.amount_per_claim,
+          txHash: claim.tx_hash
+        }))
       };
 
       console.log('[DB] Campaign stats calculated:', stats);
 
-      return {
-        success: true,
-        campaign: {
-          id: campaign.id,
-          title: campaign.title,
-          claim_type: campaign.claim_type,
-          status: campaign.status,
-          token_symbol: campaign.token_symbol,
-          created_at: campaign.created_at
-        },
-        stats: stats,
-        claims: recentClaims
-      };
+      return stats;
 
     } catch (error) {
       console.error('[DB] Error getting campaign stats:', error);

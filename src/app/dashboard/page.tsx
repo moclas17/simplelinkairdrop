@@ -678,12 +678,12 @@ export default function DashboardPage() {
         </Card>
 
 
-        {/* Links Modal */}
+        {/* Links Modal - Mobile Optimized */}
         {showLinksModal && campaignLinks[showLinksModal] && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-background border border-border rounded-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <h2 className="text-xl font-bold text-foreground">Campaign Links</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-background border border-border rounded-2xl max-w-4xl w-full max-h-[85vh] sm:max-h-[80vh] overflow-hidden">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">Campaign Links</h2>
                 <Button
                   size="sm"
                   variant="outline"
@@ -692,50 +692,58 @@ export default function DashboardPage() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="p-6 overflow-y-auto max-h-[60vh]">
+              <div className="p-3 sm:p-6 overflow-y-auto max-h-[70vh] sm:max-h-[60vh]">
                 <div className="space-y-3">
                   {campaignLinks[showLinksModal].map((link, index: number) => (
                     <div 
                       key={(link as ClaimLink).id}
-                      className="flex items-center gap-3 p-4 rounded-lg bg-muted/50 border"
+                      className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-lg bg-muted/50 border"
                     >
-                      <span className="text-sm text-muted w-8">
-                        {index + 1}.
-                      </span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-xs px-2 py-1 rounded bg-primary/20 text-primary">
-                            {(link as ClaimLink).type}
-                          </span>
-                          {(link as ClaimLink).status === 'claimed' && (
-                            <span className="text-xs px-2 py-1 rounded bg-success/20 text-success">
-                              Claimed
+                      <div className="flex items-center gap-3 flex-1">
+                        <span className="text-sm text-muted w-6 sm:w-8 flex-shrink-0">
+                          {index + 1}.
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 mb-2 sm:mb-1 flex-wrap">
+                            <span className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-primary/20 text-primary">
+                              {(link as ClaimLink).type}
                             </span>
-                          )}
-                          {(link as ClaimLink).claimsUsed && (link as ClaimLink).claimsUsed! > 0 && (
-                            <span className="text-xs px-2 py-1 rounded bg-blue-500/20 text-blue-400">
-                              {(link as ClaimLink).claimsUsed} claimed
-                            </span>
-                          )}
+                            {(link as ClaimLink).status === 'claimed' && (
+                              <span className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-success/20 text-success">
+                                Claimed
+                              </span>
+                            )}
+                            {(link as ClaimLink).claimsUsed && (link as ClaimLink).claimsUsed! > 0 && (
+                              <span className="text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded bg-blue-500/20 text-blue-400">
+                                {(link as ClaimLink).claimsUsed} claimed
+                              </span>
+                            )}
+                          </div>
+                          <code className="text-xs font-mono text-foreground break-all sm:break-normal">
+                            {`${window.location.origin}${(link as ClaimLink).url}`}
+                          </code>
                         </div>
-                        <code className="text-xs font-mono text-foreground">
-                          {`${window.location.origin}${(link as ClaimLink).url}`}
-                        </code>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => copyToClipboard(`${window.location.origin}${(link as ClaimLink).url}`)}
-                      >
-                        <Copy className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => window.open(`${window.location.origin}${(link as ClaimLink).url}`, '_blank')}
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
+                      <div className="flex items-center gap-2 justify-end sm:justify-start">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(`${window.location.origin}${(link as ClaimLink).url}`)}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <Copy className="h-3 w-3 sm:mr-0" />
+                          <span className="sm:hidden ml-2">Copy</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => window.open(`${window.location.origin}${(link as ClaimLink).url}`, '_blank')}
+                          className="flex-1 sm:flex-none"
+                        >
+                          <ExternalLink className="h-3 w-3 sm:mr-0" />
+                          <span className="sm:hidden ml-2">Open</span>
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -744,12 +752,12 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Stats Modal */}
+        {/* Stats Modal - Mobile Optimized */}
         {showStatsModal && campaignStats[showStatsModal] && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-background border border-border rounded-2xl max-w-2xl w-full">
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <h2 className="text-xl font-bold text-foreground">Campaign Statistics</h2>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-background border border-border rounded-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-none overflow-hidden">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">Campaign Statistics</h2>
                 <Button
                   size="sm"
                   variant="outline"
@@ -758,47 +766,47 @@ export default function DashboardPage() {
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="p-4 sm:p-6 overflow-y-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="p-3 sm:p-4 rounded-lg bg-primary/10 border border-primary/20">
                       <div className="text-sm text-muted mb-1">Total Claims</div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-xl sm:text-2xl font-bold text-foreground">
                         {campaignStats[showStatsModal].totalClaims || 0}
                       </div>
                     </div>
                     
-                    <div className="p-4 rounded-lg bg-success/10 border border-success/20">
+                    <div className="p-3 sm:p-4 rounded-lg bg-success/10 border border-success/20">
                       <div className="text-sm text-muted mb-1">Successfully Claimed</div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-xl sm:text-2xl font-bold text-foreground">
                         {campaignStats[showStatsModal].successfulClaims || 0}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="space-y-4">
-                    <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="p-3 sm:p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                       <div className="text-sm text-muted mb-1">Tokens Distributed</div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-xl sm:text-2xl font-bold text-foreground">
                         {campaignStats[showStatsModal].tokensDistributed || 0}
                       </div>
                     </div>
                     
-                    <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <div className="p-3 sm:p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
                       <div className="text-sm text-muted mb-1">Completion Rate</div>
-                      <div className="text-2xl font-bold text-foreground">
+                      <div className="text-xl sm:text-2xl font-bold text-foreground">
                         {campaignStats[showStatsModal].completionRate || 0}%
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                {campaignStats[showStatsModal].recentClaims && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-semibold text-foreground mb-3">Recent Claims</h3>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                {campaignStats[showStatsModal].recentClaims && campaignStats[showStatsModal].recentClaims!.length > 0 && (
+                  <div className="mt-4 sm:mt-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-foreground mb-3">Recent Claims</h3>
+                    <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto">
                       {campaignStats[showStatsModal].recentClaims!.map((claim, index: number) => (
-                        <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                        <div key={index} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 p-2 sm:p-3 rounded-lg bg-muted/50">
                           <div className="font-mono text-xs text-foreground">
                             {(claim as { claimerAddress: string }).claimerAddress.substring(0, 10)}...{(claim as { claimerAddress: string }).claimerAddress.substring((claim as { claimerAddress: string }).claimerAddress.length - 8)}
                           </div>
