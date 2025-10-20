@@ -6,11 +6,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { 
-  ArrowLeft, 
-  Plus, 
-  Copy, 
-  ExternalLink, 
+import {
+  ArrowLeft,
+  Plus,
+  Copy,
+  ExternalLink,
   Wallet,
   LogOut,
   Shield,
@@ -21,7 +21,8 @@ import {
   Eye,
   BarChart3,
   Link as LinkIcon,
-  X
+  X,
+  Download
 } from 'lucide-react';
 import { useWallet } from '@/hooks/useWallet';
 import { getNetworkInfo, getExplorerUrl } from '@/lib/networks.js';
@@ -223,6 +224,47 @@ export default function DashboardPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
+  };
+
+  const exportStatsToCSV = (campaignId: string) => {
+    const stats = campaignStats[campaignId];
+    if (!stats || !stats.recentClaims || stats.recentClaims.length === 0) {
+      return;
+    }
+
+    // Get campaign info for filename
+    const campaign = campaigns.find(c => c.id === campaignId);
+    const campaignTitle = campaign?.title?.replace(/[^a-z0-9]/gi, '_') || 'campaign';
+
+    // CSV headers
+    const headers = ['Wallet Address', 'Amount', 'Transaction Hash', 'Claimed At'];
+
+    // CSV rows
+    const rows = stats.recentClaims.map((claim) => [
+      (claim as { claimerAddress: string }).claimerAddress,
+      (claim as { amount?: number }).amount?.toString() || '',
+      (claim as { txHash?: string }).txHash || '',
+      new Date((claim as { claimedAt: string }).claimedAt).toLocaleString()
+    ]);
+
+    // Create CSV content
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${campaignTitle}_claims_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleLogout = () => {
@@ -758,13 +800,25 @@ export default function DashboardPage() {
             <div className="bg-background border border-border rounded-2xl max-w-2xl w-full max-h-[85vh] sm:max-h-none overflow-hidden">
               <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border">
                 <h2 className="text-lg sm:text-xl font-bold text-foreground">Campaign Statistics</h2>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowStatsModal(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => exportStatsToCSV(showStatsModal)}
+                    disabled={!campaignStats[showStatsModal]?.recentClaims || campaignStats[showStatsModal].recentClaims!.length === 0}
+                    className="bg-primary/5 border-primary/30 text-primary hover:bg-primary/10"
+                  >
+                    <Download className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Export CSV</span>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowStatsModal(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="p-4 sm:p-6 overflow-y-auto">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
